@@ -9,47 +9,48 @@ Emulator::Emulator() :
     m_window(nullptr),
     m_renderer(nullptr)
 {
-
 }
-
 
 void Emulator::Start()
 {
-    //TODO Error checking
-
     // Initialize SDL
-    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
     {
-        std::cerr << "SDL could not initialize! SDL error: " << SDL_GetError() << std::endl;
+        Logger::LogError("SDL could not initialize! SDL error: '%s'", SDL_GetError());
+        return;
     }
 
     // Initialize SDL_mixer
-    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
-        std::cout << "SDL_mixer could not be initialized! SDL_mixer error: " << Mix_GetError() << std::endl;
+        Logger::LogError("SDL_mixer could not be initialized! SDL_mixer error: '%s'", Mix_GetError());
+        return;
     }
     // Create window
     m_window = SDL_CreateWindow(m_windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_windowWidth, m_windowHeight, SDL_WINDOW_SHOWN);
-    if(m_window == nullptr)
+    if (m_window == nullptr)
     {
-        std::cerr << "Window could not be created! SDL error: " << SDL_GetError() << std::endl;
+        Logger::LogError("Window could not be created! SDL error: %s", SDL_GetError());
+        return;
     }
 
     // Create renderer
     m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if(m_renderer == nullptr)
+    if (m_renderer == nullptr)
     {
-        std::cerr << "Renderer could not be created! SDL error: " << SDL_GetError() << std::endl;
+        Logger::LogError("Renderer could not be created! SDL error: %s", SDL_GetError());
+        return;
     }
 
+    Logger::Log("Gameboy is up and running!");
     // Game loop
     SDL_Event event;
-    while(m_isRunning)
+    while (m_isRunning)
     {
         // Poll for window input
-        while(SDL_PollEvent(&event) != 0)
+        while (SDL_PollEvent(&event) != 0)
         {
-            if(event.type == SDL_QUIT)
+            if (event.type == SDL_QUIT)
             {
                 m_isRunning = false;
             }
