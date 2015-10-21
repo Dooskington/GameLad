@@ -1,8 +1,10 @@
 #include "PCH.hpp"
+#include "Emulator.hpp"
 
 int main(int argc, char** argv)
 {
-    std::cout << "Hello World!" << std::endl;
+    Emulator emulator;
+    emulator.Start();
 
     return 0;
 }
