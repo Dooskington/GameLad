@@ -7,7 +7,7 @@ void Logger::Log(const std::string message, ...)
     va_start(argPointer, message);
 
     // Get the size required so we can allocate the correct sapce
-    size_t size = std::vsnprintf(nullptr, 0, message.c_str(), argPointer);
+    size_t size = std::vsnprintf(nullptr, 0, message.c_str(), argPointer) + 1;
     std::unique_ptr<char[]> buf(new char[size]);
     std::vsnprintf(&buf.get()[0], size, message.c_str(), argPointer);
 
@@ -21,7 +21,7 @@ void Logger::LogError(const std::string message, ...)
     va_start(argPointer, message);
 
     // Get the size required so we can allocate the correct sapce
-    size_t size = std::vsnprintf(nullptr, 0, message.c_str(), argPointer);
+    size_t size = std::vsnprintf(nullptr, 0, message.c_str(), argPointer) + 1;
     std::unique_ptr<char[]> buf(new char[size]);
     std::vsnprintf(&buf.get()[0], size, message.c_str(), argPointer);
 
