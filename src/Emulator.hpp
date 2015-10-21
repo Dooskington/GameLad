@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CPU.hpp"
+
 class Emulator
 {
 public:
@@ -7,7 +9,6 @@ public:
 
     void Start();
     void Stop();
-    void Update();
     void Render();
 
 private:
@@ -20,4 +21,7 @@ private:
     int m_windowHeight;
     SDL_Window* m_window;
     SDL_Renderer* m_renderer;
+
+    std::unique_ptr<CPU> m_cpu;
+    const Uint32 m_timePerFrame;
 };

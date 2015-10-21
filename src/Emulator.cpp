@@ -7,7 +7,9 @@ Emulator::Emulator() :
     m_windowWidth(160),
     m_windowHeight(144),
     m_window(nullptr),
-    m_renderer(nullptr)
+    m_renderer(nullptr),
+    m_cpu(nullptr),
+    m_timePerFrame((1.0 / 60.0) * 1000.0)
 {
 }
 
@@ -15,11 +17,17 @@ void Emulator::Start()
 {
     if (Initialize())
     {
+        // Set the current time to the start time
+        Uint32 currentTime = SDL_GetTicks();
+
         Logger::Log("Gameboy is up and running!");
-        // Game loop
         SDL_Event event;
         while (m_isRunning)
         {
+            Uint32 frameStartTime = SDL_GetTicks();
+            Uint32 frameTime = frameStartTime - currentTime;
+            currentTime = frameStartTime;
+
             // Poll for window input
             while (SDL_PollEvent(&event) != 0)
             {
@@ -29,7 +37,20 @@ void Emulator::Start()
                 }
             }
 
-            Update();
+            // Emulate one frame on the CPU (70244 cycles)
+            m_cpu->StepFrame();
+
+            // The frame is over when we have spent 16ms here
+            if(m_timePerFrame - frameTime > 0)
+            {
+                // Sleep for (int)(m_frameTime - frameTime)
+                //SDL_Delay((int)(m_timePerFrame - frameTime));
+                std::cout << "Need to sleep for: " << (int)(m_timePerFrame - frameTime) << std::endl;
+                // int cast needs to be there or else we get underflow
+                // Also seem to be getting a negative number ( like -18 ) every few seconds...
+                // SDL Delay seems to just lock up the window indefinetly
+            }
+
             Render();
         }
     }
@@ -54,11 +75,6 @@ void Emulator::Stop()
 
     Mix_Quit();
     SDL_Quit();
-}
-
-void Emulator::Update()
-{
-
 }
 
 void Emulator::Render()
@@ -93,17 +109,20 @@ bool Emulator::Initialize()
     m_window = SDL_CreateWindow(m_windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_windowWidth, m_windowHeight, SDL_WINDOW_SHOWN);
     if (m_window == nullptr)
     {
-        Logger::LogError("Window could not be created! SDL error: %s", SDL_GetError());
+        Logger::LogError("Window could not be created! SDL error: '%s'", SDL_GetError());
         return false;
     }
 
     // Create renderer
-    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
     if (m_renderer == nullptr)
     {
-        Logger::LogError("Renderer could not be created! SDL error: %s", SDL_GetError());
+        Logger::LogError("Renderer could not be created! SDL error: '%s'", SDL_GetError());
         return false;
     }
+
+    // Create CPU
+    m_cpu = std::make_unique<CPU>();
 
     return true;
 }
