@@ -29,6 +29,7 @@ debug: clean build_header build
 
 # Precompile header
 build_header:
+	@echo "*** Compiling header ***"
 	@$(CC) -w -c src/PCH.hpp -o src/PCH.hpp.gch -F $(FRAMEWORK_PATH) $(FRAMEWORKS)
 
 # Link all the .o files in the bin/ directory to create the executable
