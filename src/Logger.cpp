@@ -21,6 +21,6 @@ void Logger::LogError(const std::string message, ...)
     va_start(argPointer, message);
     vsnprintf_s(&buf.get()[0], size, size, message.c_str(), argPointer);
     va_end(argPointer);
-    
+
     std::cerr << buf.get() << std::endl;
 }

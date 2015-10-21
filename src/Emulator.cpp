@@ -13,51 +13,25 @@ Emulator::Emulator() :
 
 void Emulator::Start()
 {
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+    if (Initialize())
     {
-        Logger::LogError("SDL could not initialize! SDL error: '%s'", SDL_GetError());
-        return;
-    }
-
-    // Initialize SDL_mixer
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-    {
-        Logger::LogError("SDL_mixer could not be initialized! SDL_mixer error: '%s'", Mix_GetError());
-        return;
-    }
-    // Create window
-    m_window = SDL_CreateWindow(m_windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_windowWidth, m_windowHeight, SDL_WINDOW_SHOWN);
-    if (m_window == nullptr)
-    {
-        Logger::LogError("Window could not be created! SDL error: %s", SDL_GetError());
-        return;
-    }
-
-    // Create renderer
-    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (m_renderer == nullptr)
-    {
-        Logger::LogError("Renderer could not be created! SDL error: %s", SDL_GetError());
-        return;
-    }
-
-    Logger::Log("Gameboy is up and running!");
-    // Game loop
-    SDL_Event event;
-    while (m_isRunning)
-    {
-        // Poll for window input
-        while (SDL_PollEvent(&event) != 0)
+        Logger::Log("Gameboy is up and running!");
+        // Game loop
+        SDL_Event event;
+        while (m_isRunning)
         {
-            if (event.type == SDL_QUIT)
+            // Poll for window input
+            while (SDL_PollEvent(&event) != 0)
             {
-                m_isRunning = false;
+                if (event.type == SDL_QUIT)
+                {
+                    m_isRunning = false;
+                }
             }
-        }
 
-        Update();
-        Render();
+            Update();
+            Render();
+        }
     }
 
     Stop();
@@ -66,13 +40,20 @@ void Emulator::Start()
 void Emulator::Stop()
 {
     // Free SDL resources
-    SDL_DestroyRenderer(m_renderer);
-    SDL_DestroyWindow(m_window);
-    m_window = nullptr;
-    m_renderer = nullptr;
+    if (m_renderer != nullptr)
+    {
+        SDL_DestroyRenderer(m_renderer);
+        m_renderer = nullptr;
+    }
 
-    SDL_Quit();
+    if (m_window != nullptr)
+    {
+        SDL_DestroyWindow(m_window);
+        m_window = nullptr;
+    }
+
     Mix_Quit();
+    SDL_Quit();
 }
 
 void Emulator::Update()
@@ -90,4 +71,39 @@ void Emulator::Render()
 
     // Update window
     SDL_RenderPresent(m_renderer);
+}
+
+bool Emulator::Initialize()
+{
+    // Initialize SDL
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+    {
+        Logger::LogError("SDL could not initialize! SDL error: '%s'", SDL_GetError());
+        return false;
+    }
+
+    // Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    {
+        Logger::LogError("SDL_mixer could not be initialized! SDL_mixer error: '%s'", Mix_GetError());
+        return false;
+    }
+
+    // Create window
+    m_window = SDL_CreateWindow(m_windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_windowWidth, m_windowHeight, SDL_WINDOW_SHOWN);
+    if (m_window == nullptr)
+    {
+        Logger::LogError("Window could not be created! SDL error: %s", SDL_GetError());
+        return false;
+    }
+
+    // Create renderer
+    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (m_renderer == nullptr)
+    {
+        Logger::LogError("Renderer could not be created! SDL error: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
 }
