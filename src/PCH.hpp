@@ -3,7 +3,7 @@
 #include <string>
 #include <iostream>
 
-#include <stdarg.h>
+#include <cstdarg>
 #include <memory>
 
 #if WINDOWS

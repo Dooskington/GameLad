@@ -3,24 +3,28 @@
 
 void Logger::Log(const std::string message, ...)
 {
-    size_t size = message.length() * 2;
-    std::unique_ptr<char[]> buf(new char[size]);
     va_list argPointer;
     va_start(argPointer, message);
-    vsnprintf_s(&buf.get()[0], size, size, message.c_str(), argPointer);
-    va_end(argPointer);
 
+    // Get the size required so we can allocate the correct sapce
+    size_t size = std::vsnprintf(nullptr, 0, message.c_str(), argPointer);
+    std::unique_ptr<char[]> buf(new char[size]);
+    std::vsnprintf(&buf.get()[0], size, message.c_str(), argPointer);
+
+    va_end(argPointer);
     std::cout << buf.get() << std::endl;
 }
 
 void Logger::LogError(const std::string message, ...)
 {
-    size_t size = message.length() * 2;
-    std::unique_ptr<char[]> buf(new char[size]);
     va_list argPointer;
     va_start(argPointer, message);
-    vsnprintf_s(&buf.get()[0], size, size, message.c_str(), argPointer);
-    va_end(argPointer);
 
+    // Get the size required so we can allocate the correct sapce
+    size_t size = std::vsnprintf(nullptr, 0, message.c_str(), argPointer);
+    std::unique_ptr<char[]> buf(new char[size]);
+    std::vsnprintf(&buf.get()[0], size, message.c_str(), argPointer);
+
+    va_end(argPointer);
     std::cerr << buf.get() << std::endl;
 }
