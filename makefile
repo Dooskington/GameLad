@@ -23,9 +23,13 @@ release: clean build
 	@echo "*** Release build complete ***"
 
 # Build the project and run it through the terminal
-debug: clean build
+debug: clean build_header build
 	@echo "*** Debug build complete ***"
 	@./$(BIN_PATH)/$(BIN_NAME)
+
+# Precompile header
+build_header:
+	@$(CC) -w -c src/PCH.hpp -o src/PCH.hpp.gch -F $(FRAMEWORK_PATH) $(FRAMEWORKS)
 
 # Link all the .o files in the bin/ directory to create the executable
 build: $(OBJ_FILES)
