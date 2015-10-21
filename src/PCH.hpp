@@ -1,4 +1,3 @@
-// TODO Make this an actual precompiled header
 #pragma once
 
 #include <iostream>
