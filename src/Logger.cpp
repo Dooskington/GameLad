@@ -7,7 +7,7 @@ void Logger::Log(const std::string message, ...)
     std::unique_ptr<char[]> buf(new char[size]);
     va_list argPointer;
     va_start(argPointer, message);
-    vsnprintf_s(&buf.get()[0], size, size, message.c_str(), argPointer);
+    vsnprintf(&buf.get()[0], size, message.c_str(), argPointer);
     va_end(argPointer);
 
     std::cout << buf.get() << std::endl;
@@ -19,7 +19,7 @@ void Logger::LogError(const std::string message, ...)
     std::unique_ptr<char[]> buf(new char[size]);
     va_list argPointer;
     va_start(argPointer, message);
-    vsnprintf_s(&buf.get()[0], size, size, message.c_str(), argPointer);
+    vsnprintf(&buf.get()[0], size, message.c_str(), argPointer);
     va_end(argPointer);
 
     std::cerr << buf.get() << std::endl;
