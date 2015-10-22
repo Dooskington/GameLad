@@ -38,7 +38,7 @@ void Emulator::Start()
                 continue;
             }
 
-            // Emulate one frame on the CPU (70244 cycles)
+            // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
             m_cpu->StepFrame();
             Render();
 
