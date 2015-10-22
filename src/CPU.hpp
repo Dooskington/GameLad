@@ -9,20 +9,27 @@ public:
     ~CPU();
 
     void StepFrame();
-    void NOP();
-
-    // Registers
-    unsigned short AF; // Accumulator & flags
-    unsigned short BC; // General purpose
-    unsigned short DE; // General purpose
-    unsigned short HL; // General purpose
-    unsigned short SP; // Stack pointer
-    unsigned short PC; // Program counter
-
-    // Memory
-    char memory[0xFFFF]; // 64k array that will act as memory
 
     // OpCode Functions
+    void NOP();
+
+private:
+    // Clock cycles
+    const unsigned int m_maxCycles;
+    unsigned int m_cycles; // The current number of cycles
+
+    // Registers
+    unsigned short m_AF; // Accumulator & flags
+    unsigned short m_BC; // General purpose
+    unsigned short m_DE; // General purpose
+    unsigned short m_HL; // General purpose
+    unsigned short m_SP; // Stack pointer
+    unsigned short m_PC; // Program counter
+
+    // Memory
+    char m_memory[0xFFFF]; // 64k array that will act as memory
+
+    // OpCode Function Map
     typedef void(CPU::*opCodeFunction)();
-    opCodeFunction operationMap[0xFF];
+    opCodeFunction m_operationMap[0xFF];
 };
