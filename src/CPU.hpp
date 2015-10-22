@@ -10,12 +10,12 @@ public:
 
     void StepFrame();
 
+private:
     // OpCode Functions
     void NOP();
 
 private:
     // Clock cycles
-    const unsigned int m_maxCycles;
     unsigned int m_cycles; // The current number of cycles
 
     // Registers
@@ -27,7 +27,7 @@ private:
     unsigned short m_PC; // Program counter
 
     // Memory
-    char m_memory[0xFFFF]; // 64k array that will act as memory
+    ubyte m_memory[0xFFFF]; // 64k array that will act as memory
 
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)();

@@ -15,3 +15,5 @@
 #endif
 
 #include "Logger.hpp"
+
+typedef unsigned char ubyte;
