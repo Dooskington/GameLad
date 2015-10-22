@@ -64,7 +64,6 @@ void Emulator::Stop()
     m_renderer.reset();
     m_window.reset();
 
-    //Mix_Quit();
     SDL_Quit();
 }
 
@@ -89,15 +88,6 @@ bool Emulator::Initialize()
         Logger::LogError("SDL could not initialize! SDL error: '%s'", SDL_GetError());
         return false;
     }
-
-    // Initialize SDL_mixer
-    /*
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-    {
-        Logger::LogError("SDL_mixer could not be initialized! SDL_mixer error: '%s'", Mix_GetError());
-        return false;
-    }
-    */
 
     // Create window
     m_window = std::unique_ptr<SDL_Window, SDLWindowDeleter>(
