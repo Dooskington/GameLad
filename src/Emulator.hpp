@@ -8,10 +8,10 @@ public:
     Emulator();
 
     void Start();
+    
+private:
     void Stop();
     void Render();
-
-private:
     bool Initialize();
 
     struct SDLWindowDeleter
