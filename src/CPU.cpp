@@ -5,20 +5,17 @@
 CPU::CPU() :
     m_cycles(0),
     m_maxCycles(70244),
-    m_AF(0x0000),
-    m_BC(0x0000),
-    m_DE(0x0000),
-    m_HL(0x0000),
-    m_SP(0x0000),
-    m_PC(0x0000)
+    m_AF(0x00),
+    m_BC(0x00),
+    m_DE(0x00),
+    m_HL(0x00),
+    m_SP(0x00),
+    m_PC(0x00)
 {
     Logger::Log("CPU Created.");
 
-    // Initialize memory to 0x0000
-    for (int i = 0; i < 0xFFFF; i++)
-    {
-        m_memory[i] = 0x0000;
-    }
+    // Initialize memory to 0x00
+    memset(m_memory, 0x00, 0xFFFF);
     
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
