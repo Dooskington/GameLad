@@ -6,6 +6,7 @@
 const unsigned int CyclesPerFrame = 70244;
 
 CPU::CPU() :
+    m_MMU(nullptr),
     m_cycles(0),
     m_AF(0x0000),
     m_BC(0x0000),
@@ -16,8 +17,8 @@ CPU::CPU() :
 {
     Logger::Log("CPU Created.");
 
-    // Initialize memory to 0x00
-    memset(m_memory, 0x00, 0xFFFF);
+    // Create the MMU
+    m_MMU = std::make_unique<MMU>();
     
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
@@ -34,14 +35,16 @@ void CPU::StepFrame()
     {
         // Read through the memory, starting at m_PC
         // Execute the correct function for each OpCode
-        opCodeFunction func = m_operationMap[m_memory[m_PC]];
-        if (func != nullptr)
+        opCodeFunction instruction;
+        instruction = m_operationMap[m_MMU->Read(m_PC)];
+
+        if (instruction != nullptr)
         {
-            (this->*func)();
+            (this->*instruction)();
         }
         else
         {
-            Logger::LogError("OpCode 0x%02X could not be interpreted.", m_memory[m_PC]);
+            Logger::LogError("OpCode 0x%02X could not be interpreted.", m_MMU->Read(m_PC));
             // TODO: HALT
             return;
         }
@@ -51,6 +54,10 @@ void CPU::StepFrame()
     // few cycles ahead.
     m_cycles -= CyclesPerFrame;
 }
+
+/*
+    CPU INSTRUCTIONS
+*/
 
 void CPU::NOP()
 {

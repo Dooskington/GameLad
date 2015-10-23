@@ -2,6 +2,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 #include <cstdarg>
 #include <memory>
@@ -16,4 +17,4 @@
 
 #include "Logger.hpp"
 
-typedef unsigned char ubyte;
+typedef char byte;
