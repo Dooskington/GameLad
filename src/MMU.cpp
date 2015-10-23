@@ -56,7 +56,7 @@ bool MMU::Initialize()
     return LoadBootRom("res/bios.bin");
 }
 
-byte MMU::Read(unsigned short address)
+byte MMU::ReadByte(unsigned short address)
 {
     // If we are booting and reading below 0x00FF, read from the boot rom.
     if (m_isBooting && (address <= 0x00FF))
@@ -69,6 +69,14 @@ byte MMU::Read(unsigned short address)
         // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
         return m_memory[address];
     }
+}
+
+unsigned short MMU::ReadUShort(unsigned short address)
+{
+    unsigned short val = ReadByte(address + 1);
+    val = val << 8;
+    val |= ReadByte(address);
+    return val;
 }
 
 bool MMU::LoadBootRom(std::string path)

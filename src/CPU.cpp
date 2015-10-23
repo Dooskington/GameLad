@@ -22,6 +22,7 @@ CPU::CPU() :
 
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
+    m_operationMap[0x31] = &CPU::LDSPnn;
 }
 
 CPU::~CPU()
@@ -48,7 +49,7 @@ void CPU::StepFrame()
         // Read through the memory, starting at m_PC
         // Execute the correct function for each OpCode
         opCodeFunction instruction;
-        instruction = m_operationMap[m_MMU->Read(m_PC)];
+        instruction = m_operationMap[m_MMU->ReadByte(m_PC)];
 
         if (instruction != nullptr)
         {
@@ -56,7 +57,7 @@ void CPU::StepFrame()
         }
         else
         {
-            Logger::LogError("OpCode 0x%02X could not be interpreted.", m_MMU->Read(m_PC));
+            Logger::LogError("OpCode 0x%02X could not be interpreted.", m_MMU->ReadByte(m_PC));
             HALT();
             return;
         }
@@ -79,6 +80,15 @@ void CPU::HALT()
 
 void CPU::NOP()
 {
-    m_cycles += 4;
     m_PC += 1;
+    m_cycles += 4;
+}
+
+void CPU::LDSPnn()
+{
+    m_PC += 1; // Look at the first byte of nn
+    unsigned short nn = m_MMU->ReadUShort(m_PC); // Read nn
+    m_SP = nn;
+    m_PC += 2; // Move onto the next instruction
+    m_cycles += 8;
 }

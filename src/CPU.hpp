@@ -17,6 +17,7 @@ private:
 
     // OpCode Functions
     void NOP();
+    void LDSPnn();
 
 private:
     // MMU (Memory Map Unit)
