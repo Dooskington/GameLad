@@ -1,6 +1,41 @@
 #include "PCH.hpp"
 #include "MMU.hpp"
 
+/*
+General Memory Map
+==================
+When m_isBooting = true, override with:
+-MMU:
+0x0000-0x00FF   Boot ROM (256 bytes) [DONE]
+
+When m_isBooting = false:
+-Cartridge:
+0x0000-0x3FFF   16KB ROM Bank 00     (in cartridge, fixed at bank 00)
+0x4000-0x7FFF   16KB ROM Bank 01..NN (in cartridge, switchable bank number)
+
+-GPU:
+0x8000-0x9FFF   8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+
+-MMU:
+0xA000-0xBFFF   8KB External RAM     (in cartridge, switchable bank, if any)
+0xC000-0xCFFF   4KB Work RAM Bank 0 (WRAM)
+0xD000-0xDFFF   4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
+0xE000-0xFDFF   Same as C000-DDFF (ECHO)    (typically not used)
+
+-GPU:
+0xFE00-0xFE9F   Sprite Attribute Table (OAM)
+
+-N/A:
+0xFEA0-0xFEFF   Not Usable
+
+-GamePad/SerialData/Timer/Audio/GPU:
+0xFF00-0xFF7F   I/O Ports
+
+-MMU:
+0xFF80-0xFFFE   High RAM (HRAM)
+0xFFFF          Interrupt Enable Register
+*/
+
 MMU::MMU() :
     m_isBooting(true)
 {
@@ -30,6 +65,8 @@ byte MMU::Read(unsigned short address)
     }
     else
     {
+        // TODO: Eventually, this will go away and instead it will read from the correct
+        // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
         return m_memory[address];
     }
 }
