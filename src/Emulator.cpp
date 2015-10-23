@@ -49,7 +49,6 @@ void Emulator::Start()
                 Uint32 delay = TimePerFrame - frameElapsedTime;
 
                 // Sleep for (16ms - elapsed frame time)
-                Logger::Log("Need to sleep for: %d ms", delay);
                 SDL_Delay(delay);
             }
         }
@@ -118,6 +117,12 @@ bool Emulator::Initialize()
     if (m_cpu == nullptr)
     {
         Logger::LogError("CPU could not be created!");
+        return false;
+    }
+
+    if (!m_cpu->Initialize())
+    {
+        Logger::LogError("CPU could not be initialized!");
         return false;
     }
 

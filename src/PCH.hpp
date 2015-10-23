@@ -18,3 +18,5 @@
 #include "Logger.hpp"
 
 typedef char byte;
+
+#define ARRAYSIZE(a) (sizeof a / sizeof a[0])
