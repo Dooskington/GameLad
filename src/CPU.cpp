@@ -6,8 +6,8 @@
 const unsigned int CyclesPerFrame = 70244;
 
 CPU::CPU() :
-    m_MMU(nullptr),
     m_cycles(0),
+    m_isHalted(false),
     m_AF(0x0000),
     m_BC(0x0000),
     m_DE(0x0000),
@@ -19,18 +19,30 @@ CPU::CPU() :
 
     // Create the MMU
     m_MMU = std::make_unique<MMU>();
-    
+
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
 }
 
 CPU::~CPU()
 {
+    m_MMU.reset();
+
     Logger::Log("CPU Destroyed.");
+}
+
+bool CPU::Initialize()
+{
+    return m_MMU->Initialize();
 }
 
 void CPU::StepFrame()
 {
+    if (m_isHalted)
+    {
+        return;
+    }
+
     while (m_cycles < CyclesPerFrame)
     {
         // Read through the memory, starting at m_PC
@@ -45,7 +57,7 @@ void CPU::StepFrame()
         else
         {
             Logger::LogError("OpCode 0x%02X could not be interpreted.", m_MMU->Read(m_PC));
-            // TODO: HALT
+            HALT();
             return;
         }
     }
@@ -53,6 +65,12 @@ void CPU::StepFrame()
     // Reset the cycles. If we went over our max cycles, the next frame will start a
     // few cycles ahead.
     m_cycles -= CyclesPerFrame;
+}
+
+void CPU::HALT()
+{
+    m_isHalted = true;
+    Logger::Log("!!!! HALTED !!!!");
 }
 
 /*

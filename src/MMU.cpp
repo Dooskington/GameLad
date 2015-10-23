@@ -6,11 +6,8 @@ MMU::MMU() :
 {
     Logger::Log("MMU Created.");
 
-    // Initialize boot rom
-    LoadBootRom("res/bios.bin");
-
     // Initialize memory
-    memset(m_memory, 0x00, 0xFFFF);
+    memset(m_memory, 0x00, ARRAYSIZE(m_memory));
 }
 
 MMU::~MMU()
@@ -18,24 +15,28 @@ MMU::~MMU()
     Logger::Log("MMU Destroyed.");
 }
 
-byte MMU::Read(unsigned short PC)
+bool MMU::Initialize()
 {
-    if (PC <= 0xFF)
+    // Initialize boot rom
+    return LoadBootRom("res/bios.bin");
+}
+
+byte MMU::Read(unsigned short address)
+{
+    // If we are booting and reading below 0x00FF, read from the boot rom.
+    if (m_isBooting && (address <= 0x00FF))
     {
-        // If we are reading below 0xFF, and booting, read from the boot rom.
-        if (m_isBooting)
-        {
-            return m_bios[PC];
-        }
+        return m_bios[address];
     }
     else
     {
-        return m_memory[PC];
+        return m_memory[address];
     }
 }
 
-void MMU::LoadBootRom(std::string path)
+bool MMU::LoadBootRom(std::string path)
 {
+    bool succeeded = false;
     std::streampos size;
 
     std::ifstream file(path, std::ios::in | std::ios::binary | std::ios::ate);
@@ -45,8 +46,16 @@ void MMU::LoadBootRom(std::string path)
         file.seekg(0, std::ios::beg);
         if (file.read(m_bios, size))
         {
-            std::cout << "Loaded rom " << path << " (" << size << " bytes)" << std::endl;
+            Logger::Log("Loaded boot rom %s (%d bytes)", path, size.seekpos());
+            succeeded = true;
         }
+        else
+        {
+            Logger::Log("Failed to load boot rom %s", path);
+        }
+
         file.close();
     }
+
+    return succeeded;
 }

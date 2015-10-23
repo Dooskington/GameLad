@@ -9,9 +9,12 @@ public:
     CPU();
     ~CPU();
 
+    bool Initialize();
     void StepFrame();
 
 private:
+    void HALT();
+
     // OpCode Functions
     void NOP();
 
@@ -21,6 +24,7 @@ private:
 
     // Clock cycles
     unsigned int m_cycles; // The current number of cycles
+    bool m_isHalted;
 
     // Registers
     unsigned short m_AF; // Accumulator & flags
