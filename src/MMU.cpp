@@ -89,7 +89,7 @@ bool MMU::LoadBootRom(std::string path)
     {
         size = file.tellg();
         file.seekg(0, std::ios::beg);
-        if (file.read(m_bios, size))
+        if (file.read(reinterpret_cast<char*>(m_bios), size))
         {
             Logger::Log("Loaded boot rom %s (%d bytes)", path, size.seekpos());
             succeeded = true;
