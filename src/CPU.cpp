@@ -134,11 +134,9 @@ void CPU::LDSPnn()
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A()
 {
-    m_PC += 1; // Look at A
-    byte A = m_MMU->ReadByte(m_PC); // Read A
-    m_MMU->SetMemory(m_HL, A); // Load A into the address pointed at by HL.
+    m_PC += 1;
+    m_MMU->SetMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
     m_HL--;
-    m_PC += 1; // Move onto the next instruction
     m_cycles += 8;
 }
 
