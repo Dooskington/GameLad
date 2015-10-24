@@ -23,7 +23,9 @@ private:
 
     // OpCode Functions
     void NOP();
+    void LDHLnn();
     void LDSPnn();
+    void LDD_HL_A();
     void XORA();
 
 private:

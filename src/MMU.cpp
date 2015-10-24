@@ -71,12 +71,24 @@ byte MMU::ReadByte(ushort address)
     }
 }
 
-unsigned short MMU::ReadUShort(ushort address)
+ushort MMU::ReadUShort(ushort address)
 {
-    unsigned short val = ReadByte(address + 1);
+    ushort val = ReadByte(address + 1);
     val = val << 8;
     val |= ReadByte(address);
     return val;
+}
+
+void MMU::SetMemory(const ushort& address, const byte val)
+{
+    if (address <= 0xFFFF)
+    {
+        m_memory[address] = val;
+    }
+    else
+    {
+        Logger::LogError("Access violation! 0x%04X is out of bounds.", address);
+    }
 }
 
 bool MMU::LoadBootRom(std::string path)
