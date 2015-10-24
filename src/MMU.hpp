@@ -9,8 +9,8 @@ public:
     ~MMU();
 
     bool Initialize();
-    byte ReadByte(const ushort address);
-    unsigned short ReadUShort(const ushort address);
+    byte ReadByte(const ushort& address);
+    unsigned short ReadUShort(const ushort& address);
     void SetMemory(const ushort& address, const byte val);
 
 private:

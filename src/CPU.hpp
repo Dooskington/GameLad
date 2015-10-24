@@ -26,11 +26,11 @@ private:
     void HALT();
 
     // OpCode Functions
-    void NOP();
-    void LDHLnn();
-    void LDSPnn();
-    void LDD_HL_A();
-    void XORA();
+    void NOP();             // 0x00
+    void LDHLnn();          // 0x21
+    void LDSPnn();          // 0x31
+    void LDD_HL_A();        // 0x32
+    void XORA();            // 0xAF
 
 private:
     // MMU (Memory Map Unit)

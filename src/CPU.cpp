@@ -195,7 +195,7 @@ void CPU::XORA()
     m_cycles += 4;
 
     // Affects Z and clears NHC
-    if (GetHighByte(m_AF) == 0)
+    if (GetHighByte(m_AF) == 0x00)
     {
         SetFlag(ZeroFlag);
     }

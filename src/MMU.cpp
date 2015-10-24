@@ -56,7 +56,7 @@ bool MMU::Initialize()
     return LoadBootRom("res/bios.bin");
 }
 
-byte MMU::ReadByte(ushort address)
+byte MMU::ReadByte(const ushort& address)
 {
     // If we are booting and reading below 0x00FF, read from the boot rom.
     if (m_isBooting && (address <= 0x00FF))
@@ -71,7 +71,7 @@ byte MMU::ReadByte(ushort address)
     }
 }
 
-ushort MMU::ReadUShort(ushort address)
+ushort MMU::ReadUShort(const ushort& address)
 {
     ushort val = ReadByte(address + 1);
     val = val << 8;
