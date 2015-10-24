@@ -19,6 +19,10 @@ private:
     void SetHighByte(ushort* dest, byte val);
     void SetLowByte(ushort* dest, byte val);
 
+    void SetFlag(byte bit);
+    void ClearFlag(byte bit);
+    bool IsFlagSet(byte bit);
+
     void HALT();
 
     // OpCode Functions
