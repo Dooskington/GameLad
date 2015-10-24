@@ -23,6 +23,7 @@ CPU::CPU() :
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x31] = &CPU::LDSPnn;
+    m_operationMap[0xAF] = &CPU::XORA;
 }
 
 CPU::~CPU()
@@ -69,6 +70,28 @@ void CPU::StepFrame()
     m_cycles -= CyclesPerFrame;
 }
 
+byte CPU::GetHighByte(ushort dest)
+{
+    return ((dest >> 8) & 0xFF);
+}
+
+byte CPU::GetLowByte(ushort dest)
+{
+    return (dest & 0xFF);
+}
+
+void CPU::SetHighByte(ushort* dest, byte val)
+{
+    byte low = GetLowByte(*dest);
+    *dest = (val << 8) + low;
+}
+
+void CPU::SetLowByte(ushort* dest, byte val)
+{
+    byte high = GetHighByte(*dest);
+    *dest = (high << 8) + val;
+}
+
 void CPU::HALT()
 {
     m_isHalted = true;
@@ -79,17 +102,38 @@ void CPU::HALT()
     CPU INSTRUCTIONS
 */
 
+// 0x00 (NOP)
 void CPU::NOP()
 {
     m_PC += 1;
     m_cycles += 4;
 }
 
+// 0x31 (LD SP, nn)
 void CPU::LDSPnn()
 {
     m_PC += 1; // Look at the first byte of nn
-    unsigned short nn = m_MMU->ReadUShort(m_PC); // Read nn
+    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
     m_SP = nn;
     m_PC += 2; // Move onto the next instruction
     m_cycles += 8;
+}
+
+// 0xAF (XOR A)
+void CPU::XORA()
+{
+    m_PC += 1;
+
+    // TEST BYTE SWAPPING
+    ushort test = 0xFFEE;
+    byte low = GetLowByte(test);
+    byte high = GetHighByte(test);
+    Logger::Log("0x%04X", test);
+    Logger::Log("Swapping high and low bytes");
+
+    SetHighByte(&test, GetLowByte(test));
+    SetLowByte(&test, GetHighByte(test));
+    byte low2 = GetLowByte(test);
+    byte high2 = GetHighByte(test);
+    Logger::Log("0x%04X", test);
 }
