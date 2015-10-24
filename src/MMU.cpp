@@ -81,13 +81,15 @@ ushort MMU::ReadUShort(ushort address)
 
 void MMU::SetMemory(const ushort& address, const byte val)
 {
-    if (address <= 0xFFFF)
+    if (m_isBooting && (address <= 0x00FF))
     {
-        m_memory[address] = val;
+        m_bios[address] = val;
     }
     else
     {
-        Logger::LogError("Access violation! 0x%04X is out of bounds.", address);
+        // TODO: Eventually, this will go away and instead it will read from the correct
+        // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
+        m_memory[address] = val;
     }
 }
 
