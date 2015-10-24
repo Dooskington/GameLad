@@ -29,6 +29,8 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="res\bios.bin" />
+    <None Include="res\tests\cpu_instrs.gb" />
+    <None Include="res\tests\instr_timing.gb" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{385A83D3-0FCE-4724-A5D9-111E281807EC}</ProjectGuid>
