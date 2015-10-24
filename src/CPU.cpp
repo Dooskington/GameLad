@@ -85,13 +85,13 @@ byte CPU::GetLowByte(ushort dest)
 void CPU::SetHighByte(ushort* dest, byte val)
 {
     byte low = GetLowByte(*dest);
-    *dest = (val << 8) & low;
+    *dest = (val << 8) | low;
 }
 
 void CPU::SetLowByte(ushort* dest, byte val)
 {
     byte high = GetHighByte(*dest);
-    *dest = (high << 8) & val;
+    *dest = (high << 8) | val;
 }
 
 void CPU::HALT()
