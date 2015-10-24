@@ -5,6 +5,20 @@
 // The number of CPU cycles per frame
 const unsigned int CyclesPerFrame = 70244;
 
+/*
+The Flag Register (lower 8bit of AF register)
+Bit  Name  Set Clr  Expl.
+7    zf    Z   NZ   Zero Flag
+6    n     -   -    Add/Sub-Flag (BCD)
+5    h     -   -    Half Carry Flag (BCD)
+4    cy    C   NC   Carry Flag
+3-0  -     -   -    Not used (always zero)
+*/
+#define ZeroFlag        7
+#define AddFlag         6
+#define HalfCarryFlag   5
+#define CarryFlag       4
+
 CPU::CPU() :
     m_cycles(0),
     m_isHalted(false),
@@ -94,6 +108,31 @@ void CPU::SetLowByte(ushort* dest, byte val)
     *dest = (high << 8) | val;
 }
 
+void CPU::SetFlag(byte flag)
+{
+    // This shifts the bit to the left to where the flag is
+    // Then ORs it with the Flag register.
+    // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
+    SetLowByte(&m_AF, (GetLowByte(m_AF) | (1 << flag)) & 0xF0);
+}
+
+void CPU::ClearFlag(byte flag)
+{
+    // This shifts the bit to the left to where the flag is
+    // Then it inverts all of the bits
+    // Then ANDs it with the Flag register.
+    // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
+    SetLowByte(&m_AF, (GetLowByte(m_AF) & ~(1 << flag)) & 0xF0);
+}
+
+bool CPU::IsFlagSet(byte flag)
+{
+    // This gets the Flag register, shifts it to the right to get the bit we are interested
+    // in to the "1" position. Then we AND it with 1 and compare to 1.
+    // If that bit was set, it'll return true, otherwise false.
+    return ((GetLowByte(m_AF) >> flag) & 0x01) == 0x01;
+}
+
 void CPU::HALT()
 {
     m_isHalted = true;
@@ -109,6 +148,8 @@ void CPU::NOP()
 {
     m_PC += 1;
     m_cycles += 4;
+
+    // No flags affected
 }
 
 // 0x21 (LD HL, nn)
@@ -119,6 +160,8 @@ void CPU::LDHLnn()
     m_HL = nn;
     m_PC += 2; // Move onto the next instruction
     m_cycles += 8;
+
+    // No flags affected
 }
 
 // 0x31 (LD SP, nn)
@@ -129,6 +172,8 @@ void CPU::LDSPnn()
     m_SP = nn;
     m_PC += 2; // Move onto the next instruction
     m_cycles += 8;
+
+    // No flags affected
 }
 
 // 0x32 (LDD (HL), A)
@@ -138,6 +183,8 @@ void CPU::LDD_HL_A()
     m_MMU->SetMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
     m_HL--;
     m_cycles += 8;
+
+    // No flags affected
 }
 
 // 0xAF (XOR A)
@@ -146,4 +193,18 @@ void CPU::XORA()
     m_PC += 1;
     SetHighByte(&m_AF, GetHighByte(m_AF) ^ GetHighByte(m_AF));
     m_cycles += 4;
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
 }
