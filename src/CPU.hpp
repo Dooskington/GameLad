@@ -13,11 +13,20 @@ public:
     void StepFrame();
 
 private:
+    byte GetHighByte(ushort dest);
+    byte GetLowByte(ushort dest);
+
+    void SetHighByte(ushort* dest, byte val);
+    void SetLowByte(ushort* dest, byte val);
+
     void HALT();
 
     // OpCode Functions
     void NOP();
+    void LDHLnn();
     void LDSPnn();
+    void LDD_HL_A();
+    void XORA();
 
 private:
     // MMU (Memory Map Unit)
@@ -28,12 +37,12 @@ private:
     bool m_isHalted;
 
     // Registers
-    unsigned short m_AF; // Accumulator & flags
-    unsigned short m_BC; // General purpose
-    unsigned short m_DE; // General purpose
-    unsigned short m_HL; // General purpose
-    unsigned short m_SP; // Stack pointer
-    unsigned short m_PC; // Program counter
+    ushort m_AF; // Accumulator & flags
+    ushort m_BC; // General purpose
+    ushort m_DE; // General purpose
+    ushort m_HL; // General purpose
+    ushort m_SP; // Stack pointer
+    ushort m_PC; // Program counter
 
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)();

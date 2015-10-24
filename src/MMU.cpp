@@ -56,7 +56,7 @@ bool MMU::Initialize()
     return LoadBootRom("res/bios.bin");
 }
 
-byte MMU::ReadByte(unsigned short address)
+byte MMU::ReadByte(ushort address)
 {
     // If we are booting and reading below 0x00FF, read from the boot rom.
     if (m_isBooting && (address <= 0x00FF))
@@ -71,12 +71,24 @@ byte MMU::ReadByte(unsigned short address)
     }
 }
 
-unsigned short MMU::ReadUShort(unsigned short address)
+ushort MMU::ReadUShort(ushort address)
 {
-    unsigned short val = ReadByte(address + 1);
+    ushort val = ReadByte(address + 1);
     val = val << 8;
     val |= ReadByte(address);
     return val;
+}
+
+void MMU::SetMemory(const ushort& address, const byte val)
+{
+    if (address <= 0xFFFF)
+    {
+        m_memory[address] = val;
+    }
+    else
+    {
+        Logger::LogError("Access violation! 0x%04X is out of bounds.", address);
+    }
 }
 
 bool MMU::LoadBootRom(std::string path)
