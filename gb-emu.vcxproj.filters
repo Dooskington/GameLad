@@ -1,83 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\CPU.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Emulator.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Logger.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Main.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MMU.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pch.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\CPU.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\CPU.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\CPU.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\CPU.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-    <ClInclude Include="src\CPU.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Emulator.hpp" />
-    <ClInclude Include="src\Logger.hpp" />
-    <ClInclude Include="src\MMU.hpp" />
-    <ClInclude Include="src\PCH.hpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
     <None Include="res\bios.bin">
       <Filter>res</Filter>
@@ -98,11 +21,11 @@
     </Filter>
     <Filter Include="Headers">
       <UniqueIdentifier>{24865f9a-e104-4901-ad1c-1acde3737588}</UniqueIdentifier>
-      <Extensions>*.hpp</Extensions>
+      <Extensions>hpp</Extensions>
     </Filter>
     <Filter Include="Sources">
       <UniqueIdentifier>{c8fdb02d-2ecf-48c4-9774-baec71afb9bb}</UniqueIdentifier>
-      <Extensions>*.cpp</Extensions>
+      <Extensions>cpp</Extensions>
     </Filter>
   </ItemGroup>
 </Project>
