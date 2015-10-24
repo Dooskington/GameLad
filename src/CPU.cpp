@@ -47,9 +47,10 @@ void CPU::StepFrame()
     while (m_cycles < CyclesPerFrame)
     {
         // Read through the memory, starting at m_PC
+        byte opCode = m_MMU->ReadByte(m_PC);
         // Execute the correct function for each OpCode
         opCodeFunction instruction;
-        instruction = m_operationMap[m_MMU->ReadByte(m_PC)];
+        instruction = m_operationMap[opCode];
 
         if (instruction != nullptr)
         {
@@ -57,7 +58,7 @@ void CPU::StepFrame()
         }
         else
         {
-            Logger::LogError("OpCode 0x%02X could not be interpreted.", m_MMU->ReadByte(m_PC));
+            Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
             HALT();
             return;
         }

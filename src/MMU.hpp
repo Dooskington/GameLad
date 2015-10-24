@@ -9,8 +9,8 @@ public:
     ~MMU();
 
     bool Initialize();
-    byte ReadByte(unsigned short PC);
-    unsigned short ReadUShort(unsigned short PC);
+    byte ReadByte(unsigned short address);
+    unsigned short ReadUShort(unsigned short address);
 
 private:
     bool LoadBootRom(std::string path);
