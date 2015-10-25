@@ -33,6 +33,7 @@ private:
     void LDD_HL_A();
     void XORA();
     void JRNZe();
+    void LDCe();
     
     // OpCode CD functions
     void BIT7h();

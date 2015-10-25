@@ -41,6 +41,7 @@ CPU::CPU() :
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
     m_operationMap[0x20] = &CPU::JRNZe;
+    m_operationMap[0x0E] = &CPU::LDCe;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -242,6 +243,18 @@ void CPU::JRNZe()
         m_PC += 1;
         m_PC += arg;
     }
+}
+
+// 0x0E (LD C, e)
+void CPU::LDCe()
+{
+    m_PC += 1; // Look at e
+    byte e = m_MMU->ReadByte(m_PC); // Read e
+    SetLowByte(&m_BC, e); // Set C to e
+    m_PC += 2; // Move onto the next instruction
+    m_cycles += 8;
+
+    // No flags affected
 }
 
 /*
