@@ -33,25 +33,25 @@ CPU::CPU() :
 
     // Create the MMU
     m_MMU = std::make_unique<MMU>();
-    
+
     // Create the Cartridge
     m_cartridge = std::make_unique<Cartridge>();
 
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
-    m_operationMap[0x21] = &CPU::LDHLnn;
+    m_operationMap[0x0C] = &CPU::INCC;
+    m_operationMap[0x0E] = &CPU::LDCe;
     m_operationMap[0x11] = &CPU::LDDEnn;
+    m_operationMap[0x1A] = &CPU::LDA_DE_;
+    m_operationMap[0x20] = &CPU::JRNZe;
+    m_operationMap[0x21] = &CPU::LDHLnn;
     m_operationMap[0x31] = &CPU::LDSPnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
-    m_operationMap[0xAF] = &CPU::XORA;
-    m_operationMap[0x20] = &CPU::JRNZe;
-    m_operationMap[0x0E] = &CPU::LDCe;
     m_operationMap[0x3E] = &CPU::LDAe;
-    m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
-    m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
-    m_operationMap[0x0C] = &CPU::INCC;
     m_operationMap[0x77] = &CPU::LD_HL_A;
-    m_operationMap[0x1A] = &CPU::LDA_DE_;
+    m_operationMap[0xAF] = &CPU::XORA;
+    m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
+    m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -59,6 +59,7 @@ CPU::CPU() :
 
 CPU::~CPU()
 {
+    m_cartridge.reset();
     m_MMU.reset();
 
     Logger::Log("CPU destroyed.");
@@ -181,13 +182,48 @@ void CPU::NOP()
     // No flags affected
 }
 
-// 0x21 (LD HL, nn)
-void CPU::LDHLnn()
+// 0x0C (INC C)
+void CPU::INCC()
 {
-    m_PC += 1; // Look at the first byte of nn
-    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
-    m_HL = nn;
-    m_PC += 2; // Move onto the next instruction
+    m_PC += 1;
+
+    byte C = GetLowByte(m_BC);
+    bool isBit3Before = IsBitSet(C, 3);
+    C += 1;
+    bool isBit3After = IsBitSet(C, 3);
+    SetLowByte(&m_BC, C);
+    m_cycles += 4;
+
+    // Flags affected: z0h- (znhc)
+    // Affects Z, clears N, affects H
+    if (GetHighByte(m_AF) == 0)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+
+    if (isBit3Before && !isBit3After)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
+}
+
+// 0x0E (LD C, e)
+void CPU::LDCe()
+{
+    m_PC += 1; // Look at e
+    byte e = m_MMU->ReadByte(m_PC); // Read e
+    SetLowByte(&m_BC, e); // Set C to e
+    m_PC += 1; // Move onto the next instruction
     m_cycles += 8;
 
     // No flags affected
@@ -199,6 +235,50 @@ void CPU::LDDEnn()
     m_PC += 1; // Look at the first byte of nn
     ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
     m_DE = nn;
+    m_PC += 2; // Move onto the next instruction
+    m_cycles += 8;
+
+    // No flags affected
+}
+
+// 0x1A (LD A, (DE))
+void CPU::LDA_DE_()
+{
+    // loads the value stored at the address pointed to by DE 
+    // (currently 0x0104) and stores in the A register
+    m_PC += 1;
+    byte val = m_MMU->ReadByte(m_DE);
+    SetHighByte(&m_AF, val);
+    m_cycles += 8;
+
+    // No flags affected
+}
+
+// 0x20 0xFB (JR NZ, e)
+void CPU::JRNZe()
+{
+    if (IsFlagSet(ZeroFlag))
+    {
+        m_PC += 2;
+        m_cycles += 12;
+    }
+    else
+    {
+        m_PC += 1;
+        sbyte arg = static_cast<sbyte>(m_MMU->ReadByte(m_PC));
+        m_PC += 1;
+        m_PC += arg;
+    }
+
+    // No flags affected
+}
+
+// 0x21 (LD HL, nn)
+void CPU::LDHLnn()
+{
+    m_PC += 1; // Look at the first byte of nn
+    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
+    m_HL = nn;
     m_PC += 2; // Move onto the next instruction
     m_cycles += 8;
 
@@ -221,8 +301,26 @@ void CPU::LDSPnn()
 void CPU::LDD_HL_A()
 {
     m_PC += 1;
-    m_MMU->SetMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
+
+    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
+    {
+        HALT();
+        return;
+    }
+
     m_HL--;
+    m_cycles += 8;
+
+    // No flags affected
+}
+
+// 0x3E (LD A, e)
+void CPU::LDAe()
+{
+    m_PC += 1; // Look at e
+    byte e = m_MMU->ReadByte(m_PC); // Read e
+    SetHighByte(&m_AF, e); // Set A to e
+    m_PC += 1; // Move onto the next instruction
     m_cycles += 8;
 
     // No flags affected
@@ -233,20 +331,12 @@ void CPU::LDD_HL_A()
 void CPU::LD_HL_A()
 {
     m_PC += 1;
-    m_MMU->SetMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
-    m_cycles += 8;
 
-    // No flags affected
-}
+    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
+    {
+        HALT();
+    }
 
-// 0x1A (LD A, (DE))
-void CPU::LDA_DE_()
-{
-    // loads the value stored at the address pointed to by DE 
-    // (currently 0x0104) and stores in the A register
-    m_PC += 1;
-    byte val = m_MMU->GetMemory(m_DE);
-    SetHighByte(&m_AF, val);
     m_cycles += 8;
 
     // No flags affected
@@ -260,7 +350,7 @@ void CPU::XORA()
     m_cycles += 4;
 
     // Affects Z and clears NHC
-    if (GetHighByte(m_AF) == 0)
+    if (GetHighByte(m_AF) == 0x00)
     {
         SetFlag(ZeroFlag);
     }
@@ -274,44 +364,18 @@ void CPU::XORA()
     ClearFlag(CarryFlag);
 }
 
-// 0x20 0xFB (JR NZ, e)
-void CPU::JRNZe()
+// 0xE0 (LD(0xFF00 + n), A)
+void CPU::LD_0xFF00n_A()
 {
-    if (IsFlagSet(ZeroFlag))
+    m_PC += 1; // Look at n
+    byte n = m_MMU->ReadByte(m_PC); // Read n
+
+    if (!m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF))) // Load A into 0xFF00 + n
     {
-        m_PC += 2;
-        m_cycles += 12;
-    }
-    else
-    {
-        m_PC += 1;
-        sbyte arg = static_cast<sbyte>(m_MMU->ReadByte(m_PC));
-        m_PC += 1;
-        m_PC += arg;
+        HALT();
     }
 
-    // No flags affected
-}
-
-// 0x0E (LD C, e)
-void CPU::LDCe()
-{
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetLowByte(&m_BC, e); // Set C to e
-    m_PC += 1; // Move onto the next instruction
-    m_cycles += 8;
-
-    // No flags affected
-}
-
-// 0x3E (LD A, e)
-void CPU::LDAe()
-{
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetHighByte(&m_AF, e); // Set C to e
-    m_PC += 1; // Move onto the next instruction
+    m_PC += 1;
     m_cycles += 8;
 
     // No flags affected
@@ -321,48 +385,19 @@ void CPU::LDAe()
 void CPU::LD_0xFF00C_A()
 {
     m_PC += 1;
-    m_MMU->SetMemory(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
+
+    if (!m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF))) // Load A into 0xFF00 + C
+    {
+        HALT();
+    }
+
     m_cycles += 8;
 
     // No flags affected
-}
-
-// 0xE0 (LD(0xFF00 + n), A)
-void CPU::LD_0xFF00n_A()
-{
-    m_PC += 1; // Look at n
-    byte n = m_MMU->ReadByte(m_PC); // Read n
-    m_MMU->SetMemory(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
-    m_PC += 1;
-    m_cycles += 8;
-
-    // No flags affected
-}
-
-// 0x0C (INC C)
-void CPU::INCC()
-{
-    m_PC += 1;
-    SetLowByte(&m_BC, GetLowByte(m_BC) + 1);
-    m_cycles += 4;
-
-    // Flags affected: z0h- (znhc)
-    // Affects Z, clears N, affects H
-    if (GetHighByte(m_AF) == 0)
-    {
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        ClearFlag(ZeroFlag);
-    }
-
-    ClearFlag(AddFlag);
-    SetFlag(HalfCarryFlag);
 }
 
 /*
-    CPU CB INSTRUCTION MAP
+    CPU 0xCB INSTRUCTION MAP
 */
 
 // 0x7C (BIT 7, h)
@@ -372,7 +407,7 @@ void CPU::BIT7h()
     m_cycles += 8;
 
     // Test bit 7 in H
-    if(!IsBitSet(GetHighByte(m_HL), 7))
+    if (!IsBitSet(GetHighByte(m_HL), 7))
     {
         // Z is set if specified bit is 0
         SetFlag(ZeroFlag);

@@ -28,23 +28,23 @@ private:
     void HALT();
 
     // OpCode Functions
-    void NOP();
-    void LDHLnn();
-    void LDDEnn();
-    void LDSPnn();
-    void LDD_HL_A();
-    void LD_HL_A();
-    void LDA_DE_();
-    void XORA();
-    void JRNZe();
-    void LDCe();
-    void LDAe();
-    void LD_0xFF00C_A();
-    void LD_0xFF00n_A();
-    void INCC();
-    
-    // OpCode CD functions
-    void BIT7h();
+    void NOP();             // 0x00
+    void INCC();            // 0x0C
+    void LDCe();            // 0x0E
+    void LDDEnn();          // 0x11
+    void LDA_DE_();         // 0x1A
+    void JRNZe();           // 0x20
+    void LDHLnn();          // 0x21
+    void LDSPnn();          // 0x31
+    void LDD_HL_A();        // 0x32
+    void LDAe();            // 0x3E
+    void LD_HL_A();         // 0x77
+    void XORA();            // 0xAF
+    void LD_0xFF00C_A();    // 0xE0
+    void LD_0xFF00n_A();    // 0xE2
+
+    // OpCode 0xCB functions
+    void BIT7h();           // 0x7C
 
 private:
     // MMU (Memory Map Unit)
@@ -67,6 +67,6 @@ private:
 
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)();
-    opCodeFunction m_operationMap[0xFF];
-    opCodeFunction m_operationMapCB[0xFF];
+    opCodeFunction m_operationMap[0xFF + 1];
+    opCodeFunction m_operationMapCB[0xFF + 1];
 };

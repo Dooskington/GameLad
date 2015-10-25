@@ -56,7 +56,7 @@ bool MMU::Initialize()
     return LoadBootRom("res/bios.bin");
 }
 
-byte MMU::ReadByte(ushort address)
+byte MMU::ReadByte(const ushort& address)
 {
     // If we are booting and reading below 0x00FF, read from the boot rom.
     if (m_isBooting && (address <= 0x00FF))
@@ -71,7 +71,7 @@ byte MMU::ReadByte(ushort address)
     }
 }
 
-ushort MMU::ReadUShort(ushort address)
+ushort MMU::ReadUShort(const ushort& address)
 {
     ushort val = ReadByte(address + 1);
     val = val << 8;
@@ -79,25 +79,12 @@ ushort MMU::ReadUShort(ushort address)
     return val;
 }
 
-byte MMU::GetMemory(const ushort& address)
-{
-    if (m_isBooting && (address <= 0x00FF))
-    {
-        return m_bios[address];
-    }
-    else
-    {
-        // TODO: Eventually, this will go away and instead it will read from the correct
-        // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
-        return m_memory[address];
-    }
-}
-
-void MMU::SetMemory(const ushort& address, const byte val)
+bool MMU::WriteByte(const ushort& address, const byte val)
 {
     if (m_isBooting && (address <= 0x00FF))
     {
         Logger::LogError("Access Violation! You can't write to the boot rom, you silly goose.");
+        return false;
     }
     else
     {
@@ -105,6 +92,7 @@ void MMU::SetMemory(const ushort& address, const byte val)
         // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
         //Logger::LogError("Access Violation! You can't write to the cartridge, you silly goose.");
         m_memory[address] = val;
+        return true;
     }
 }
 

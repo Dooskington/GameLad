@@ -9,10 +9,9 @@ public:
     ~MMU();
 
     bool Initialize();
-    byte ReadByte(const ushort address);
-    unsigned short ReadUShort(const ushort address);
-    byte GetMemory(const ushort& address);
-    void SetMemory(const ushort& address, const byte val);
+    byte ReadByte(const ushort& address);
+    unsigned short ReadUShort(const ushort& address);
+    bool WriteByte(const ushort& address, const byte val);
 
 private:
     bool LoadBootRom(std::string path);
