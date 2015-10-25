@@ -4,6 +4,9 @@
 #include "Cartridge.hpp"
 #include "GPU.hpp"
 #include "APU.hpp"
+#include "Joypad.hpp"
+#include "Serial.hpp"
+#include "Timer.hpp"
 
 class CPU
 {
@@ -60,6 +63,15 @@ private:
 
     // APU
     std::unique_ptr<APU> m_APU;
+
+    // Joypad
+    std::unique_ptr<Joypad> m_joypad;
+
+    // Serial
+    std::unique_ptr<Serial> m_serial;
+
+    // Timer
+    std::unique_ptr<Timer> m_timer;
 
     // Clock cycles
     unsigned int m_cycles; // The current number of cycles

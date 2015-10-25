@@ -42,14 +42,23 @@ CPU::CPU() :
     // Create the APU
     m_APU = std::make_unique<APU>();
 
+    // Create the Joypad
+    m_joypad = std::make_unique<Joypad>();
+
+    // Create the Serial
+    m_serial = std::make_unique<Serial>();
+
+    // Create the Timer
+    m_timer = std::make_unique<Timer>();
+
     m_MMU->RegisterMemoryUnit(0x0000, 0x7FFF, m_cartridge.get());
     m_MMU->RegisterMemoryUnit(0x8000, 0x9FFF, m_GPU.get());
     m_MMU->RegisterMemoryUnit(0xA000, 0xBFFF, m_cartridge.get());
     m_MMU->RegisterMemoryUnit(0xFE00, 0xFE9F, m_GPU.get());
     // 0xFEA0-0xFEFF - Unusable
-    //m_MMU->RegisterMemoryUnit(0xFF00, 0xFF00, m_joypad.get());
-    //m_MMU->RegisterMemoryUnit(0xFF01, 0xFF02, m_serial.get());
-    //m_MMU->RegisterMemoryUnit(0xFF04, 0xFF07, m_timer.get());
+    m_MMU->RegisterMemoryUnit(0xFF00, 0xFF00, m_joypad.get());
+    m_MMU->RegisterMemoryUnit(0xFF01, 0xFF02, m_serial.get());
+    m_MMU->RegisterMemoryUnit(0xFF04, 0xFF07, m_timer.get());
     m_MMU->RegisterMemoryUnit(0xFF10, 0xFF3F, m_APU.get());
     m_MMU->RegisterMemoryUnit(0xFF40, 0xFF4C, m_GPU.get());
     m_MMU->RegisterMemoryUnit(0xFF4E, 0xFF55, m_GPU.get());
@@ -78,6 +87,9 @@ CPU::CPU() :
 
 CPU::~CPU()
 {
+    m_timer.reset();
+    m_serial.reset();
+    m_joypad.reset();
     m_APU.reset();
     m_GPU.reset();
     m_cartridge.reset();
