@@ -2,6 +2,7 @@
 
 #include "PCH.hpp"
 #include "MMU.hpp"
+#include "Cartridge.hpp"
 
 class CPU
 {
@@ -48,6 +49,9 @@ private:
 private:
     // MMU (Memory Map Unit)
     std::unique_ptr<MMU> m_MMU;
+
+    // Cartridge
+    std::unique_ptr<Cartridge> m_cartridge;
 
     // Clock cycles
     unsigned int m_cycles; // The current number of cycles

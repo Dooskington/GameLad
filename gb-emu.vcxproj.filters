@@ -28,4 +28,64 @@
       <Extensions>cpp</Extensions>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\CPU.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Logger.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MMU.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pch.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Emulator.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Cartridge.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\CPU.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Emulator.hpp" />
+    <ClInclude Include="src\Logger.hpp" />
+    <ClInclude Include="src\MMU.hpp" />
+    <ClInclude Include="src\PCH.hpp" />
+    <ClInclude Include="src\CPU.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Emulator.hpp" />
+    <ClInclude Include="src\Logger.hpp" />
+    <ClInclude Include="src\MMU.hpp" />
+    <ClInclude Include="src\PCH.hpp" />
+    <ClInclude Include="src\CPU.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Emulator.hpp" />
+    <ClInclude Include="src\Logger.hpp" />
+    <ClInclude Include="src\MMU.hpp" />
+    <ClInclude Include="src\PCH.hpp" />
+    <ClInclude Include="src\CPU.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Emulator.hpp" />
+    <ClInclude Include="src\Logger.hpp" />
+    <ClInclude Include="src\MMU.hpp" />
+    <ClInclude Include="src\PCH.hpp" />
+    <ClInclude Include="src\CPU.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Emulator.hpp" />
+    <ClInclude Include="src\Logger.hpp" />
+    <ClInclude Include="src\MMU.hpp" />
+    <ClInclude Include="src\PCH.hpp" />
+  </ItemGroup>
 </Project>

@@ -29,10 +29,13 @@ CPU::CPU() :
     m_SP(0x0000),
     m_PC(0x0000)
 {
-    Logger::Log("CPU Created.");
+    Logger::Log("CPU created.");
 
     // Create the MMU
     m_MMU = std::make_unique<MMU>();
+    
+    // Create the Cartridge
+    m_cartridge = std::make_unique<Cartridge>();
 
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
@@ -58,7 +61,7 @@ CPU::~CPU()
 {
     m_MMU.reset();
 
-    Logger::Log("CPU Destroyed.");
+    Logger::Log("CPU destroyed.");
 }
 
 bool CPU::Initialize()
