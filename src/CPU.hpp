@@ -34,6 +34,7 @@ private:
     void XORA();
     void JRNZe();
     void LDCe();
+    void LDAe();
     
     // OpCode CD functions
     void BIT7h();
