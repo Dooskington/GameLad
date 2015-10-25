@@ -79,6 +79,20 @@ ushort MMU::ReadUShort(ushort address)
     return val;
 }
 
+byte MMU::GetMemory(const ushort& address)
+{
+    if (m_isBooting && (address <= 0x00FF))
+    {
+        return m_bios[address];
+    }
+    else
+    {
+        // TODO: Eventually, this will go away and instead it will read from the correct
+        // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
+        return m_memory[address];
+    }
+}
+
 void MMU::SetMemory(const ushort& address, const byte val)
 {
     if (m_isBooting && (address <= 0x00FF))

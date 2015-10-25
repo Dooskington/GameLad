@@ -11,6 +11,7 @@ public:
     bool Initialize();
     byte ReadByte(const ushort address);
     unsigned short ReadUShort(const ushort address);
+    byte GetMemory(const ushort& address);
     void SetMemory(const ushort& address, const byte val);
 
 private:

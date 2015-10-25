@@ -29,9 +29,11 @@ private:
     // OpCode Functions
     void NOP();
     void LDHLnn();
+    void LDDEnn();
     void LDSPnn();
     void LDD_HL_A();
     void LD_HL_A();
+    void LDA_DE_();
     void XORA();
     void JRNZe();
     void LDCe();

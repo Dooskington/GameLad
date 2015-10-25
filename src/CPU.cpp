@@ -37,6 +37,7 @@ CPU::CPU() :
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x21] = &CPU::LDHLnn;
+    m_operationMap[0x11] = &CPU::LDDEnn;
     m_operationMap[0x31] = &CPU::LDSPnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
@@ -47,6 +48,7 @@ CPU::CPU() :
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
     m_operationMap[0x0C] = &CPU::INCC;
     m_operationMap[0x77] = &CPU::LD_HL_A;
+    m_operationMap[0x1A] = &CPU::LDA_DE_;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -188,6 +190,18 @@ void CPU::LDHLnn()
     // No flags affected
 }
 
+// 0x11 (LD DE, nn)
+void CPU::LDDEnn()
+{
+    m_PC += 1; // Look at the first byte of nn
+    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
+    m_DE = nn;
+    m_PC += 2; // Move onto the next instruction
+    m_cycles += 8;
+
+    // No flags affected
+}
+
 // 0x31 (LD SP, nn)
 void CPU::LDSPnn()
 {
@@ -217,6 +231,19 @@ void CPU::LD_HL_A()
 {
     m_PC += 1;
     m_MMU->SetMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
+    m_cycles += 8;
+
+    // No flags affected
+}
+
+// 0x1A (LD A, (DE))
+void CPU::LDA_DE_()
+{
+    // loads the value stored at the address pointed to by DE 
+    // (currently 0x0104) and stores in the A register
+    m_PC += 1;
+    byte val = m_MMU->GetMemory(m_DE);
+    SetHighByte(&m_AF, val);
     m_cycles += 8;
 
     // No flags affected
