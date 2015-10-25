@@ -12,6 +12,7 @@ public:
 
     bool Initialize();
     void StepFrame();
+    bool LoadROM(std::string path);
 
 private:
     byte GetHighByte(ushort dest);

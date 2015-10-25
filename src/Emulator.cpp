@@ -17,39 +17,46 @@ void Emulator::Start()
     {
         SDL_Event event;
 
-        Logger::Log("Gameboy is up and running!");
-
-        while (m_isRunning)
+        if (!m_cpu->LoadROM("res/tests/cpu_instrs.gb"))
         {
-            Uint32 frameStartTime = SDL_GetTicks();
+            Logger::Log("Failed to load the Gameboy ROM");
+        }
+        else
+        {
+            Logger::Log("Gameboy is up and running!");
 
-            // Poll for window input
-            while (SDL_PollEvent(&event) != 0)
+            while (m_isRunning)
             {
-                if (event.type == SDL_QUIT)
+                Uint32 frameStartTime = SDL_GetTicks();
+
+                // Poll for window input
+                while (SDL_PollEvent(&event) != 0)
                 {
-                    m_isRunning = false;
+                    if (event.type == SDL_QUIT)
+                    {
+                        m_isRunning = false;
+                    }
                 }
-            }
 
-            if (!m_isRunning)
-            {
-                // Exit early if the app is closing
-                continue;
-            }
+                if (!m_isRunning)
+                {
+                    // Exit early if the app is closing
+                    continue;
+                }
 
-            // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
-            m_cpu->StepFrame();
-            Render();
+                // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
+                m_cpu->StepFrame();
+                Render();
 
-            // If we haven't used up our time, we need to delay the rest of the frame time
-            Uint32 frameElapsedTime = SDL_GetTicks() - frameStartTime;
-            if (frameElapsedTime < TimePerFrame)
-            {
-                Uint32 delay = TimePerFrame - frameElapsedTime;
+                // If we haven't used up our time, we need to delay the rest of the frame time
+                Uint32 frameElapsedTime = SDL_GetTicks() - frameStartTime;
+                if (frameElapsedTime < TimePerFrame)
+                {
+                    Uint32 delay = TimePerFrame - frameElapsedTime;
 
-                // Sleep for (16ms - elapsed frame time)
-                SDL_Delay(delay);
+                    // Sleep for (16ms - elapsed frame time)
+                    SDL_Delay(delay);
+                }
             }
         }
     }

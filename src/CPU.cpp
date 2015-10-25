@@ -72,6 +72,11 @@ bool CPU::Initialize()
     return m_MMU->Initialize();
 }
 
+bool CPU::LoadROM(std::string path)
+{
+    return m_cartridge->LoadROM(path);
+}
+
 void CPU::StepFrame()
 {
     if (m_isHalted)

@@ -16,8 +16,10 @@ When m_isBooting = false:
 -GPU:
 0x8000-0x9FFF   8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
 
--MMU:
+-Cartridge:
 0xA000-0xBFFF   8KB External RAM     (in cartridge, switchable bank, if any)
+
+-MMU:
 0xC000-0xCFFF   4KB Work RAM Bank 0 (WRAM)
 0xD000-0xDFFF   4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
 0xE000-0xFDFF   Same as C000-DDFF (ECHO)    (typically not used)
@@ -40,9 +42,6 @@ MMU::MMU() :
     m_isBooting(true)
 {
     Logger::Log("MMU created.");
-
-    // Initialize memory
-    memset(m_memory, 0x00, ARRAYSIZE(m_memory));
 
     RegisterMemoryUnit(0x0000, 0xFFFF, nullptr);
 }
@@ -91,20 +90,10 @@ byte MMU::ReadByte(const ushort& address)
 
 ushort MMU::ReadUShort(const ushort& address)
 {
-    if (m_isBooting && (address <= 0x00FF))
-    {
-        return ReadUShortInternal(address);
-    }
-
-    auto spUnit = std::move(m_memoryUnits[address]);
-    if (spUnit == nullptr)
-    {
-        return ReadUShortInternal(address);
-    }
-    else
-    {
-        return spUnit->ReadUShort(address);
-    }
+    ushort val = ReadByte(address + 1);
+    val = val << 8;
+    val |= ReadByte(address);
+    return val;
 }
 
 bool MMU::WriteByte(const ushort& address, const byte val)
@@ -154,24 +143,81 @@ bool MMU::LoadBootRom(std::string path)
 
 byte MMU::ReadByteInternal(const ushort& address)
 {
-    // TODO: Eventually, this will go away and instead it will read from the correct
-    // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
-    return m_memory[address];
-}
+    /*
+    -MMU:
+    0xC000-0xCFFF   4KB Work RAM Bank 0 (WRAM)
+    0xD000-0xDFFF   4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
+    0xE000-0xFDFF   Same as C000-DDFF (ECHO)    (typically not used)
+    0xFF80-0xFFFE   High RAM (HRAM)
+    0xFFFF          Interrupt Enable Register
+    */
 
-ushort MMU::ReadUShortInternal(const ushort& address)
-{
-    ushort val = ReadByte(address + 1);
-    val = val << 8;
-    val |= ReadByte(address);
-    return val;
+    if (address >= 0xC000 && address <= 0xCFFF)
+    {
+        return m_bank0[address - 0xC000];
+    }
+    else if (address >= 0xC000 && address <= 0xDFFF)
+    {
+        return m_bank1[address - 0xD000];
+    }
+    else if (address >= 0xE000 && address <= 0xEFFF)
+    {
+        return m_bank0[address - 0xE000];
+    }
+    else if (address >= 0xF000 && address <= 0xFDFF)
+    {
+        return m_bank1[address - 0xF000];
+    }
+    else if (address >= 0xFF80 && address <= 0xFFFE)
+    {
+        return m_HRAM[address - 0xFF80];
+    }
+    else if (address == 0xFFFF)
+    {
+        // TODO: Interrupt bit
+        Logger::Log("MMU doesn't support interrupts yet!");
+        return 0x00;
+    }
+    else
+    {
+        Logger::Log("MMU::ReadByteInternal isn't ready to support reading from 0x%04X", address);
+        return 0x00;
+    }
 }
 
 bool MMU::WriteByteInternal(const ushort& address, const byte val)
 {
-    // TODO: Eventually, this will go away and instead it will read from the correct
-    // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
-    //Logger::LogError("Access Violation! You can't write to the cartridge, you silly goose.");
-    m_memory[address] = val;
+    if (address >= 0xC000 && address <= 0xCFFF)
+    {
+        m_bank0[address - 0xC000] = val;
+    }
+    else if (address >= 0xC000 && address <= 0xDFFF)
+    {
+        m_bank1[address - 0xD000] = val;
+    }
+    else if (address >= 0xE000 && address <= 0xEFFF)
+    {
+        m_bank0[address - 0xE000] = val;
+    }
+    else if (address >= 0xF000 && address <= 0xFDFF)
+    {
+        m_bank1[address - 0xF000] = val;
+    }
+    else if (address >= 0xFF80 && address <= 0xFFFE)
+    {
+        m_HRAM[address - 0xFF80] = val;
+    }
+    else if (address == 0xFFFF)
+    {
+        // TODO: Interrupt bit
+        Logger::Log("MMU doesn't support interrupts yet!");
+        return false;
+    }
+    else
+    {
+        Logger::Log("MMU::WriteByteInternal isn't ready to support writing to 0x%04X", address);
+        return false;
+    }
+
     return true;
 }
