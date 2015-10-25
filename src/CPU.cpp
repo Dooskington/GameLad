@@ -44,6 +44,7 @@ CPU::CPU() :
     m_operationMap[0x0E] = &CPU::LDCe;
     m_operationMap[0x3E] = &CPU::LDAe;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
+    m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
     m_operationMap[0x0C] = &CPU::INCC;
     m_operationMap[0x77] = &CPU::LD_HL_A;
 
@@ -296,13 +297,23 @@ void CPU::LD_0xFF00C_A()
     // No flags affected
 }
 
+// 0xE0 (LD(0xFF00 + n), A)
+void CPU::LD_0xFF00n_A()
+{
+    m_PC += 1; // Look at n
+    byte n = m_MMU->ReadByte(m_PC); // Read n
+    m_MMU->SetMemory(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
+    m_PC += 1;
+    m_cycles += 8;
+
+    // No flags affected
+}
+
 // 0x0C (INC C)
 void CPU::INCC()
 {
     m_PC += 1;
-    Logger::Log("0x%02X", GetLowByte(m_BC));
     SetLowByte(&m_BC, GetLowByte(m_BC) + 1);
-    Logger::Log("0x%02X", GetLowByte(m_BC));
     m_cycles += 4;
 
     // Flags affected: z0h- (znhc)

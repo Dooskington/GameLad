@@ -37,6 +37,7 @@ private:
     void LDCe();
     void LDAe();
     void LD_0xFF00C_A();
+    void LD_0xFF00n_A();
     void INCC();
     
     // OpCode CD functions
