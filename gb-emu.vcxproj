@@ -14,8 +14,10 @@
     <ClInclude Include="src\*.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\APU.cpp" />
     <ClCompile Include="src\Cartridge.cpp" />
     <ClCompile Include="src\CPU.cpp" />
+    <ClCompile Include="src\GPU.cpp" />
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\MMU.cpp" />
     <ClCompile Include="src\pch.cpp">

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "PCH.hpp"
 #include "MMU.hpp"
 #include "Cartridge.hpp"
+#include "GPU.hpp"
+#include "APU.hpp"
 
 class CPU
 {
@@ -53,6 +54,12 @@ private:
 
     // Cartridge
     std::unique_ptr<Cartridge> m_cartridge;
+
+    // GPU
+    std::unique_ptr<GPU> m_GPU;
+
+    // APU
+    std::unique_ptr<APU> m_APU;
 
     // Clock cycles
     unsigned int m_cycles; // The current number of cycles
