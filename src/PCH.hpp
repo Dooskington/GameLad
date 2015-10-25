@@ -16,6 +16,7 @@
 #include "Logger.hpp"
 
 typedef unsigned char byte;
+typedef signed char sbyte;
 typedef unsigned short ushort;
 
 #define ARRAYSIZE(a) (sizeof a / sizeof a[0])

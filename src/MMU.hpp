@@ -11,7 +11,7 @@ public:
     bool Initialize();
     byte ReadByte(const ushort& address);
     unsigned short ReadUShort(const ushort& address);
-    void SetMemory(const ushort& address, const byte val);
+    bool WriteByte(const ushort& address, const byte val);
 
 private:
     bool LoadBootRom(std::string path);

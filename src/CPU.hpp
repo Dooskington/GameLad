@@ -2,6 +2,7 @@
 
 #include "PCH.hpp"
 #include "MMU.hpp"
+#include "Cartridge.hpp"
 
 class CPU
 {
@@ -19,22 +20,38 @@ private:
     void SetHighByte(ushort* dest, byte val);
     void SetLowByte(ushort* dest, byte val);
 
-    void SetFlag(byte bit);
-    void ClearFlag(byte bit);
-    bool IsFlagSet(byte bit);
+    void SetFlag(byte flag);
+    void ClearFlag(byte flag);
+    bool IsFlagSet(byte flag);
+    bool IsBitSet(byte val, byte bit);
 
     void HALT();
 
     // OpCode Functions
     void NOP();             // 0x00
+    void INCC();            // 0x0C
+    void LDCe();            // 0x0E
+    void LDDEnn();          // 0x11
+    void LDA_DE_();         // 0x1A
+    void JRNZe();           // 0x20
     void LDHLnn();          // 0x21
     void LDSPnn();          // 0x31
     void LDD_HL_A();        // 0x32
+    void LDAe();            // 0x3E
+    void LD_HL_A();         // 0x77
     void XORA();            // 0xAF
+    void LD_0xFF00C_A();    // 0xE0
+    void LD_0xFF00n_A();    // 0xE2
+
+    // OpCode 0xCB functions
+    void BIT7h();           // 0x7C
 
 private:
     // MMU (Memory Map Unit)
     std::unique_ptr<MMU> m_MMU;
+
+    // Cartridge
+    std::unique_ptr<Cartridge> m_cartridge;
 
     // Clock cycles
     unsigned int m_cycles; // The current number of cycles
@@ -50,5 +67,6 @@ private:
 
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)();
-    opCodeFunction m_operationMap[0xFF];
+    opCodeFunction m_operationMap[0xFF + 1];
+    opCodeFunction m_operationMapCB[0xFF + 1];
 };
