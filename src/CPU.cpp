@@ -44,6 +44,7 @@ CPU::CPU() :
     m_operationMap[0x0E] = &CPU::LDCe;
     m_operationMap[0x3E] = &CPU::LDAe;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
+    m_operationMap[0x0C] = &CPU::INCC;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -245,6 +246,8 @@ void CPU::JRNZe()
         m_PC += 1;
         m_PC += arg;
     }
+
+    // No flags affected
 }
 
 // 0x0E (LD C, e)
@@ -279,6 +282,30 @@ void CPU::LD_0xFF00C_A()
     m_cycles += 8;
 
     // No flags affected
+}
+
+// 0x0C (INC C)
+void CPU::INCC()
+{
+    m_PC += 1;
+    Logger::Log("0x%02X", GetLowByte(m_BC));
+    SetLowByte(&m_BC, GetLowByte(m_BC) + 1);
+    Logger::Log("0x%02X", GetLowByte(m_BC));
+    m_cycles += 4;
+
+    // Flags affected: z0h- (znhc)
+    // Affects Z, clears N, affects H
+    if (GetHighByte(m_AF) == 0)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
 }
 
 /*
