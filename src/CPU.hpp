@@ -35,6 +35,7 @@ private:
     void JRNZe();
     void LDCe();
     void LDAe();
+    void LD_0xFF00C_A();
     
     // OpCode CD functions
     void BIT7h();
