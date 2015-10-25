@@ -19,9 +19,10 @@ private:
     void SetHighByte(ushort* dest, byte val);
     void SetLowByte(ushort* dest, byte val);
 
-    void SetFlag(byte bit);
-    void ClearFlag(byte bit);
-    bool IsFlagSet(byte bit);
+    void SetFlag(byte flag);
+    void ClearFlag(byte flag);
+    bool IsFlagSet(byte flag);
+    bool IsBitSet(byte val, byte bit);
 
     void HALT();
 
@@ -31,6 +32,10 @@ private:
     void LDSPnn();
     void LDD_HL_A();
     void XORA();
+    void JRNZe();
+    
+    // OpCode CD functions
+    void BIT7h();
 
 private:
     // MMU (Memory Map Unit)
@@ -51,4 +56,5 @@ private:
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)();
     opCodeFunction m_operationMap[0xFF];
+    opCodeFunction m_operationMapCB[0xFF];
 };

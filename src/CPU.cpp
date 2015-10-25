@@ -40,6 +40,9 @@ CPU::CPU() :
     m_operationMap[0x31] = &CPU::LDSPnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
+
+    // Initialize the operationMapCB
+    m_operationMapCB[0x7C] = &CPU::BIT7h;
 }
 
 CPU::~CPU()
@@ -65,9 +68,18 @@ void CPU::StepFrame()
     {
         // Read through the memory, starting at m_PC
         byte opCode = m_MMU->ReadByte(m_PC);
-        // Execute the correct function for each OpCode
-        opCodeFunction instruction;
-        instruction = m_operationMap[opCode];
+        opCodeFunction instruction; // Execute the correct function for each OpCode
+
+        if (opCode == 0xCB)
+        {
+            m_PC += 1;
+            opCode = m_MMU->ReadByte(m_PC);
+            instruction = m_operationMapCB[opCode];
+        }
+        else
+        {
+            instruction = m_operationMap[opCode];
+        }
 
         if (instruction != nullptr)
         {
@@ -127,10 +139,15 @@ void CPU::ClearFlag(byte flag)
 
 bool CPU::IsFlagSet(byte flag)
 {
-    // This gets the Flag register, shifts it to the right to get the bit we are interested
+    return IsBitSet(GetLowByte(m_AF), flag);
+}
+
+bool CPU::IsBitSet(byte val, byte bit)
+{
+    // This shifts the byte val to the right to get the bit we are interested
     // in to the "1" position. Then we AND it with 1 and compare to 1.
     // If that bit was set, it'll return true, otherwise false.
-    return ((GetLowByte(m_AF) >> flag) & 0x01) == 0x01;
+    return ((val >> bit) & 0x01) == 0x01;
 }
 
 void CPU::HALT()
@@ -140,7 +157,7 @@ void CPU::HALT()
 }
 
 /*
-    CPU INSTRUCTIONS
+    CPU INSTRUCTION MAP
 */
 
 // 0x00 (NOP)
@@ -207,4 +224,30 @@ void CPU::XORA()
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+}
+
+/*
+    CPU CB INSTRUCTION MAP
+*/
+
+// 0x7C (BIT 7, h)
+void CPU::BIT7h()
+{
+    m_PC++;
+    m_cycles += 8;
+
+    // Test bit 7 in H
+    if(!IsBitSet(GetHighByte(m_HL), 7))
+    {
+        // Z is set if specified bit is 0
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        // Reset otherwise
+        ClearFlag(ZeroFlag);
+    }
+
+    SetFlag(HalfCarryFlag); // H is set
+    ClearFlag(AddFlag); // N is reset
 }
