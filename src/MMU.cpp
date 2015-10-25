@@ -43,6 +43,8 @@ MMU::MMU() :
 
     // Initialize memory
     memset(m_memory, 0x00, ARRAYSIZE(m_memory));
+
+    RegisterMemoryUnit(0x0000, 0xFFFF, nullptr);
 }
 
 MMU::~MMU()
@@ -56,6 +58,18 @@ bool MMU::Initialize()
     return LoadBootRom("res/bios.bin");
 }
 
+void MMU::RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit)
+{
+    for (ushort index = startRange; index <= endRange; index++)
+    {
+        m_memoryUnits[index] = pUnit;
+
+        // Prevent wrap around
+        if (index == 0xFFFF)
+            break;
+    }
+}
+
 byte MMU::ReadByte(const ushort& address)
 {
     // If we are booting and reading below 0x00FF, read from the boot rom.
@@ -63,20 +77,34 @@ byte MMU::ReadByte(const ushort& address)
     {
         return m_bios[address];
     }
+
+    auto spUnit = std::move(m_memoryUnits[address]);
+    if (spUnit == nullptr)
+    {
+        return ReadByteInternal(address);
+    }
     else
     {
-        // TODO: Eventually, this will go away and instead it will read from the correct
-        // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
-        return m_memory[address];
+        return spUnit->ReadByte(address);
     }
 }
 
 ushort MMU::ReadUShort(const ushort& address)
 {
-    ushort val = ReadByte(address + 1);
-    val = val << 8;
-    val |= ReadByte(address);
-    return val;
+    if (m_isBooting && (address <= 0x00FF))
+    {
+        return ReadUShortInternal(address);
+    }
+
+    auto spUnit = std::move(m_memoryUnits[address]);
+    if (spUnit == nullptr)
+    {
+        return ReadUShortInternal(address);
+    }
+    else
+    {
+        return spUnit->ReadUShort(address);
+    }
 }
 
 bool MMU::WriteByte(const ushort& address, const byte val)
@@ -86,13 +114,15 @@ bool MMU::WriteByte(const ushort& address, const byte val)
         Logger::LogError("Access Violation! You can't write to the boot rom, you silly goose.");
         return false;
     }
+
+    auto spUnit = std::move(m_memoryUnits[address]);
+    if (spUnit == nullptr)
+    {
+        return WriteByteInternal(address, val);
+    }
     else
     {
-        // TODO: Eventually, this will go away and instead it will read from the correct
-        // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
-        //Logger::LogError("Access Violation! You can't write to the cartridge, you silly goose.");
-        m_memory[address] = val;
-        return true;
+        return spUnit->WriteByte(address, val);
     }
 }
 
@@ -120,4 +150,28 @@ bool MMU::LoadBootRom(std::string path)
     }
 
     return succeeded;
+}
+
+byte MMU::ReadByteInternal(const ushort& address)
+{
+    // TODO: Eventually, this will go away and instead it will read from the correct
+    // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
+    return m_memory[address];
+}
+
+ushort MMU::ReadUShortInternal(const ushort& address)
+{
+    ushort val = ReadByte(address + 1);
+    val = val << 8;
+    val |= ReadByte(address);
+    return val;
+}
+
+bool MMU::WriteByteInternal(const ushort& address, const byte val)
+{
+    // TODO: Eventually, this will go away and instead it will read from the correct
+    // device.  For example 0x2345 will read from the 16KB ROM Bank 00 on the cartridge.
+    //Logger::LogError("Access Violation! You can't write to the cartridge, you silly goose.");
+    m_memory[address] = val;
+    return true;
 }

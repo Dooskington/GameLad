@@ -37,6 +37,8 @@ CPU::CPU() :
     // Create the Cartridge
     m_cartridge = std::make_unique<Cartridge>();
 
+    m_MMU->RegisterMemoryUnit(0x0000, 0x7FFF, m_cartridge.get());
+
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x0C] = &CPU::INCC;

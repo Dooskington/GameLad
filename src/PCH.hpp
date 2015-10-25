@@ -7,16 +7,19 @@
 #include <cstdarg>
 #include <memory>
 
+#include <map>
+
 #if WINDOWS
     #include <SDL.h>
 #else
     #include "SDL2/SDL.h"
 #endif
 
-#include "Logger.hpp"
-
 typedef unsigned char byte;
 typedef signed char sbyte;
 typedef unsigned short ushort;
+
+#include "Logger.hpp"
+#include "IMemoryUnit.hpp"
 
 #define ARRAYSIZE(a) (sizeof a / sizeof a[0])
