@@ -45,6 +45,7 @@ CPU::CPU() :
     m_operationMap[0x3E] = &CPU::LDAe;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
     m_operationMap[0x0C] = &CPU::INCC;
+    m_operationMap[0x77] = &CPU::LD_HL_A;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -204,6 +205,17 @@ void CPU::LDD_HL_A()
     m_PC += 1;
     m_MMU->SetMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
     m_HL--;
+    m_cycles += 8;
+
+    // No flags affected
+}
+
+// 0x77 (LD (HL), A)
+// Identical to 0x32, except does not decrement
+void CPU::LD_HL_A()
+{
+    m_PC += 1;
+    m_MMU->SetMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
     m_cycles += 8;
 
     // No flags affected

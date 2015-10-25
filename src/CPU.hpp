@@ -31,6 +31,7 @@ private:
     void LDHLnn();
     void LDSPnn();
     void LDD_HL_A();
+    void LD_HL_A();
     void XORA();
     void JRNZe();
     void LDCe();
