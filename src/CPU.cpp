@@ -40,6 +40,7 @@ CPU::CPU() :
     m_operationMap[0x31] = &CPU::LDSPnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
+    m_operationMap[0x20] = &CPU::JRNZe;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -224,6 +225,23 @@ void CPU::XORA()
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+}
+
+// 0x20 0xFB (JR NZ, e)
+void CPU::JRNZe()
+{
+    if (IsFlagSet(ZeroFlag))
+    {
+        m_PC += 2;
+        m_cycles += 12;
+    }
+    else
+    {
+        m_PC += 1;
+        sbyte arg = static_cast<sbyte>(m_MMU->ReadByte(m_PC));
+        m_PC += 1;
+        m_PC += arg;
+    }
 }
 
 /*
