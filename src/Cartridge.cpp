@@ -24,8 +24,6 @@ Specifies which Memory Bank Controller (if any) is used in the cartridge, and if
 11h  MBC3                     FFh  HuC1+RAM+BATTERY
 12h  MBC3+RAM
 */
-#define MBC1RAM             0x02
-#define MBC1RAMBattery      0x03
 #define MBC2                0x05
 #define MBC2Battery         0x06
 #define ROMRAM              0x08
@@ -165,7 +163,9 @@ bool Cartridge::LoadMBC()
         m_MBC = std::unique_ptr<ROMOnly_MBC>(new ROMOnly_MBC(m_ROM.get()));
         return true;
     case MBC1:
-        m_MBC = std::unique_ptr<MBC1_MBC>(new MBC1_MBC(m_ROM.get()));
+    case MBC1RAM:
+    case MBC1RAMBattery:
+        m_MBC = std::unique_ptr<MBC1_MBC>(new MBC1_MBC(mbcType, m_ROM.get()));
         return true;
     default:
         Logger::Log("Unsupported Cartridge MBC type: 0x%02X", mbcType);

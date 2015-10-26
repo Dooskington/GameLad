@@ -14,5 +14,6 @@ public:
 
 private:
     byte* m_ROM;
+    byte m_RAM[0x1FFF + 1];
 };
 
