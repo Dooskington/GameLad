@@ -13,9 +13,9 @@ MBCs Control Registers.
 #define ROMBankMode 0x00
 #define RAMBankMode 0x01
 
-MBC1_MBC::MBC1_MBC(byte mbcType, byte* data) :
-    m_mbcType(mbcType),
-    m_ROM(data),
+MBC1_MBC::MBC1_MBC(byte* pROM, byte* pRAM) :
+    m_ROM(pROM),
+    m_RAM(pRAM),
     m_ROMBankLower(0x00),
     m_ROMRAMBankUpper(0x00),
     m_ROMRAMMode(ROMBankMode),
@@ -70,8 +70,14 @@ byte MBC1_MBC::ReadByte(const ushort& address)
         */
         if (!m_isRAMEnabled)
         {
-            Logger::Log("MBC1_MBC::ReadByte doesn't support reading to 0x%04X, RAM disabled.", address);
-            return false;
+            Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
+            return 0x00;
+        }
+
+        if (m_RAM == nullptr)
+        {
+            Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
+            return 0x00;
         }
 
         // In ROM Mode, only bank 0x00 is available
@@ -158,6 +164,12 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
         if (!m_isRAMEnabled)
         {
             Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
+            return false;
+        }
+
+        if (m_RAM == nullptr)
+        {
+            Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
             return false;
         }
 

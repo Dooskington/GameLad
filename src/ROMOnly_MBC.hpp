@@ -5,7 +5,7 @@
 class ROMOnly_MBC : public IMemoryUnit
 {
 public:
-    ROMOnly_MBC(byte* data);
+    ROMOnly_MBC(byte* pROM, byte* pRAM);
     ~ROMOnly_MBC();
     
     // IMemoryUnit
@@ -14,6 +14,6 @@ public:
 
 private:
     byte* m_ROM;
-    byte m_RAM[0x1FFF + 1];
+    byte* m_RAM;
 };
 
