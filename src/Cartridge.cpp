@@ -212,7 +212,8 @@ bool Cartridge::LoadMBC(__int64 actualSize)
         return true;
     case MBC2:
     case MBC2Battery:
-        m_MBC = std::unique_ptr<MBC2_MBC>(new MBC2_MBC(m_ROM.get(), m_RAM.get()));
+        m_RAM.reset();
+        m_MBC = std::unique_ptr<MBC2_MBC>(new MBC2_MBC(m_ROM.get()));
         return true;
     case MBC3TimerBattery:
     case MBC3TimerRAMBattery:

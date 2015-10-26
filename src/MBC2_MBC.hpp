@@ -6,7 +6,7 @@
 class MBC2_MBC : public IMemoryUnit
 {
 public:
-    MBC2_MBC(byte* pROM, byte* pRAM);
+    MBC2_MBC(byte* pROM);
     ~MBC2_MBC();
 
     // IMemoryUnit
@@ -15,5 +15,8 @@ public:
 
 private:
     byte* m_ROM;
-    byte* m_RAM;
+    byte m_RAM[0x1FF + 1];
+    byte m_ROMBank;
+
+    bool m_isRAMEnabled;
 };

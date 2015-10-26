@@ -1,6 +1,8 @@
 #include "PCH.hpp"
 #include "MBC1_MBC.hpp"
 /*
+MBC1 (max 2MByte ROM and/or 32KByte RAM)
+
 This is the first MBC chip for the gameboy. Any newer MBC chips are working similiar, so that is
 relative easy to upgrade a program from one MBC chip to another - or even to make it compatible to
 several different types of MBCs.
@@ -51,7 +53,7 @@ byte MBC1_MBC::ReadByte(const ushort& address)
         byte targetBank = m_ROMBankLower;
         if (m_ROMRAMMode == ROMBankMode)
         {
-            // The upper bank values are only availabel in ROM Bank Mode
+            // The upper bank values are only available in ROM Bank Mode
             targetBank |= (m_ROMRAMBankUpper << 4);
         }
 
@@ -126,6 +128,8 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
         {
             m_ROMBankLower = 0x01;
         }
+
+        return true;
     }
     else if (address <= 0x5FFF)
     {
@@ -136,6 +140,7 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
         */
 
         m_ROMRAMBankUpper = val & 0x03;
+        return true;
     }
     else if (address <= 0x7FFF)
     {
@@ -149,9 +154,9 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
         can be used during Mode 0, and only ROM Banks 00-1Fh can be used during Mode 1.
         */
         m_ROMRAMMode = val & 0x01;
+        return true;
     }
-
-    if (address >= 0xA000 && address <= 0xBFFF)
+    else if (address >= 0xA000 && address <= 0xBFFF)
     {
         /*
         A000-BFFF - RAM Bank 00-03, if any (Read/Write)
