@@ -19,4 +19,10 @@ public:
 private:
     byte* m_ROM;
     byte* m_RAM;
+
+    byte m_ROMBank;
+    byte m_RAMBank;
+    byte m_RTCRegister;
+
+    bool m_isRAMEnabled;
 };

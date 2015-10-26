@@ -7,41 +7,9 @@ MBC3 (max 2MByte ROM and/or 32KByte RAM and Timer)
 Beside for the ability to access up to 2MB ROM (128 banks), and 32KB RAM (4 banks), the MBC3 also
 includes a built-in Real Time Clock (RTC). The RTC requires an external 32.768 kHz Quartz
 Oscillator, and an external battery (if it should continue to tick when the gameboy is turned off).
+*/
 
-0000-3FFF - ROM Bank 00 (Read Only)
-Same as for MBC1.
-
-4000-7FFF - ROM Bank 01-7F (Read Only)
-Same as for MBC1, except that accessing banks 20h, 40h, and 60h is supported now.
-
-A000-BFFF - RAM Bank 00-03, if any (Read/Write)
-A000-BFFF - RTC Register 08-0C (Read/Write)
-Depending on the current Bank Number/RTC Register selection (see below), this memory space is used
-to access an 8KByte external RAM Bank, or a single RTC Register.
-
-0000-1FFF - RAM and Timer Enable (Write Only)
-Mostly the same as for MBC1, a value of 0Ah will enable reading and writing to external RAM - and
-to the RTC Registers! A value of 00h will disable either.
-
-2000-3FFF - ROM Bank Number (Write Only)
-Same as for MBC1, except that the whole 7 bits of the RAM Bank Number are written directly to this
-address. As for the MBC1, writing a value of 00h, will select Bank 01h instead. All other values
-01-7Fh select the corresponding ROM Banks.
-
-4000-5FFF - RAM Bank Number - or - RTC Register Select (Write Only)
-As for the MBC1s RAM Banking Mode, writing a value in range for 00h-03h maps the corresponding
-external RAM Bank (if any) into memory at A000-BFFF.
-When writing a value of 08h-0Ch, this will map the corresponding RTC register into memory at
-A000-BFFF. That register could then be read/written by accessing any address in that area,
-typically that is done by using address A000.
-
-6000-7FFF - Latch Clock Data (Write Only)
-When writing 00h, and then 01h to this register, the current time becomes latched into the RTC
-registers. The latched data will not change until it becomes latched again, by repeating the
-write 00h->01h procedure.
-This is supposed for <reading> from the RTC registers. It is proof to read the latched (frozen)
-time from the RTC registers, while the clock itself continues to tick in background.
-
+/*
 The Clock Counter Registers
 08h  RTC S   Seconds   0-59 (0-3Bh)
 09h  RTC M   Minutes   0-59 (0-3Bh)
@@ -67,9 +35,15 @@ When accessing the RTC Registers it is recommended to execute a 4ms delay (4 Cyc
 Speed Mode) between the separate accesses.
 */
 
+#define EnableRAM   0x0A
+
 MBC3_MBC::MBC3_MBC(byte* pROM, byte* pRAM) :
     m_ROM(pROM),
-    m_RAM(pRAM)
+    m_RAM(pRAM),
+    m_ROMBank(0x01),
+    m_RAMBank(0x00),
+    m_RTCRegister(0x00),
+    m_isRAMEnabled(false)
 {
     Logger::Log("MBC3_MBC created.");
 }
@@ -82,12 +56,126 @@ MBC3_MBC::~MBC3_MBC()
 // IMemoryUnit
 byte MBC3_MBC::ReadByte(const ushort& address)
 {
+    if (address <= 0x3FFF)
+    {
+        /*
+        0000-3FFF - ROM Bank 00 (Read Only)
+        Same as for MBC1.
+        */
+        return m_ROM[address];
+    }
+    else if (address <= 0x7FFF)
+    {
+        /*
+        4000-7FFF - ROM Bank 01-7F (Read Only)
+        Same as for MBC1, except that accessing banks 20h, 40h, and 60h is supported now.
+        */
+        byte target = (address - 0x4000);
+        target += (0x4000 * m_ROMBank);
+        return m_ROM[target];
+    }
+    else if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        /*
+        A000-BFFF - RAM Bank 00-03, if any (Read/Write)
+        A000-BFFF - RTC Register 08-0C (Read/Write)
+        Depending on the current Bank Number/RTC Register selection (see below), this memory space is used
+        to access an 8KByte external RAM Bank, or a single RTC Register.
+        */
+        if (m_RAMBank <= 0x03)
+        {
+            ushort target = address - 0xA000;
+            // Offset based on the bank number
+            target += (0x2000 * m_RAMBank);
+            return m_RAM[target];
+        }
+        else if (m_RAMBank >= 0x08 && m_RAMBank <= 0x0C)
+        {
+            return m_RTCRegister;
+        }
+    }
+
     Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X", address);
     return 0x00;
 }
 
 bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
 {
+    if (address <= 0x1FFF)
+    {
+        /*
+        0000-1FFF - RAM and Timer Enable (Write Only)
+        Mostly the same as for MBC1, a value of 0Ah will enable reading and writing to external RAM - and
+        to the RTC Registers! A value of 00h will disable either.
+        */
+        m_isRAMEnabled = ((val & EnableRAM) == EnableRAM);
+        return true;
+    }
+    else if (address <= 0x3FFF)
+    {
+        /*
+        2000-3FFF - ROM Bank Number (Write Only)
+        Same as for MBC1, except that the whole 7 bits of the RAM Bank Number are written directly to this
+        address. As for the MBC1, writing a value of 00h, will select Bank 01h instead. All other values
+        01-7Fh select the corresponding ROM Banks.
+        */
+        m_ROMBank = (val & 0x7F);
+        if (m_ROMBank == 0x00)
+        {
+            m_ROMBank = 0x01;
+        }
+
+        return true;
+    }
+    else if (address <= 0x5FFF)
+    {
+        /*
+        4000-5FFF - RAM Bank Number - or - RTC Register Select (Write Only)
+        As for the MBC1s RAM Banking Mode, writing a value in range for 00h-03h maps the corresponding
+        external RAM Bank (if any) into memory at A000-BFFF.
+        When writing a value of 08h-0Ch, this will map the corresponding RTC register into memory at
+        A000-BFFF. That register could then be read/written by accessing any address in that area,
+        typically that is done by using address A000.
+        */
+        m_RAMBank = val;
+        return true;
+    }
+    else if (address <= 0x7FFF)
+    {
+        /*
+        6000-7FFF - Latch Clock Data (Write Only)
+        When writing 00h, and then 01h to this register, the current time becomes latched into the RTC
+        registers. The latched data will not change until it becomes latched again, by repeating the
+        write 00h->01h procedure.
+        This is supposed for <reading> from the RTC registers. It is proof to read the latched (frozen)
+        time from the RTC registers, while the clock itself continues to tick in background.
+        */
+        Logger::Log("MBC3_MBC::WriteByte doesn't support Latch Clock Data yet. 0x%04X", address);
+        return false;
+    }
+    else if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        /*
+        A000-BFFF - RAM Bank 00-03, if any (Read/Write)
+        A000-BFFF - RTC Register 08-0C (Read/Write)
+        Depending on the current Bank Number/RTC Register selection (see below), this memory space is used
+        to access an 8KByte external RAM Bank, or a single RTC Register.
+        */
+        if (m_RAMBank <= 0x03)
+        {
+            ushort target = address - 0xA000;
+            // Offset based on the bank number
+            target += (0x2000 * m_RAMBank);
+            m_RAM[target] = val;
+            return true;
+        }
+        else if (m_RAMBank >= 0x08 && m_RAMBank <= 0x0C)
+        {
+            m_RTCRegister = val;
+            return true;
+        }
+    }
+
     Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X", address);
     return false;
 }

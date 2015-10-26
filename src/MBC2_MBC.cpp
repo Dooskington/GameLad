@@ -9,7 +9,7 @@ MBC2 (max 256KByte ROM and 512x4 bits RAM)
 
 MBC2_MBC::MBC2_MBC(byte* pROM) :
     m_ROM(pROM),
-    m_ROMBank(0x00),
+    m_ROMBank(0x01),
     m_isRAMEnabled(false)
 {
     Logger::Log("MBC2_MBC created.");

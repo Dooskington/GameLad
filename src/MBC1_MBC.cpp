@@ -18,7 +18,7 @@ MBCs Control Registers.
 MBC1_MBC::MBC1_MBC(byte* pROM, byte* pRAM) :
     m_ROM(pROM),
     m_RAM(pRAM),
-    m_ROMBankLower(0x00),
+    m_ROMBankLower(0x01),
     m_ROMRAMBankUpper(0x00),
     m_ROMRAMMode(ROMBankMode),
     m_isRAMEnabled(false)
@@ -87,7 +87,7 @@ byte MBC1_MBC::ReadByte(const ushort& address)
         if (m_ROMRAMMode == RAMBankMode)
         {
             // Offset based on the bank number
-            target += (0x2000 * m_ROMBankLower);
+            target += (0x2000 * m_ROMRAMBankUpper);
         }
 
         return m_RAM[target];
@@ -183,7 +183,7 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
         if (m_ROMRAMMode == RAMBankMode)
         {
             // Offset based on the bank number
-            target += (0x2000 * m_ROMBankLower);
+            target += (0x2000 * m_ROMRAMBankUpper);
         }
 
         m_RAM[target] = val;
