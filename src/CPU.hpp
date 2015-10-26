@@ -1,8 +1,12 @@
 #pragma once
 
-#include "PCH.hpp"
 #include "MMU.hpp"
 #include "Cartridge.hpp"
+#include "GPU.hpp"
+#include "APU.hpp"
+#include "Joypad.hpp"
+#include "Serial.hpp"
+#include "Timer.hpp"
 
 class CPU
 {
@@ -12,6 +16,7 @@ public:
 
     bool Initialize();
     void StepFrame();
+    bool LoadROM(std::string path);
 
 private:
     byte GetHighByte(ushort dest);
@@ -52,6 +57,21 @@ private:
 
     // Cartridge
     std::unique_ptr<Cartridge> m_cartridge;
+
+    // GPU
+    std::unique_ptr<GPU> m_GPU;
+
+    // APU
+    std::unique_ptr<APU> m_APU;
+
+    // Joypad
+    std::unique_ptr<Joypad> m_joypad;
+
+    // Serial
+    std::unique_ptr<Serial> m_serial;
+
+    // Timer
+    std::unique_ptr<Timer> m_timer;
 
     // Clock cycles
     unsigned int m_cycles; // The current number of cycles

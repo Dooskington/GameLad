@@ -1,17 +1,15 @@
 #pragma once
 
-class Cartridge : public IMemoryUnit
+class Joypad : public IMemoryUnit
 {
 public:
-    Cartridge();
-    ~Cartridge();
-
-    bool LoadROM(std::string path);
+    Joypad();
+    ~Joypad();
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    std::unique_ptr<byte> m_ROM;
+    byte m_memory[0xFFFF + 1];
 };
