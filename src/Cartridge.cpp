@@ -3,6 +3,10 @@
 
 #include "ROMOnly_MBC.hpp"
 #include "MBC1_MBC.hpp"
+#include "MBC2_MBC.hpp"
+#include "MBC3_MBC.hpp"
+#include "MBC4_MBC.hpp"
+#include "MBC5_MBC.hpp"
 
 #define CartridgeTypeAddress 0x0147
 #define ROMSizeAddress 0x0148
@@ -27,27 +31,14 @@ Specifies which Memory Bank Controller (if any) is used in the cartridge, and if
 11h  MBC3                     FFh  HuC1+RAM+BATTERY
 12h  MBC3+RAM
 */
-#define MBC2                0x05
-#define MBC2Battery         0x06
+
 #define ROMRAM              0x08
 #define ROMRAMBattery       0x09
+
 #define MMM01               0x0B
 #define MMM01RAM            0x0C
 #define MMM01RAMBattery     0x0D
-#define MBC3TimerBattery    0x0F
-#define MBC3TimerRAMBattery 0x10
-#define MBC3                0x11
-#define MBC3RAM             0x12
-#define MBC3RAMBattery      0x13
-#define MBC4                0x15
-#define MBC4RAM             0x16
-#define MBC4RAMBattery      0x17
-#define MBC5                0x19
-#define MBC5RAM             0x1A
-#define MBC5RAMBattery      0x1B
-#define MBC5Rumble          0x1C
-#define MBC5RumbleRAM       0x1D
-#define MBC5RumbleRAMBattery 0x1E
+
 #define PocketCamera        0xFC
 #define BandaiTama5         0xFD
 #define HuC3                0xFE
@@ -219,9 +210,32 @@ bool Cartridge::LoadMBC(__int64 actualSize)
     case MBC1RAMBattery:
         m_MBC = std::unique_ptr<MBC1_MBC>(new MBC1_MBC(m_ROM.get(), m_RAM.get()));
         return true;
+    case MBC2:
+    case MBC2Battery:
+        m_MBC = std::unique_ptr<MBC2_MBC>(new MBC2_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
+    case MBC3TimerBattery:
+    case MBC3TimerRAMBattery:
+    case MBC3:
+    case MBC3RAM:
+    case MBC3RAMBattery:
+        m_MBC = std::unique_ptr<MBC3_MBC>(new MBC3_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
+    case MBC4:
+    case MBC4RAM:
+    case MBC4RAMBattery:
+        m_MBC = std::unique_ptr<MBC4_MBC>(new MBC4_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
+    case MBC5:
+    case MBC5RAM:
+    case MBC5RAMBattery:
+    case MBC5Rumble:
+    case MBC5RumbleRAM:
+    case MBC5RumbleRAMBattery:
+        m_MBC = std::unique_ptr<MBC5_MBC>(new MBC5_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
     default:
         Logger::Log("Unsupported Cartridge MBC type: 0x%02X", mbcType);
         return false;
     }
-
 }

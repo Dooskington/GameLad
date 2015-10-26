@@ -21,6 +21,10 @@
     <ClCompile Include="src\Joypad.cpp" />
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\MBC1_MBC.cpp" />
+    <ClCompile Include="src\MBC2_MBC.cpp" />
+    <ClCompile Include="src\MBC3_MBC.cpp" />
+    <ClCompile Include="src\MBC4_MBC.cpp" />
+    <ClCompile Include="src\MBC5_MBC.cpp" />
     <ClCompile Include="src\MMU.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
