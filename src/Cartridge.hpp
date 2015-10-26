@@ -13,5 +13,9 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
+    bool LoadMBC();
+
+private:
     std::unique_ptr<byte> m_ROM;
+    std::unique_ptr<IMemoryUnit> m_MBC;
 };
