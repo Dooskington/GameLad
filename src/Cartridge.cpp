@@ -157,6 +157,9 @@ bool Cartridge::LoadMBC()
 {
     byte mbcType = m_ROM.get()[CartridgeTypeAddress];
 
+    // TODO: Check 0x0148 - ROM Size
+    // TODO: Check 0x0149 - RAM Size
+
     switch (mbcType)
     {
     case ROMOnly:
