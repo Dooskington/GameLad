@@ -9,6 +9,8 @@ includes a built-in Real Time Clock (RTC). The RTC requires an external 32.768 k
 Oscillator, and an external battery (if it should continue to tick when the gameboy is turned off).
 */
 
+// TODO: Implement a timer
+
 /*
 The Clock Counter Registers
 08h  RTC S   Seconds   0-59 (0-3Bh)
@@ -42,9 +44,10 @@ MBC3_MBC::MBC3_MBC(byte* pROM, byte* pRAM) :
     m_RAM(pRAM),
     m_ROMBank(0x01),
     m_RAMBank(0x00),
-    m_RTCRegister(0x00),
     m_isRAMEnabled(false)
 {
+    memset(m_RTCRegisters, 0x00, ARRAYSIZE(m_RTCRegisters));
+
     Logger::Log("MBC3_MBC created.");
 }
 
@@ -91,7 +94,7 @@ byte MBC3_MBC::ReadByte(const ushort& address)
         }
         else if (m_RAMBank >= 0x08 && m_RAMBank <= 0x0C)
         {
-            return m_RTCRegister;
+            return m_RTCRegisters[m_RAMBank - 0x08];
         }
     }
 
@@ -171,7 +174,7 @@ bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
         }
         else if (m_RAMBank >= 0x08 && m_RAMBank <= 0x0C)
         {
-            m_RTCRegister = val;
+            m_RTCRegisters[m_RAMBank - 0x08] = val;
             return true;
         }
     }

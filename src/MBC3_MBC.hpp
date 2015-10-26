@@ -22,7 +22,7 @@ private:
 
     byte m_ROMBank;
     byte m_RAMBank;
-    byte m_RTCRegister;
+    byte m_RTCRegisters[0x05];
 
     bool m_isRAMEnabled;
 };
