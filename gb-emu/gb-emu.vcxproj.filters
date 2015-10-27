@@ -36,4 +36,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="*.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

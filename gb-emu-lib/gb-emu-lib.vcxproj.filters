@@ -124,5 +124,8 @@
     <ClInclude Include="ICPU.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IMMU.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

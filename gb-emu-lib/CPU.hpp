@@ -8,17 +8,39 @@
 #include "Serial.hpp"
 #include "Timer.hpp"
 
+/*
+The Flag Register (lower 8bit of AF register)
+Bit  Name  Set Clr  Expl.
+7    zf    Z   NZ   Zero Flag
+6    n     -   -    Add/Sub-Flag (BCD)
+5    h     -   -    Half Carry Flag (BCD)
+4    cy    C   NC   Carry Flag
+3-0  -     -   -    Not used (always zero)
+*/
+#define ZeroFlag        7
+#define AddFlag         6
+#define HalfCarryFlag   5
+#define CarryFlag       4
+
 class CPU : public ICPU
 {
+    friend class CPUTests;
+
 public:
     CPU();
     ~CPU();
 
+private:
+    bool Initialize(IMMU* pMMU);
+
+public:
     bool Initialize();
-    void StepFrame();
     bool LoadROM(std::string path);
+    void StepFrame();
 
 private:
+    void Step();
+
     byte GetHighByte(ushort dest);
     byte GetLowByte(ushort dest);
 
@@ -53,7 +75,7 @@ private:
 
 private:
     // MMU (Memory Map Unit)
-    std::unique_ptr<MMU> m_MMU;
+    std::unique_ptr<IMMU> m_MMU;
 
     // Cartridge
     std::unique_ptr<Cartridge> m_cartridge;
