@@ -57,7 +57,7 @@ byte MBC1_MBC::ReadByte(const ushort& address)
             targetBank |= (m_ROMRAMBankUpper << 4);
         }
 
-        byte target = (address - 0x4000);
+        ushort target = (address - 0x4000);
         target += (0x4000 * targetBank);
         return m_ROM[target];
     }

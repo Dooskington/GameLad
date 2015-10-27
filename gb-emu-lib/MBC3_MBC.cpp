@@ -73,7 +73,7 @@ byte MBC3_MBC::ReadByte(const ushort& address)
         4000-7FFF - ROM Bank 01-7F (Read Only)
         Same as for MBC1, except that accessing banks 20h, 40h, and 60h is supported now.
         */
-        byte target = (address - 0x4000);
+        ushort target = (address - 0x4000);
         target += (0x4000 * m_ROMBank);
         return m_ROM[target];
     }
