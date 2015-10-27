@@ -1,5 +1,5 @@
 #include "PCH.hpp"
-#include "Emulator.hpp"
+#include <Emulator.hpp>
 
 int main(int argc, char** argv)
 {

@@ -21,5 +21,6 @@ typedef unsigned short ushort;
 
 #include "Logger.hpp"
 #include "IMemoryUnit.hpp"
+#include "ICPU.hpp"
 
 #define ARRAYSIZE(a) (sizeof a / sizeof a[0])

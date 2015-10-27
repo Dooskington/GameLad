@@ -8,7 +8,7 @@
 #include "Serial.hpp"
 #include "Timer.hpp"
 
-class CPU
+class CPU : public ICPU
 {
 public:
     CPU();

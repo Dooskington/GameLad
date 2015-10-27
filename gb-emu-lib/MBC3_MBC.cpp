@@ -85,6 +85,18 @@ byte MBC3_MBC::ReadByte(const ushort& address)
         Depending on the current Bank Number/RTC Register selection (see below), this memory space is used
         to access an 8KByte external RAM Bank, or a single RTC Register.
         */
+        if (!m_isRAMEnabled)
+        {
+            Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
+            return 0x00;
+        }
+
+        if (m_RAM == nullptr)
+        {
+            Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
+            return 0x00;
+        }
+
         if (m_RAMBank <= 0x03)
         {
             ushort target = address - 0xA000;
@@ -153,6 +165,9 @@ bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
         This is supposed for <reading> from the RTC registers. It is proof to read the latched (frozen)
         time from the RTC registers, while the clock itself continues to tick in background.
         */
+
+        // TODO: Look at this for ideas:
+        // https://github.com/creker/Cookieboy/blob/a476f8ec5baffd176ee1572885edb7f41b241571/CookieboyMBC3.h
         Logger::Log("MBC3_MBC::WriteByte doesn't support Latch Clock Data yet. 0x%04X", address);
         return false;
     }
@@ -164,6 +179,19 @@ bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
         Depending on the current Bank Number/RTC Register selection (see below), this memory space is used
         to access an 8KByte external RAM Bank, or a single RTC Register.
         */
+
+        if (!m_isRAMEnabled)
+        {
+            Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
+            return false;
+        }
+
+        if (m_RAM == nullptr)
+        {
+            Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
+            return false;
+        }
+
         if (m_RAMBank <= 0x03)
         {
             ushort target = address - 0xA000;

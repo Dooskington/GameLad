@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CPU.hpp"
+#include "ICPU.hpp"
 
 class Emulator
 {
@@ -46,5 +46,5 @@ private:
 
     std::unique_ptr<SDL_Window, SDLWindowDeleter> m_window;
     std::unique_ptr<SDL_Renderer, SDLRendererDeleter> m_renderer;
-    std::unique_ptr<CPU> m_cpu;
+    std::unique_ptr<ICPU> m_cpu;
 };
