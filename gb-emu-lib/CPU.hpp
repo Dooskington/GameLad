@@ -50,7 +50,6 @@ private:
     void SetFlag(byte flag);
     void ClearFlag(byte flag);
     bool IsFlagSet(byte flag);
-    bool IsBitSet(byte val, byte bit);
 
     void HALT();
 

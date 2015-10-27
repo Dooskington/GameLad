@@ -185,15 +185,7 @@ void CPU::ClearFlag(byte flag)
 
 bool CPU::IsFlagSet(byte flag)
 {
-    return IsBitSet(GetLowByte(m_AF), flag);
-}
-
-bool CPU::IsBitSet(byte val, byte bit)
-{
-    // This shifts the byte val to the right to get the bit we are interested
-    // in to the "1" position. Then we AND it with 1 and compare to 1.
-    // If that bit was set, it'll return true, otherwise false.
-    return ((val >> bit) & 0x01) == 0x01;
+    return ISBITSET(GetLowByte(m_AF), flag);
 }
 
 void CPU::HALT()
@@ -221,9 +213,9 @@ void CPU::INCC()
     m_PC += 1;
 
     byte C = GetLowByte(m_BC);
-    bool isBit3Before = IsBitSet(C, 3);
+    bool isBit3Before = ISBITSET(C, 3);
     C += 1;
-    bool isBit3After = IsBitSet(C, 3);
+    bool isBit3After = ISBITSET(C, 3);
     SetLowByte(&m_BC, C);
     m_cycles += 4;
 
@@ -442,7 +434,7 @@ void CPU::BIT7h()
     m_cycles += 8;
 
     // Test bit 7 in H
-    if (!IsBitSet(GetHighByte(m_HL), 7))
+    if (!ISBITSET(GetHighByte(m_HL), 7))
     {
         // Z is set if specified bit is 0
         SetFlag(ZeroFlag);

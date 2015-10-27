@@ -35,3 +35,4 @@ typedef unsigned short ushort;
 #include "IMMU.hpp"
 
 #define ARRAYSIZE(a) (sizeof a / sizeof a[0])
+#define ISBITSET(val, bit) (((val >> bit) & 0x01) == 0x01)
