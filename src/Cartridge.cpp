@@ -3,8 +3,15 @@
 
 #include "ROMOnly_MBC.hpp"
 #include "MBC1_MBC.hpp"
+#include "MBC2_MBC.hpp"
+#include "MBC3_MBC.hpp"
+#include "MBC4_MBC.hpp"
+#include "MBC5_MBC.hpp"
 
 #define CartridgeTypeAddress 0x0147
+#define ROMSizeAddress 0x0148
+#define RAMSizeAddress 0x0149
+
 /*
 0x0147 - Cartridge Type
 Specifies which Memory Bank Controller (if any) is used in the cartridge, and if further external hardware exists in the cartridge.
@@ -24,27 +31,14 @@ Specifies which Memory Bank Controller (if any) is used in the cartridge, and if
 11h  MBC3                     FFh  HuC1+RAM+BATTERY
 12h  MBC3+RAM
 */
-#define MBC2                0x05
-#define MBC2Battery         0x06
+
 #define ROMRAM              0x08
 #define ROMRAMBattery       0x09
+
 #define MMM01               0x0B
 #define MMM01RAM            0x0C
 #define MMM01RAMBattery     0x0D
-#define MBC3TimerBattery    0x0F
-#define MBC3TimerRAMBattery 0x10
-#define MBC3                0x11
-#define MBC3RAM             0x12
-#define MBC3RAMBattery      0x13
-#define MBC4                0x15
-#define MBC4RAM             0x16
-#define MBC4RAMBattery      0x17
-#define MBC5                0x19
-#define MBC5RAM             0x1A
-#define MBC5RAMBattery      0x1B
-#define MBC5Rumble          0x1C
-#define MBC5RumbleRAM       0x1D
-#define MBC5RumbleRAMBattery 0x1E
+
 #define PocketCamera        0xFC
 #define BandaiTama5         0xFD
 #define HuC3                0xFE
@@ -84,7 +78,8 @@ Specifies the size of the external RAM in the cartridge (if any).
 01h - 2 KBytes
 02h - 8 Kbytes
 03h - 32 KBytes (4 banks of 8KBytes each)
-When using a MBC2 chip 00h must be specified in this entry, even though the MBC2 includes a built-in RAM of 512 x 4 bits.
+When using a MBC2 chip 00h must be specified in this entry, even though the MBC2 includes a built-in
+RAM of 512 x 4 bits.
 */
 #define RAM_None        0x00
 #define RAM_2KB         0x01
@@ -100,6 +95,7 @@ Cartridge::~Cartridge()
 {
     m_MBC.reset();
     m_ROM.reset();
+    m_RAM.reset();
 
     Logger::Log("Cartridge destroyed.");
 }
@@ -128,7 +124,7 @@ bool Cartridge::LoadROM(std::string path)
             }
             else
             {
-                succeeded = LoadMBC();
+                succeeded = LoadMBC(size.seekpos());
             }
         }
         else
@@ -153,26 +149,94 @@ bool Cartridge::WriteByte(const ushort& address, const byte val)
     return m_MBC->WriteByte(address, val);
 }
 
-bool Cartridge::LoadMBC()
+bool Cartridge::LoadMBC(__int64 actualSize)
 {
     byte mbcType = m_ROM.get()[CartridgeTypeAddress];
+    byte romSizeFlag = m_ROM.get()[ROMSizeAddress];
+    byte ramSizeFlag = m_ROM.get()[RAMSizeAddress];
 
-    // TODO: Check 0x0148 - ROM Size
-    // TODO: Check 0x0149 - RAM Size
+    __int64 romSize = (32 * 1024) << romSizeFlag;
+    switch (romSizeFlag)
+    {
+    case ROM_1_1MB:
+        romSize = 1179648;
+        break;
+    case ROM_1_2MB:
+        romSize = 1310720;
+        break;
+    case ROM_1_5MB:
+        romSize = 1572864;
+        break;
+    }
+
+    if (actualSize != romSize)
+    {
+        Logger::Log("Cartridge::LoadMBC - Unexpected ROM file size. Got: %d   Expected: %d", actualSize, romSize);
+        return false;
+    }
+
+    __int64 ramSize = 0;
+    switch (ramSizeFlag)
+    {
+    case RAM_None:
+        ramSize = 0;
+        break;
+    case RAM_2KB:
+        ramSize = (1024 * 2);
+        break;
+    case RAM_8KB:
+        ramSize = (1024 * 8);
+        break;
+    case RAM_32KB:
+        ramSize = (1024 * 32);
+        break;
+    default:
+        Logger::Log("Cartridge::LoadMBC - Unexpected RAM size flag: 0x%02X", ramSizeFlag);
+        return false;
+    }
+
+    if (ramSize > 0)
+    {
+        m_RAM = std::unique_ptr<byte>(new byte[ramSize]);
+    }
 
     switch (mbcType)
     {
     case ROMOnly:
-        m_MBC = std::unique_ptr<ROMOnly_MBC>(new ROMOnly_MBC(m_ROM.get()));
+        m_MBC = std::unique_ptr<ROMOnly_MBC>(new ROMOnly_MBC(m_ROM.get(), m_RAM.get()));
         return true;
     case MBC1:
     case MBC1RAM:
     case MBC1RAMBattery:
-        m_MBC = std::unique_ptr<MBC1_MBC>(new MBC1_MBC(mbcType, m_ROM.get()));
+        m_MBC = std::unique_ptr<MBC1_MBC>(new MBC1_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
+    case MBC2:
+    case MBC2Battery:
+        m_RAM.reset();
+        m_MBC = std::unique_ptr<MBC2_MBC>(new MBC2_MBC(m_ROM.get()));
+        return true;
+    case MBC3TimerBattery:
+    case MBC3TimerRAMBattery:
+    case MBC3:
+    case MBC3RAM:
+    case MBC3RAMBattery:
+        m_MBC = std::unique_ptr<MBC3_MBC>(new MBC3_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
+    case MBC4:
+    case MBC4RAM:
+    case MBC4RAMBattery:
+        m_MBC = std::unique_ptr<MBC4_MBC>(new MBC4_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
+    case MBC5:
+    case MBC5RAM:
+    case MBC5RAMBattery:
+    case MBC5Rumble:
+    case MBC5RumbleRAM:
+    case MBC5RumbleRAMBattery:
+        m_MBC = std::unique_ptr<MBC5_MBC>(new MBC5_MBC(m_ROM.get(), m_RAM.get()));
         return true;
     default:
         Logger::Log("Unsupported Cartridge MBC type: 0x%02X", mbcType);
         return false;
     }
-
 }

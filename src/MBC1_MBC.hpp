@@ -7,7 +7,7 @@
 class MBC1_MBC : public IMemoryUnit
 {
 public:
-    MBC1_MBC(byte mbcType, byte* data);
+    MBC1_MBC(byte* pROM, byte* pRAM);
     ~MBC1_MBC();
     
     // IMemoryUnit
@@ -15,13 +15,12 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    byte m_mbcType;
     byte* m_ROM;
+    byte* m_RAM;
     byte m_ROMBankLower;
     byte m_ROMRAMBankUpper;
     byte m_ROMRAMMode;
 
     bool m_isRAMEnabled;
-    byte m_RAM[0x7FFF + 1]; // 32KB, 4 banks of 8KB each
 };
 

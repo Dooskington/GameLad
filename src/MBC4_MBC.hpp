@@ -1,12 +1,14 @@
 #pragma once
 
-#define ROMOnly             0x00
+#define MBC4                0x15
+#define MBC4RAM             0x16
+#define MBC4RAMBattery      0x17
 
-class ROMOnly_MBC : public IMemoryUnit
+class MBC4_MBC : public IMemoryUnit
 {
 public:
-    ROMOnly_MBC(byte* pROM, byte* pRAM);
-    ~ROMOnly_MBC();
+    MBC4_MBC(byte* pROM, byte* pRAM);
+    ~MBC4_MBC();
     
     // IMemoryUnit
     byte ReadByte(const ushort& address);
@@ -16,4 +18,3 @@ private:
     byte* m_ROM;
     byte* m_RAM;
 };
-
