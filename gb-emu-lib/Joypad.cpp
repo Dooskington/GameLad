@@ -23,7 +23,7 @@ byte Joypad::ReadByte(const ushort& address)
         // TODO: NYI
         return 0x00;
     default:
-        Logger::Log("APU::ReadByte cannot read from address 0x%04X", address);
+        Logger::Log("Joypad::ReadByte cannot read from address 0x%04X", address);
         return 0x00;
     }
 }
