@@ -293,7 +293,7 @@ void CPU::JRNZe()
     if (IsFlagSet(ZeroFlag))
     {
         m_PC += 2;
-        m_cycles += 12;
+        m_cycles += 8;
     }
     else
     {
@@ -301,6 +301,8 @@ void CPU::JRNZe()
         sbyte arg = static_cast<sbyte>(m_MMU->ReadByte(m_PC));
         m_PC += 1;
         m_PC += arg;
+
+        m_cycles += 12;
     }
 
     // No flags affected
