@@ -11,5 +11,6 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    byte m_memory[0xFFFF + 1];
+    byte m_VRAM[0x1FFF + 1];
+    byte m_OAM[0x009F + 1];
 };
