@@ -38,7 +38,7 @@ byte MBC2_MBC::ReadByte(const ushort& address)
         This area may contain any of the further 16KByte banks of the ROM, allowing to address up to 16 ROM
         Banks (almost 256KByte).
         */
-        byte target = (address - 0x4000);
+        ushort target = (address - 0x4000);
         target += (0x4000 * m_ROMBank);
         return m_ROM[target];
     }
@@ -113,6 +113,7 @@ bool MBC2_MBC::WriteByte(const ushort& address, const byte val)
         }
 
         m_RAM[address - 0xA000] = (val & 0x0F);
+        return true;
     }
 
     Logger::Log("MBC2_MBC::WriteByte doesn't support writing to 0x%04X", address);
