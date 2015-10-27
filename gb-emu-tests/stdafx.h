@@ -1,4 +1,14 @@
+// stdafx.h : include file for standard system include files,
+// or project specific include files that are used frequently, but
+// are changed infrequently
+//
+
 #pragma once
+
+#include "targetver.h"
+
+// Headers for CppUnitTest
+#include "CppUnitTest.h"
 
 #include <string>
 #include <iostream>
@@ -21,5 +31,7 @@ typedef unsigned short ushort;
 
 #include "Logger.hpp"
 #include "IMemoryUnit.hpp"
+#include "ICPU.hpp"
+#include "IMMU.hpp"
 
 #define ARRAYSIZE(a) (sizeof a / sizeof a[0])

@@ -11,55 +11,68 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\*.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\APU.cpp" />
-    <ClCompile Include="src\Cartridge.cpp" />
-    <ClCompile Include="src\CPU.cpp" />
-    <ClCompile Include="src\GPU.cpp" />
-    <ClCompile Include="src\Joypad.cpp" />
-    <ClCompile Include="src\Logger.cpp" />
-    <ClCompile Include="src\MBC1_MBC.cpp" />
-    <ClCompile Include="src\MBC2_MBC.cpp" />
-    <ClCompile Include="src\MBC3_MBC.cpp" />
-    <ClCompile Include="src\MBC4_MBC.cpp" />
-    <ClCompile Include="src\MBC5_MBC.cpp" />
-    <ClCompile Include="src\MMU.cpp" />
-    <ClCompile Include="src\pch.cpp">
+    <ClCompile Include="APU.cpp" />
+    <ClCompile Include="Cartridge.cpp" />
+    <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="Emulator.cpp" />
+    <ClCompile Include="GPU.cpp" />
+    <ClCompile Include="Joypad.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="MBC1_MBC.cpp" />
+    <ClCompile Include="MBC2_MBC.cpp" />
+    <ClCompile Include="MBC3_MBC.cpp" />
+    <ClCompile Include="MBC4_MBC.cpp" />
+    <ClCompile Include="MBC5_MBC.cpp" />
+    <ClCompile Include="MMU.cpp" />
+    <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Emulator.cpp">
-    </ClCompile>
-    <ClCompile Include="src\Main.cpp">
-    </ClCompile>
-    <ClCompile Include="src\ROMOnly_MBC.cpp" />
-    <ClCompile Include="src\Serial.cpp" />
-    <ClCompile Include="src\Timer.cpp" />
+    <ClCompile Include="ROMOnly_MBC.cpp" />
+    <ClCompile Include="Serial.cpp" />
+    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="res\bios.bin" />
-    <None Include="res\tests\cpu_instrs.gb" />
-    <None Include="res\tests\instr_timing.gb" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="APU.hpp" />
+    <ClInclude Include="Cartridge.hpp" />
+    <ClInclude Include="CPU.hpp" />
+    <ClInclude Include="Emulator.hpp" />
+    <ClInclude Include="GPU.hpp" />
+    <ClInclude Include="ICPU.hpp" />
+    <ClInclude Include="IMemoryUnit.hpp" />
+    <ClInclude Include="IMMU.hpp" />
+    <ClInclude Include="Joypad.hpp" />
+    <ClInclude Include="Logger.hpp" />
+    <ClInclude Include="MBC1_MBC.hpp" />
+    <ClInclude Include="MBC2_MBC.hpp" />
+    <ClInclude Include="MBC3_MBC.hpp" />
+    <ClInclude Include="MBC4_MBC.hpp" />
+    <ClInclude Include="MBC5_MBC.hpp" />
+    <ClInclude Include="MMU.hpp" />
+    <ClInclude Include="pch.hpp" />
+    <ClInclude Include="ROMOnly_MBC.hpp" />
+    <ClInclude Include="Serial.hpp" />
+    <ClInclude Include="Timer.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{385A83D3-0FCE-4724-A5D9-111E281807EC}</ProjectGuid>
+    <ProjectGuid>{89D4AA97-0AFD-40E7-8BBD-FF42012BAB87}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>gb-emu</RootNamespace>
+    <RootNamespace>gbemulib</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -77,39 +90,26 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(ProjectDir)packages\sdl2.2.0.3\build\native\lib\$(Platform)\dynamic;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(ProjectDir)packages\sdl2.2.0.3\build\native\lib\$(Platform)\dynamic;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WINDOWS; _CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINDOWS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2_Mixer.lib;SDL2_TTF.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy $(ProjectDir)res\*.* $(OutDir)res\ /E /Y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>Copy Resources</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -118,35 +118,28 @@
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WINDOWS; _CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINDOWS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy $(ProjectDir)res\*.* $(OutDir)res\ /E /Y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>Copy Resources</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets" Condition="Exists('packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets')" />
-    <Import Project="packages\sdl2.2.0.3\build\native\sdl2.targets" Condition="Exists('packages\sdl2.2.0.3\build\native\sdl2.targets')" />
+    <Import Project="..\packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets" Condition="Exists('..\packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets')" />
+    <Import Project="..\packages\sdl2.2.0.3\build\native\sdl2.targets" Condition="Exists('..\packages\sdl2.2.0.3\build\native\sdl2.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets'))" />
-    <Error Condition="!Exists('packages\sdl2.2.0.3\build\native\sdl2.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\sdl2.2.0.3\build\native\sdl2.targets'))" />
+    <Error Condition="!Exists('..\packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sdl2.redist.2.0.3\build\native\sdl2.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\sdl2.2.0.3\build\native\sdl2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sdl2.2.0.3\build\native\sdl2.targets'))" />
   </Target>
 </Project>

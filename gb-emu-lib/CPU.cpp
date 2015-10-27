@@ -4,20 +4,6 @@
 // The number of CPU cycles per frame
 const unsigned int CyclesPerFrame = 70244;
 
-/*
-The Flag Register (lower 8bit of AF register)
-Bit  Name  Set Clr  Expl.
-7    zf    Z   NZ   Zero Flag
-6    n     -   -    Add/Sub-Flag (BCD)
-5    h     -   -    Half Carry Flag (BCD)
-4    cy    C   NC   Carry Flag
-3-0  -     -   -    Not used (always zero)
-*/
-#define ZeroFlag        7
-#define AddFlag         6
-#define HalfCarryFlag   5
-#define CarryFlag       4
-
 CPU::CPU() :
     m_cycles(0),
     m_isHalted(false),
@@ -29,9 +15,25 @@ CPU::CPU() :
     m_PC(0x0000)
 {
     Logger::Log("CPU created.");
+}
 
+CPU::~CPU()
+{
+    m_timer.reset();
+    m_serial.reset();
+    m_joypad.reset();
+    m_APU.reset();
+    m_GPU.reset();
+    m_cartridge.reset();
+    m_MMU.reset();
+
+    Logger::Log("CPU destroyed.");
+}
+
+bool CPU::Initialize(IMMU* pMMU)
+{
     // Create the MMU
-    m_MMU = std::make_unique<MMU>();
+    m_MMU = std::unique_ptr<IMMU>(pMMU);
 
     // Create the Cartridge
     m_cartridge = std::make_unique<Cartridge>();
@@ -83,24 +85,13 @@ CPU::CPU() :
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
-}
 
-CPU::~CPU()
-{
-    m_timer.reset();
-    m_serial.reset();
-    m_joypad.reset();
-    m_APU.reset();
-    m_GPU.reset();
-    m_cartridge.reset();
-    m_MMU.reset();
-
-    Logger::Log("CPU destroyed.");
+    return m_MMU->Initialize();
 }
 
 bool CPU::Initialize()
 {
-    return m_MMU->Initialize();
+    return Initialize(new MMU());
 }
 
 bool CPU::LoadROM(std::string path)
@@ -110,43 +101,47 @@ bool CPU::LoadROM(std::string path)
 
 void CPU::StepFrame()
 {
-    if (m_isHalted)
-    {
-        return;
-    }
-
     while (m_cycles < CyclesPerFrame)
     {
-        // Read through the memory, starting at m_PC
-        byte opCode = m_MMU->ReadByte(m_PC);
-        opCodeFunction instruction; // Execute the correct function for each OpCode
-
-        if (opCode == 0xCB)
+        if (m_isHalted)
         {
-            m_PC += 1;
-            opCode = m_MMU->ReadByte(m_PC);
-            instruction = m_operationMapCB[opCode];
-        }
-        else
-        {
-            instruction = m_operationMap[opCode];
-        }
-
-        if (instruction != nullptr)
-        {
-            (this->*instruction)();
-        }
-        else
-        {
-            Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
-            HALT();
             return;
         }
+
+        Step();
     }
 
     // Reset the cycles. If we went over our max cycles, the next frame will start a
     // few cycles ahead.
     m_cycles -= CyclesPerFrame;
+}
+
+void CPU::Step()
+{
+    // Read through the memory, starting at m_PC
+    byte opCode = m_MMU->ReadByte(m_PC);
+    opCodeFunction instruction; // Execute the correct function for each OpCode
+
+    if (opCode == 0xCB)
+    {
+        m_PC += 1;
+        opCode = m_MMU->ReadByte(m_PC);
+        instruction = m_operationMapCB[opCode];
+    }
+    else
+    {
+        instruction = m_operationMap[opCode];
+    }
+
+    if (instruction != nullptr)
+    {
+        (this->*instruction)();
+    }
+    else
+    {
+        Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
+        HALT();
+    }
 }
 
 byte CPU::GetHighByte(ushort dest)
@@ -234,7 +229,7 @@ void CPU::INCC()
 
     // Flags affected: z0h- (znhc)
     // Affects Z, clears N, affects H
-    if (GetHighByte(m_AF) == 0)
+    if (C == 0x00)
     {
         SetFlag(ZeroFlag);
     }
@@ -298,7 +293,7 @@ void CPU::JRNZe()
     if (IsFlagSet(ZeroFlag))
     {
         m_PC += 2;
-        m_cycles += 12;
+        m_cycles += 8;
     }
     else
     {
@@ -306,6 +301,8 @@ void CPU::JRNZe()
         sbyte arg = static_cast<sbyte>(m_MMU->ReadByte(m_PC));
         m_PC += 1;
         m_PC += arg;
+
+        m_cycles += 12;
     }
 
     // No flags affected

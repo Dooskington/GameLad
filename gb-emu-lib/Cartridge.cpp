@@ -111,7 +111,7 @@ bool Cartridge::LoadROM(std::string path)
         size = file.tellg();
         file.seekg(0, std::ios::beg);
 
-        m_ROM = std::unique_ptr<byte>(new byte[size.seekpos()]);
+        m_ROM = std::unique_ptr<byte>(new byte[static_cast<unsigned int>(size.seekpos())]);
 
         if (file.read(reinterpret_cast<char*>(m_ROM.get()), size))
         {
@@ -175,7 +175,7 @@ bool Cartridge::LoadMBC(__int64 actualSize)
         return false;
     }
 
-    __int64 ramSize = 0;
+    unsigned int ramSize = 0;
     switch (ramSizeFlag)
     {
     case RAM_None:

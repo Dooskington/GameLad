@@ -1,6 +1,6 @@
 #pragma once
 
-class MMU : public IMemoryUnit
+class MMU : public IMMU
 {
 public:
     MMU();
