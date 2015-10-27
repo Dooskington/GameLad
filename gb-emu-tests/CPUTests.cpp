@@ -8,26 +8,29 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 TEST_CLASS(CPUTests)
 {
 private:
-    class TestMMU : public IMMU
+    // This is a test MMU for use by the CPUTests
+    class CPUTestsMMU : public IMMU
     {
     public:
-        TestMMU(byte* memory, int size)
+        CPUTestsMMU(byte* memory, int size)
         {
             memset(m_data, 0x00, ARRAYSIZE(m_data));
             memcpy_s(m_data, ARRAYSIZE(m_data), memory, size);
         }
 
-        ~TestMMU()
+        ~CPUTestsMMU()
         {
         }
 
         bool Initialize()
         {
+            // Nothing to do
             return true;
         }
 
         void RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit)
         {
+            // Ignore registration, we got this.
         }
 
         unsigned short ReadUShort(const ushort& address)
@@ -57,13 +60,19 @@ public:
     // 0x00
     TEST_METHOD(NOP_Test)
     {
+        // Load a NOP into the first byte of memory
         byte m_Mem[] = { 0x00 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new TestMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
 
+        // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
         spCPU->Step();
+
+        // Verify expectations after
         Assert::AreEqual(4, (int)spCPU->m_cycles);
         Assert::AreEqual(1, (int)spCPU->m_PC);
 
@@ -73,14 +82,20 @@ public:
     // 0x0C
     TEST_METHOD(INCC_Test)
     {
+        // Load two INCC operators
         byte m_Mem[] = { 0x0C, 0x0C };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new TestMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
 
+        // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0000, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_BC);
+
+        // Step the CPU 1 OpCode
         spCPU->Step();
+
+        // Verify expectations after
         Assert::AreEqual(4, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0x0001, (int)spCPU->m_BC);
@@ -88,8 +103,11 @@ public:
         Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
+        // Set C to 0xFF to cause Zero and HalfCarry to be set and execute
         spCPU->m_BC = 0x00FF;
         spCPU->Step();
+
+        // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_BC);
@@ -103,13 +121,19 @@ public:
     // 0x0E
     TEST_METHOD(LDCe_Test)
     {
+        // Load LDCe and 0x12 into memory
         byte m_Mem[] = { 0x0E, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new TestMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
 
+        // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
         spCPU->Step();
+
+        // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0012, (int)spCPU->m_BC);
