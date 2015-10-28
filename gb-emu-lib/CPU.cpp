@@ -39,7 +39,7 @@ bool CPU::Initialize(IMMU* pMMU)
     m_cartridge = std::make_unique<Cartridge>();
 
     // Create the GPU
-    m_GPU = std::make_unique<GPU>();
+    m_GPU = std::unique_ptr<GPU>(new GPU(pMMU));
 
     // Create the APU
     m_APU = std::make_unique<APU>();

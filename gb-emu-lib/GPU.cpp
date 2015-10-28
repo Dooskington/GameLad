@@ -26,7 +26,19 @@
 #define ObjectPalette1Data 0xFF49
 #define DMATransferAndStartAddress 0xFF46
 
-GPU::GPU()
+GPU::GPU(IMMU* pMMU) :
+    m_MMU(pMMU),
+    m_LCDControl(0x00),
+    m_LCDControllerStatus(0x00),
+    m_ScrollY(0x00),
+    m_ScrollX(0x00),
+    m_LCDControllerYCoordinate(0x00),
+    m_LYCompare(0x00),
+    m_WindowYPosition(0x00),
+    m_WindowXPositionMinus7(0x00),
+    m_BGPaletteData(0x00),
+    m_ObjectPalette0Data(0x00),
+    m_ObjectPalette1Data(0x00)
 {
     Logger::Log("GPU created.");
 }
@@ -53,18 +65,29 @@ byte GPU::ReadByte(const ushort& address)
     switch (address)
     {
     case LCDControl:
+        return m_LCDControl;
     case LCDControllerStatus:
+        return m_LCDControllerStatus;
     case ScrollY:
+        return m_ScrollY;
     case ScrollX:
+        return m_ScrollX;
     case LCDControllerYCoordinate:
+        return m_LCDControllerYCoordinate;
     case LYCompare:
+        return m_LYCompare;
     case WindowYPosition:
+        return m_WindowYPosition;
     case WindowXPositionMinus7:
+        return m_WindowXPositionMinus7;
     case BGPaletteData:
+        return m_BGPaletteData;
     case ObjectPalette0Data:
+        return m_ObjectPalette0Data;
     case ObjectPalette1Data:
+        return m_ObjectPalette1Data;
     case DMATransferAndStartAddress:
-        // TODO: NYI
+        Logger::Log("GPU::ReadByte cannot read from address 0x%04X (DMATransferAndStartAddress)", address);
         return 0x00;
     default:
         Logger::Log("GPU::ReadByte cannot read from address 0x%04X", address);
@@ -90,21 +113,63 @@ bool GPU::WriteByte(const ushort& address, const byte val)
     switch (address)
     {
     case LCDControl:
+        m_LCDControl = val;
+        return true;
     case LCDControllerStatus:
+        // Bits 7-3 are writable, Bits 2-0 are read only
+        m_LCDControllerStatus = (val & 0xF8) | (m_LCDControllerStatus & 0x07);
+        return true;
     case ScrollY:
+        m_ScrollY = val;
+        return true;
     case ScrollX:
+        m_ScrollX = val;
+        return true;
     case LCDControllerYCoordinate:
+        Logger::Log("GPU::WriteByte cannot write to address 0x%04X (LCDControllerYCoordinate)", address);
+        return false;
     case LYCompare:
+        m_LYCompare = val;
+        return true;
     case WindowYPosition:
+        m_WindowYPosition = val;
+        return true;
     case WindowXPositionMinus7:
+        m_WindowXPositionMinus7 = val;
+        return true;
     case BGPaletteData:
+        m_BGPaletteData = val;
+        return true;
     case ObjectPalette0Data:
+        m_ObjectPalette0Data = val;
+        return true;
     case ObjectPalette1Data:
+        m_ObjectPalette1Data = val;
+        return true;
     case DMATransferAndStartAddress:
-        // TODO: NYI
+        LaunchDMATransfer(val);
         return true;
     default:
         Logger::Log("GPU::WriteByte cannot write to address 0x%04X", address);
         return false;
+    }
+}
+
+void GPU::LaunchDMATransfer(const byte address)
+{
+    /*
+    DMA Transfer and Start Address
+    Writing to this register launches a DMA transfer from ROM or RAM to OAM memory (sprite attribute
+    table). The written value specifies the transfer source address divided by 100h, ie. source &
+    destination are:
+
+    Source:      XX00-XX9F   ;XX in range from 00-F1h
+    Destination: FE00-FE9F
+    */
+
+    ushort source = (static_cast<ushort>(address) * 0x0100);
+    for (byte offset = 0x00; offset < 0x9F; offset++)
+    {
+        WriteByte(0xFE00 | offset, m_MMU->ReadByte(source | offset));
     }
 }
