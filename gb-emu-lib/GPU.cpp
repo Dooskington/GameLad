@@ -1,33 +1,30 @@
 #include "PCH.hpp"
 #include "GPU.hpp"
 
-// FF40 - LCDC - LCD Control (R/W)
-// FF41 - STAT - LCDC Status (R/W)
-// FF42 - SCY - Scroll Y (R/W)
-// FF43 - SCX - Scroll X (R/W)
-// FF44 - LY - LCDC Y-Coordinate (R)
-// FF45 - LYC - LY Compare (R/W)
-// FF4A - WY - Window Y Position (R/W)
-// FF4B - WX - Window X Position minus 7 (R/W)
-// FF47 - BGP - BG Palette Data (R/W) - Non CGB Mode Only
-// FF48 - OBP0 - Object Palette 0 Data (R/W) - Non CGB Mode Only
-// FF49 - OBP1 - Object Palette 1 Data (R/W) - Non CGB Mode Only
-// FF46 - DMA - DMA Transfer and Start Address (W)
-#define LCDControl 0xFF40
-#define LCDControllerStatus 0xFF41
-#define ScrollY 0xFF42
-#define ScrollX 0xFF43
-#define LCDControllerYCoordinate 0xFF44
-#define LYCompare 0xFF45
-#define WindowYPosition 0xFF4A
-#define WindowXPositionMinus7 0xFF4B
-#define BGPaletteData 0xFF47
-#define ObjectPalette0Data 0xFF48
-#define ObjectPalette1Data 0xFF49
-#define DMATransferAndStartAddress 0xFF46
+/*
+FF40 - LCDC - LCD Control (R/W)
+Bit 7 - LCD Display Enable             (0=Off, 1=On)
+Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+Bit 5 - Window Display Enable          (0=Off, 1=On)
+Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
+Bit 2 - OBJ (Sprite) Size              (0=8x8, 1=8x16)
+Bit 1 - OBJ (Sprite) Display Enable    (0=Off, 1=On)
+Bit 0 - BG Display (for CGB see below) (0=Off, 1=On)
+*/
+#define IsLCDDisplayEnabled ISBITSET(m_LCDControl, 7)
+#define WindowTileMapDisplaySelect ISBITSET(m_LCDControl, 6)
+#define WindowDisplayEnable ISBITSET(m_LCDControl, 5)
+#define BGWindowTileDataSelect ISBITSET(m_LCDControl, 4)
+#define BGWTileMapDisplaySelect ISBITSET(m_LCDControl, 3)
+#define OBJSize ISBITSET(m_LCDControl, 2)
+#define OBJDisplayEnable ISBITSET(m_LCDControl, 1)
+#define BGDisplay ISBITSET(m_LCDControl, 0)
 
 GPU::GPU(IMMU* pMMU) :
     m_MMU(pMMU),
+    m_ModeClock(0),
+    m_Mode(ModeReadingOAM),
     m_LCDControl(0x00),
     m_LCDControllerStatus(0x00),
     m_ScrollY(0x00),
@@ -46,6 +43,90 @@ GPU::GPU(IMMU* pMMU) :
 GPU::~GPU()
 {
     Logger::Log("GPU destroyed.");
+}
+
+/*
+This method is called after the CPU executes an operation.  It tallies the number of cycles spent
+and ensures that the GPU switches between the various states listed below.  Essentially it loops
+through states 2, 3, and 0 until all 144 lines have been drawn. Then, it moves to state 1 where it
+cycles for 4560 cycles (10 lines @ 456 cycles per line). Finally, it starts over.
+
+The following are typical when the display is enabled:
+Mode 2  2_____2_____2_____2_____2_____2___________________2____
+Mode 3  _33____33____33____33____33____33__________________3___
+Mode 0  ___000___000___000___000___000___000________________000
+Mode 1  ____________________________________11111111111111_____
+
+The Mode Flag goes through the values 0, 2, and 3 at a cycle of about 109uS. 0 is present about 
+48.6uS, 2 about 19uS, and 3 about 41uS. This is interrupted every 16.6ms by the VBlank (1). 
+The mode flag stays set at 1 for about 1.08 ms.
+
+Mode 0 is present between 201-207 clks, 2 about 77-83 clks, and 3 about 169-175 clks. A complete 
+cycle through these states takes 456 clks. VBlank lasts 4560 clks. A complete screen refresh occurs
+every 70224 clks.)
+*/
+void GPU::Step(unsigned long cycles)
+{
+    // If the LCD screen is of, then reset all values and exit early
+    if (!IsLCDDisplayEnabled)
+    {
+        m_LCDControllerYCoordinate = 0x00;
+        m_ModeClock = 0;
+        m_Mode = ModeReadingOAM;
+        return;
+    }
+
+    m_ModeClock += cycles;
+
+    switch (m_Mode)
+    {
+    case ModeVBlank:
+        if (m_ModeClock >= VBlankCycles)
+        {
+            m_ModeClock -= VBlankCycles;
+            m_LCDControllerYCoordinate++;
+
+            if (m_LCDControllerYCoordinate == 154)
+            {
+                m_Mode = ModeReadingOAM;
+                m_LCDControllerYCoordinate = 0x00;
+            }
+        }
+        return;
+    case ModeReadingOAM:
+        if (m_ModeClock >= ReadingOAMCycles)
+        {
+            m_ModeClock -= ReadingOAMCycles;
+            m_Mode = ModeReadingOAMVRAM;
+        }
+        return;
+    case ModeReadingOAMVRAM:
+        if (m_ModeClock >= ReadingOAMVRAMCycles)
+        {
+            m_ModeClock -= ReadingOAMVRAMCycles;
+            m_Mode = ModeHBlank;
+        }
+        return;
+    case ModeHBlank:
+        if (m_ModeClock >= HBlankCycles)
+        {
+            m_ModeClock -= HBlankCycles;
+
+            m_LCDControllerYCoordinate++;
+            if (m_LCDControllerYCoordinate == 144)
+            {
+                // TODO: Render image
+                Logger::Log("Render image!");
+                m_Mode = ModeVBlank;
+            }
+            else
+            {
+                // TODO: Render scan line
+                m_Mode = ModeReadingOAM;
+            }
+        }
+        return;
+    }
 }
 
 // IMemoryUnit

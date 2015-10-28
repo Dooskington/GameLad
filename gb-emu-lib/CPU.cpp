@@ -103,11 +103,6 @@ void CPU::StepFrame()
 {
     while (m_cycles < CyclesPerFrame)
     {
-        if (m_isHalted)
-        {
-            return;
-        }
-
         Step();
     }
 
@@ -118,30 +113,42 @@ void CPU::StepFrame()
 
 void CPU::Step()
 {
-    // Read through the memory, starting at m_PC
-    byte opCode = m_MMU->ReadByte(m_PC);
-    opCodeFunction instruction; // Execute the correct function for each OpCode
+    unsigned long preCycles = m_cycles;
 
-    if (opCode == 0xCB)
+    if (m_isHalted)
     {
-        m_PC += 1;
-        opCode = m_MMU->ReadByte(m_PC);
-        instruction = m_operationMapCB[opCode];
+        NOP();
     }
     else
     {
-        instruction = m_operationMap[opCode];
+        // Read through the memory, starting at m_PC
+        byte opCode = m_MMU->ReadByte(m_PC);
+        opCodeFunction instruction; // Execute the correct function for each OpCode
+
+        if (opCode == 0xCB)
+        {
+            m_PC += 1;
+            opCode = m_MMU->ReadByte(m_PC);
+            instruction = m_operationMapCB[opCode];
+        }
+        else
+        {
+            instruction = m_operationMap[opCode];
+        }
+
+        if (instruction != nullptr)
+        {
+            (this->*instruction)();
+        }
+        else
+        {
+            Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
+            HALT();
+        }
     }
 
-    if (instruction != nullptr)
-    {
-        (this->*instruction)();
-    }
-    else
-    {
-        Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
-        HALT();
-    }
+    // Step GPU by # of elapsed cycles
+    m_GPU->Step(m_cycles - preCycles);
 }
 
 byte CPU::GetHighByte(ushort dest)
