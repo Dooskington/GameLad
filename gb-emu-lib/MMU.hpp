@@ -6,7 +6,6 @@ public:
     MMU();
     ~MMU();
 
-    bool Initialize();
     void RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit);
     unsigned short ReadUShort(const ushort& address);
 
@@ -15,15 +14,12 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    bool LoadBootRom(std::string path);
-
     byte ReadByteInternal(const ushort& address);
     bool WriteByteInternal(const ushort& address, const byte val);
 
 private:
     // Booting
     bool m_isBooting;
-    byte m_bios[0xFF + 1]; // The boot rom, loaded from bios.bin
 
     // Memory
     IMemoryUnit* m_memoryUnits[0xFFFF + 1];

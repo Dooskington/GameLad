@@ -86,7 +86,7 @@ bool CPU::Initialize(IMMU* pMMU)
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
 
-    return m_MMU->Initialize();
+    return true;
 }
 
 bool CPU::Initialize()
@@ -114,6 +114,11 @@ void CPU::StepFrame()
 void CPU::TriggerInterrupt(byte interrupt)
 {
     // TODO: Process interrupts here!
+}
+
+byte* CPU::GetCurrentFrame()
+{
+    return m_GPU->GetCurrentFrame();
 }
 
 void CPU::Step()

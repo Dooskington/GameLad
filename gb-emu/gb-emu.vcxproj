@@ -23,7 +23,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="res\bios.bin" />
     <None Include="res\tests\cpu_instrs.gb" />
     <None Include="res\tests\instr_timing.gb" />
   </ItemGroup>

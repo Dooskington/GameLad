@@ -14,4 +14,5 @@ public:
     virtual bool LoadROM(std::string path) = 0;
     virtual void StepFrame() = 0;
     virtual void TriggerInterrupt(byte interrupt) = 0;
+    virtual byte* GetCurrentFrame() = 0;
 };
