@@ -39,7 +39,7 @@ bool CPU::Initialize(IMMU* pMMU)
     m_cartridge = std::make_unique<Cartridge>();
 
     // Create the GPU
-    m_GPU = std::unique_ptr<GPU>(new GPU(pMMU));
+    m_GPU = std::unique_ptr<GPU>(new GPU(pMMU, this));
 
     // Create the APU
     m_APU = std::make_unique<APU>();
@@ -109,6 +109,11 @@ void CPU::StepFrame()
     // Reset the cycles. If we went over our max cycles, the next frame will start a
     // few cycles ahead.
     m_cycles -= CyclesPerFrame;
+}
+
+void CPU::TriggerInterrupt(byte interrupt)
+{
+    // TODO: Process interrupts here!
 }
 
 void CPU::Step()

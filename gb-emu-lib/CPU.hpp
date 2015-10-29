@@ -37,6 +37,7 @@ public:
     bool Initialize();
     bool LoadROM(std::string path);
     void StepFrame();
+    void TriggerInterrupt(byte interrupt);
 
 private:
     void Step();
