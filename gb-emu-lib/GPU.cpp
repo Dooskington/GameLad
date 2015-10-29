@@ -2,13 +2,6 @@
 #include "GPU.hpp"
 
 /*
-TODO:
-- INT 40
-
-*/
-
-
-/*
 FF40 - LCDC - LCD Control (R/W)
 Bit 7 - LCD Display Enable             (0=Off, 1=On)
 Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
@@ -53,8 +46,9 @@ const byte GBColors[]
     0xEB, 0xC4, 0x60, 0x00
 };
 
-GPU::GPU(IMMU* pMMU) :
+GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     m_MMU(pMMU),
+    m_CPU(pCPU),
     m_ModeClock(0),
     m_LCDControl(0x00),
     m_ScrollY(0x00),
@@ -137,9 +131,9 @@ void GPU::Step(unsigned long cycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
             SETMODE(ModeHBlank);
-            if (HBlankInterrupt)
+            if (HBlankInterrupt && (m_CPU != nullptr))
             {
-                // TODO: Send HBlank interrupt (STAT 0x48)
+                m_CPU->TriggerInterrupt(INT48);
             }
         }
         break;
@@ -153,9 +147,9 @@ void GPU::Step(unsigned long cycles)
             {
                 SETMODE(ModeVBlank);
                 RenderImage();
-                if (VBlankInterrupt)
+                if (VBlankInterrupt && (m_CPU != nullptr))
                 {
-                    // TODO: Send VBlank interrupt (0x40)
+                    m_CPU->TriggerInterrupt(INT40);
                 }
             }
             else
@@ -172,8 +166,10 @@ void GPU::Step(unsigned long cycles)
     {
         m_LCDControllerStatus = SETBIT(m_LCDControllerStatus, 2);
 
-        // TODO: Fire Coincidence interrupt
-        // INT 48 - LCDC Status Interrupt
+        if (m_CPU != nullptr)
+        {
+            m_CPU->TriggerInterrupt(INT48);
+        }
     }
     else
     {
@@ -186,12 +182,12 @@ byte GPU::ReadByte(const ushort& address)
 {
     if (address >= 0x8000 && address <= 0x9FFF)
     {
-        // TODO: Test mode to see if available
+        // CONSIDER: Test mode to see if available
         return m_VRAM[address - 0x8000];
     }
     else if (address >= 0xFE00 && address <= 0xFE9F)
     {
-        // TODO: Test mode to see if available
+        // CONSIDER: Test mode to see if available
         return m_OAM[address - 0xFE00];
     }
 
@@ -232,13 +228,13 @@ bool GPU::WriteByte(const ushort& address, const byte val)
 {
     if (address >= 0x8000 && address <= 0x9FFF)
     {
-        // TODO: Test mode to see if available
+        // CONSIDER: Test mode to see if available
         m_VRAM[address - 0x8000] = val;
         return true;
     }
     else if (address >= 0xFE00 && address <= 0xFE9F)
     {
-        // TODO: Test mode to see if available
+        // CONSIDER: Test mode to see if available
         m_OAM[address - 0xFE00] = val;
         return true;
     }

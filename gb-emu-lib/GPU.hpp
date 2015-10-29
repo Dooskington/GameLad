@@ -40,7 +40,7 @@ class GPU : public IMemoryUnit
     friend class GPUTests;
 
 public:
-    GPU(IMMU* pMMU);
+    GPU(IMMU* pMMU, ICPU* pCPU);
     ~GPU();
 
     void Step(unsigned long cycles);
@@ -57,6 +57,7 @@ private:
 
 private:
     IMMU* m_MMU;
+    ICPU* m_CPU;
     byte m_VRAM[0x1FFF + 1];
     byte m_OAM[0x009F + 1];
     byte m_DisplayPixels[160 * 144 * 4];
