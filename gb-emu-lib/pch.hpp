@@ -9,12 +9,6 @@
 
 #include <map>
 
-#if WINDOWS
-    #include <SDL.h>
-#else
-    #include "SDL2/SDL.h"
-#endif
-
 typedef unsigned char byte;
 typedef signed char sbyte;
 typedef unsigned short ushort;
