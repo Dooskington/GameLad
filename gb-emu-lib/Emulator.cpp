@@ -42,3 +42,8 @@ bool Emulator::Initialize(std::string rom)
 
     return true;
 }
+
+byte* Emulator::GetCurrentFrame()
+{
+    return m_cpu->GetCurrentFrame();
+}

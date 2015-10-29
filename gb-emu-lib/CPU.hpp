@@ -38,6 +38,7 @@ public:
     bool LoadROM(std::string path);
     void StepFrame();
     void TriggerInterrupt(byte interrupt);
+    byte* GetCurrentFrame();
 
 private:
     void Step();

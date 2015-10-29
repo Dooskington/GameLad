@@ -116,6 +116,11 @@ void CPU::TriggerInterrupt(byte interrupt)
     // TODO: Process interrupts here!
 }
 
+byte* CPU::GetCurrentFrame()
+{
+    return m_GPU->GetCurrentFrame();
+}
+
 void CPU::Step()
 {
     unsigned long preCycles = m_cycles;

@@ -63,6 +63,7 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
 {
     SETMODE(ModeReadingOAM);
     memset(m_DisplayPixels, 0x00, ARRAYSIZE(m_DisplayPixels));
+
     Logger::Log("GPU created.");
 }
 
@@ -175,6 +176,11 @@ void GPU::Step(unsigned long cycles)
     {
         m_LCDControllerStatus = CLEARBIT(m_LCDControllerStatus, 2);
     }
+}
+
+byte* GPU::GetCurrentFrame()
+{
+    return m_DisplayPixels;
 }
 
 // IMemoryUnit
@@ -356,10 +362,7 @@ void GPU::RenderBackgroundScanline()
 
         byte color = palette[pLo + pHi];
 
-        int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
-        m_DisplayPixels[index + 0] = color;
-        m_DisplayPixels[index + 1] = color;
-        m_DisplayPixels[index + 2] = color;
-        m_DisplayPixels[index + 3] = 0xFF;
+        int index = (m_LCDControllerYCoordinate * 160) + x;
+        m_DisplayPixels[index] = color;
     }
 }
