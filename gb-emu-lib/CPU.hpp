@@ -95,7 +95,7 @@ private:
     std::unique_ptr<Timer> m_timer;
 
     // Clock cycles
-    unsigned int m_cycles; // The current number of cycles
+    unsigned long m_cycles; // The current number of cycles
     bool m_isHalted;
 
     // Registers

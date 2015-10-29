@@ -39,7 +39,7 @@ bool CPU::Initialize(IMMU* pMMU)
     m_cartridge = std::make_unique<Cartridge>();
 
     // Create the GPU
-    m_GPU = std::make_unique<GPU>();
+    m_GPU = std::unique_ptr<GPU>(new GPU(pMMU));
 
     // Create the APU
     m_APU = std::make_unique<APU>();
@@ -103,11 +103,6 @@ void CPU::StepFrame()
 {
     while (m_cycles < CyclesPerFrame)
     {
-        if (m_isHalted)
-        {
-            return;
-        }
-
         Step();
     }
 
@@ -118,30 +113,42 @@ void CPU::StepFrame()
 
 void CPU::Step()
 {
-    // Read through the memory, starting at m_PC
-    byte opCode = m_MMU->ReadByte(m_PC);
-    opCodeFunction instruction; // Execute the correct function for each OpCode
+    unsigned long preCycles = m_cycles;
 
-    if (opCode == 0xCB)
+    if (m_isHalted)
     {
-        m_PC += 1;
-        opCode = m_MMU->ReadByte(m_PC);
-        instruction = m_operationMapCB[opCode];
+        NOP();
     }
     else
     {
-        instruction = m_operationMap[opCode];
+        // Read through the memory, starting at m_PC
+        byte opCode = m_MMU->ReadByte(m_PC);
+        opCodeFunction instruction; // Execute the correct function for each OpCode
+
+        if (opCode == 0xCB)
+        {
+            m_PC += 1;
+            opCode = m_MMU->ReadByte(m_PC);
+            instruction = m_operationMapCB[opCode];
+        }
+        else
+        {
+            instruction = m_operationMap[opCode];
+        }
+
+        if (instruction != nullptr)
+        {
+            (this->*instruction)();
+        }
+        else
+        {
+            Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
+            HALT();
+        }
     }
 
-    if (instruction != nullptr)
-    {
-        (this->*instruction)();
-    }
-    else
-    {
-        Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
-        HALT();
-    }
+    // Step GPU by # of elapsed cycles
+    m_GPU->Step(m_cycles - preCycles);
 }
 
 byte CPU::GetHighByte(ushort dest)
@@ -171,7 +178,7 @@ void CPU::SetFlag(byte flag)
     // This shifts the bit to the left to where the flag is
     // Then ORs it with the Flag register.
     // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
-    SetLowByte(&m_AF, (GetLowByte(m_AF) | (1 << flag)) & 0xF0);
+    SetLowByte(&m_AF, SETBIT(GetLowByte(m_AF), flag) & 0xF0);
 }
 
 void CPU::ClearFlag(byte flag)
@@ -180,7 +187,7 @@ void CPU::ClearFlag(byte flag)
     // Then it inverts all of the bits
     // Then ANDs it with the Flag register.
     // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
-    SetLowByte(&m_AF, (GetLowByte(m_AF) & ~(1 << flag)) & 0xF0);
+    SetLowByte(&m_AF, CLEARBIT(GetLowByte(m_AF), flag) & 0xF0);
 }
 
 bool CPU::IsFlagSet(byte flag)

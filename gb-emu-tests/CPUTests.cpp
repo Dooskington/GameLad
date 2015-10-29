@@ -15,7 +15,10 @@ private:
         CPUTestsMMU(byte* memory, int size)
         {
             memset(m_data, 0x00, ARRAYSIZE(m_data));
-            memcpy_s(m_data, ARRAYSIZE(m_data), memory, size);
+            if (memory != nullptr)
+            {
+                memcpy_s(m_data, ARRAYSIZE(m_data), memory, size);
+            }
         }
 
         ~CPUTestsMMU()
