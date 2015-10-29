@@ -51,14 +51,17 @@ public:
 
 private:
     void LaunchDMATransfer(const byte address);
+    void RenderScanline();
+    void RenderImage();
+    void RenderBackgroundScanline();
 
 private:
     IMMU* m_MMU;
     byte m_VRAM[0x1FFF + 1];
     byte m_OAM[0x009F + 1];
+    byte m_DisplayPixels[160 * 144 * 4];
 
     unsigned long m_ModeClock;
-    byte m_Mode;
     
     byte m_LCDControl;
     byte m_LCDControllerStatus;

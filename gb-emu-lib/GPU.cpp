@@ -2,6 +2,13 @@
 #include "GPU.hpp"
 
 /*
+TODO:
+- INT 40
+
+*/
+
+
+/*
 FF40 - LCDC - LCD Control (R/W)
 Bit 7 - LCD Display Enable             (0=Off, 1=On)
 Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
@@ -19,14 +26,37 @@ Bit 0 - BG Display (for CGB see below) (0=Off, 1=On)
 #define BGWTileMapDisplaySelect ISBITSET(m_LCDControl, 3)
 #define OBJSize ISBITSET(m_LCDControl, 2)
 #define OBJDisplayEnable ISBITSET(m_LCDControl, 1)
-#define BGDisplay ISBITSET(m_LCDControl, 0)
+#define BGDisplayEnable ISBITSET(m_LCDControl, 0)
+
+/*
+FF41 - STAT - LCDC Status (R/W)
+Bit 6 - LYC=LY Coincidence Interrupt (1=Enable) (Read/Write)
+Bit 5 - Mode 2 OAM Interrupt         (1=Enable) (Read/Write)
+Bit 4 - Mode 1 V-Blank Interrupt     (1=Enable) (Read/Write)
+Bit 3 - Mode 0 H-Blank Interrupt     (1=Enable) (Read/Write)
+Bit 2 - Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
+Bit 1-0 - Mode Flag       (Mode 0-3, see below) (Read Only)
+    0: During H-Blank
+    1: During V-Blank
+    2: During Searching OAM-RAM
+    3: During Transfering Data to LCD Driver
+*/
+#define LYCoincidenceInterrupt ISBITSET(m_LCDControllerStatus , 6)
+#define OAMInterrupt ISBITSET(m_LCDControllerStatus , 5)
+#define VBlankInterrupt ISBITSET(m_LCDControllerStatus , 4)
+#define HBlankInterrupt ISBITSET(m_LCDControllerStatus , 3)
+#define SETMODE(mode) m_LCDControllerStatus = ((m_LCDControllerStatus & ~0x03) | mode)
+#define GETMODE (m_LCDControllerStatus & 0x03)
+
+const byte GBColors[]
+{
+    0xEB, 0xC4, 0x60, 0x00
+};
 
 GPU::GPU(IMMU* pMMU) :
     m_MMU(pMMU),
     m_ModeClock(0),
-    m_Mode(ModeReadingOAM),
     m_LCDControl(0x00),
-    m_LCDControllerStatus(0x00),
     m_ScrollY(0x00),
     m_ScrollX(0x00),
     m_LCDControllerYCoordinate(0x00),
@@ -37,6 +67,8 @@ GPU::GPU(IMMU* pMMU) :
     m_ObjectPalette0Data(0x00),
     m_ObjectPalette1Data(0x00)
 {
+    SETMODE(ModeReadingOAM);
+    memset(m_DisplayPixels, 0x00, ARRAYSIZE(m_DisplayPixels));
     Logger::Log("GPU created.");
 }
 
@@ -57,11 +89,11 @@ Mode 3  _33____33____33____33____33____33__________________3___
 Mode 0  ___000___000___000___000___000___000________________000
 Mode 1  ____________________________________11111111111111_____
 
-The Mode Flag goes through the values 0, 2, and 3 at a cycle of about 109uS. 0 is present about 
-48.6uS, 2 about 19uS, and 3 about 41uS. This is interrupted every 16.6ms by the VBlank (1). 
+The Mode Flag goes through the values 0, 2, and 3 at a cycle of about 109uS. 0 is present about
+48.6uS, 2 about 19uS, and 3 about 41uS. This is interrupted every 16.6ms by the VBlank (1).
 The mode flag stays set at 1 for about 1.08 ms.
 
-Mode 0 is present between 201-207 clks, 2 about 77-83 clks, and 3 about 169-175 clks. A complete 
+Mode 0 is present between 201-207 clks, 2 about 77-83 clks, and 3 about 169-175 clks. A complete
 cycle through these states takes 456 clks. VBlank lasts 4560 clks. A complete screen refresh occurs
 every 70224 clks.)
 */
@@ -72,13 +104,13 @@ void GPU::Step(unsigned long cycles)
     {
         m_LCDControllerYCoordinate = 0x00;
         m_ModeClock = 0;
-        m_Mode = ModeReadingOAM;
+        SETMODE(ModeReadingOAM);
         return;
     }
 
     m_ModeClock += cycles;
 
-    switch (m_Mode)
+    switch (GETMODE)
     {
     case ModeVBlank:
         if (m_ModeClock >= VBlankCycles)
@@ -88,25 +120,29 @@ void GPU::Step(unsigned long cycles)
 
             if (m_LCDControllerYCoordinate == 154)
             {
-                m_Mode = ModeReadingOAM;
+                SETMODE(ModeReadingOAM);
                 m_LCDControllerYCoordinate = 0x00;
             }
         }
-        return;
+        break;
     case ModeReadingOAM:
         if (m_ModeClock >= ReadingOAMCycles)
         {
             m_ModeClock -= ReadingOAMCycles;
-            m_Mode = ModeReadingOAMVRAM;
+            SETMODE(ModeReadingOAMVRAM);
         }
-        return;
+        break;
     case ModeReadingOAMVRAM:
         if (m_ModeClock >= ReadingOAMVRAMCycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
-            m_Mode = ModeHBlank;
+            SETMODE(ModeHBlank);
+            if (HBlankInterrupt)
+            {
+                // TODO: Send HBlank interrupt (STAT 0x48)
+            }
         }
-        return;
+        break;
     case ModeHBlank:
         if (m_ModeClock >= HBlankCycles)
         {
@@ -115,17 +151,33 @@ void GPU::Step(unsigned long cycles)
             m_LCDControllerYCoordinate++;
             if (m_LCDControllerYCoordinate == 144)
             {
-                // TODO: Render image
-                Logger::Log("Render image!");
-                m_Mode = ModeVBlank;
+                SETMODE(ModeVBlank);
+                RenderImage();
+                if (VBlankInterrupt)
+                {
+                    // TODO: Send VBlank interrupt (0x40)
+                }
             }
             else
             {
-                // TODO: Render scan line
-                m_Mode = ModeReadingOAM;
+                SETMODE(ModeReadingOAM);
+                RenderScanline();
             }
         }
-        return;
+        break;
+    }
+
+    // Bit 2 - Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
+    if (m_LYCompare == m_LCDControllerYCoordinate)
+    {
+        m_LCDControllerStatus = SETBIT(m_LCDControllerStatus, 2);
+
+        // TODO: Fire Coincidence interrupt
+        // INT 48 - LCDC Status Interrupt
+    }
+    else
+    {
+        m_LCDControllerStatus = CLEARBIT(m_LCDControllerStatus, 2);
     }
 }
 
@@ -252,5 +304,66 @@ void GPU::LaunchDMATransfer(const byte address)
     for (byte offset = 0x00; offset < 0x9F; offset++)
     {
         WriteByte(0xFE00 | offset, m_MMU->ReadByte(source | offset));
+    }
+}
+
+void GPU::RenderScanline()
+{
+    if (BGDisplayEnable)
+    {
+        RenderBackgroundScanline();
+    }
+
+    if (WindowDisplayEnable)
+    {
+        // RenderWindowsScanline();
+    }
+
+    if (OBJDisplayEnable)
+    {
+        //RenderOBJScanline();
+    }
+}
+
+void GPU::RenderImage()
+{
+}
+
+void GPU::RenderBackgroundScanline()
+{
+    const ushort tileNumberMap = 0x9800;
+    const ushort tileData = 0x8000;
+    byte palette[]
+    {
+        GBColors[m_BGPaletteData & 0x03],
+        GBColors[(m_BGPaletteData >> 2) & 0x03],
+        GBColors[(m_BGPaletteData >> 4) & 0x03],
+        GBColors[(m_BGPaletteData >> 6) & 0x03],
+    };
+
+    byte tileY = (byte)((m_LCDControllerYCoordinate + m_ScrollY) / 8);
+    byte tileYOffset = (byte)((m_LCDControllerYCoordinate + m_ScrollY) % 8);
+    for (byte x = 0; x < 160; x++)
+    {
+        byte tileX = (byte)((m_ScrollX + x) / 8);
+        byte tileNumber = ReadByte((ushort)(tileNumberMap + (tileY * 32) + tileX));
+        ushort tileDataPtr = (ushort)(tileData + tileNumber * 0x10);
+
+        tileDataPtr += (ushort)(tileYOffset * 2);
+
+        byte b1 = ReadByte(tileDataPtr);
+        byte b2 = ReadByte((ushort)(tileDataPtr + 1));
+
+        byte bit = (byte)(7 - ((m_ScrollX + x) % 8));
+        byte pLo = ISBITSET(b1, bit) ? 0x01 : 0x00;
+        byte pHi = ISBITSET(b2, bit) ? 0x02 : 0x00;
+
+        byte color = palette[pLo + pHi];
+
+        int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
+        m_DisplayPixels[index + 0] = color;
+        m_DisplayPixels[index + 1] = color;
+        m_DisplayPixels[index + 2] = color;
+        m_DisplayPixels[index + 3] = 0xFF;
     }
 }

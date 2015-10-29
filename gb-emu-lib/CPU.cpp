@@ -178,7 +178,7 @@ void CPU::SetFlag(byte flag)
     // This shifts the bit to the left to where the flag is
     // Then ORs it with the Flag register.
     // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
-    SetLowByte(&m_AF, (GetLowByte(m_AF) | (1 << flag)) & 0xF0);
+    SetLowByte(&m_AF, SETBIT(GetLowByte(m_AF), flag) & 0xF0);
 }
 
 void CPU::ClearFlag(byte flag)
@@ -187,7 +187,7 @@ void CPU::ClearFlag(byte flag)
     // Then it inverts all of the bits
     // Then ANDs it with the Flag register.
     // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
-    SetLowByte(&m_AF, (GetLowByte(m_AF) & ~(1 << flag)) & 0xF0);
+    SetLowByte(&m_AF, CLEARBIT(GetLowByte(m_AF), flag) & 0xF0);
 }
 
 bool CPU::IsFlagSet(byte flag)

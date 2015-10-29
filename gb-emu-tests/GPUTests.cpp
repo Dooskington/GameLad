@@ -66,14 +66,14 @@ public:
         std::unique_ptr<GPU> spGPU = std::unique_ptr<GPU>(new GPU(spMMU.get()));
 
         Assert::AreEqual(0, (int)spGPU->m_ModeClock);
-        Assert::AreEqual(ModeReadingOAM, (int)spGPU->m_Mode);
+        Assert::AreEqual(ModeReadingOAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
         Assert::IsFalse(ISBITSET(spGPU->m_LCDControl, 7));
         spGPU->Step(4);
 
         // LCD Is off, nothing happens:
         spGPU->Step(4);
         Assert::AreEqual(0, (int)spGPU->m_ModeClock);
-        Assert::AreEqual(ModeReadingOAM, (int)spGPU->m_Mode);
+        Assert::AreEqual(ModeReadingOAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
         Assert::IsFalse(ISBITSET(spGPU->m_LCDControl, 7));
 
         // Endable LCD
@@ -90,19 +90,19 @@ public:
             {
                 for (int cycles = spGPU->m_ModeClock; cycles < ReadingOAMCycles; cycles += 4)
                 {
-                    Assert::AreEqual(ModeReadingOAM, (int)spGPU->m_Mode);
+                    Assert::AreEqual(ModeReadingOAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
                     spGPU->Step(4);
                 }
 
                 for (int cycles = spGPU->m_ModeClock; cycles < ReadingOAMVRAMCycles; cycles += 4)
                 {
-                    Assert::AreEqual(ModeReadingOAMVRAM, (int)spGPU->m_Mode);
+                    Assert::AreEqual(ModeReadingOAMVRAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
                     spGPU->Step(4);
                 }
 
                 for (int cycles = spGPU->m_ModeClock; cycles < HBlankCycles; cycles += 4)
                 {
-                    Assert::AreEqual(ModeHBlank, (int)spGPU->m_Mode);
+                    Assert::AreEqual(ModeHBlank, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
                     spGPU->Step(4);
                 }
             }
@@ -110,14 +110,14 @@ public:
             {
                 for (int cycles = spGPU->m_ModeClock; cycles < VBlankCycles; cycles += 4)
                 {
-                    Assert::AreEqual(ModeVBlank, (int)spGPU->m_Mode);
+                    Assert::AreEqual(ModeVBlank, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
                     spGPU->Step(4);
                 }
             }
         }
 
         // By the time we get here, we should be back at the start
-        Assert::AreEqual(ModeReadingOAM, (int)spGPU->m_Mode);
+        Assert::AreEqual(ModeReadingOAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
         Assert::AreEqual(0, (int)spGPU->m_LCDControllerYCoordinate);
 
         spGPU.reset();
