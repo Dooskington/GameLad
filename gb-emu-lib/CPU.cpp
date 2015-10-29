@@ -51,7 +51,7 @@ bool CPU::Initialize(IMMU* pMMU)
     m_serial = std::make_unique<Serial>();
 
     // Create the Timer
-    m_timer = std::make_unique<Timer>();
+    m_timer = std::unique_ptr<Timer>(new Timer(this));
 
     m_MMU->RegisterMemoryUnit(0x0000, 0x7FFF, m_cartridge.get());
     m_MMU->RegisterMemoryUnit(0x8000, 0x9FFF, m_GPU.get());
