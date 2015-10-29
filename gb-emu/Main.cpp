@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 
     Emulator emulator;
 
-    if (emulator.Initialize())
+    if (emulator.Initialize("res/tests/cpu_instrs.gb"))
     {
         while (isRunning)
         {

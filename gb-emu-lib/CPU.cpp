@@ -86,7 +86,7 @@ bool CPU::Initialize(IMMU* pMMU)
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
 
-    return m_MMU->Initialize();
+    return true;
 }
 
 bool CPU::Initialize()
