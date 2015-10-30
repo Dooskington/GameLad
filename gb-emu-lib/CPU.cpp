@@ -159,6 +159,9 @@ void CPU::Step()
 
     // Step GPU by # of elapsed cycles
     m_GPU->Step(m_cycles - preCycles);
+
+    // Step the timer by the # of elapsed cycles
+    m_timer->Step(m_cycles - preCycles);
 }
 
 byte CPU::GetHighByte(ushort dest)

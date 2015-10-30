@@ -10,19 +10,52 @@
 #define TimerModulo 0xFF06
 #define TimerControl 0xFF07
 
-#define Frequency4096   0x40
-#define Frequency16384  0x10
-#define Frequency65536  0x04
+/*
+00:   4096 Hz(~4194 Hz SGB)     (1024 cycles)
+01 : 262144 Hz(~268400 Hz SGB)  (16 cycles)
+10 : 65536 Hz(~67110 Hz SGB)    (64 cycles)
+11 : 16384 Hz(~16780 Hz SGB)    (256 cycles)
+*/
+
+const ushort FrequencyCounts[]
+{
+    1024, 16, 64, 256
+};
+
+#define Frequency4096   0x00
 #define Frequency262144 0x01
+#define Frequency65536  0x02
+#define Frequency16384  0x03
 
 Timer::Counter::Counter(byte frequency) :
     m_Value(0x00),
-    m_Frequency(frequency)
+    m_Frequency(frequency),
+    m_IsRunning(true),
+    m_Cycles(0x00)
 {
 }
 
 bool Timer::Counter::Step(unsigned int cycles)
 {
+    if (!m_IsRunning)
+    {
+        return false;
+    }
+
+    // Count cycles until we reach the correct number for this timer frequency
+    m_Cycles += cycles;
+    if (m_Cycles >= FrequencyCounts[m_Frequency])
+    {
+        // Subtract cycles and increment value
+        m_Cycles -= FrequencyCounts[m_Frequency];
+        m_Value++;
+        if (m_Value == 0x00)
+        {
+            // If this overflowed, return true
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -34,6 +67,22 @@ byte Timer::Counter::GetValue()
 void Timer::Counter::SetValue(byte value)
 {
     m_Value = value;
+}
+
+void Timer::Counter::SetFrequency(byte frequency)
+{
+    m_Frequency = frequency;
+    m_Cycles = 0x00;
+}
+
+void Timer::Counter::Start()
+{
+    m_IsRunning = true;
+}
+
+void Timer::Counter::Stop()
+{
+    m_IsRunning = false;
 }
 
 Timer::Timer(ICPU* pCPU) :
@@ -58,16 +107,19 @@ Timer::~Timer()
 
 void Timer::Step(unsigned long cycles)
 {
+    m_DividerCounter->Step(cycles);
+
+    // If the timer counter overflows, reset to TimerModulo and trigger interrupt
     if (m_TimerCounter->Step(cycles))
     {
+        // If the timer counter overflows, set back to this value
+        m_TimerCounter->SetValue(m_TimerModulo);
+
         if (m_CPU != nullptr)
         {
             m_CPU->TriggerInterrupt(INT50);
-            m_TimerCounter->SetValue(m_TimerModulo);
         }
     }
-
-    m_DividerCounter->Step(cycles);
 }
 
 // IMemoryUnit
@@ -102,8 +154,16 @@ bool Timer::WriteByte(const ushort& address, const byte val)
     case TimerModulo:
         m_TimerModulo = val;
     case TimerControl:
-        // TODO: NYI
-        Logger::Log("Timer::WriteBytes: TimerControl is NYI!");
+        if (ISBITSET(val, 2))
+        {
+            m_TimerCounter->Start();
+        }
+        else
+        {
+            m_TimerCounter->Stop();
+        }
+
+        m_TimerCounter->SetFrequency(val & 0x03);
         return true;
     default:
         Logger::Log("Timer::ReadByte cannot write to address 0x%04X", address);

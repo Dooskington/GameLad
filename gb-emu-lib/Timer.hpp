@@ -11,10 +11,15 @@ private:
 
         byte GetValue();
         void SetValue(byte value);
+        void SetFrequency(byte frequency);
+        void Start();
+        void Stop();
 
     private:
+        bool m_IsRunning;
         byte m_Value;
         byte m_Frequency;
+        ushort m_Cycles;
     };
 
 public:
