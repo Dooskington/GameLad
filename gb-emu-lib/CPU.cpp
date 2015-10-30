@@ -51,7 +51,7 @@ bool CPU::Initialize(IMMU* pMMU)
     m_serial = std::make_unique<Serial>();
 
     // Create the Timer
-    m_timer = std::make_unique<Timer>();
+    m_timer = std::unique_ptr<Timer>(new Timer(this));
 
     m_MMU->RegisterMemoryUnit(0x0000, 0x7FFF, m_cartridge.get());
     m_MMU->RegisterMemoryUnit(0x8000, 0x9FFF, m_GPU.get());
@@ -159,6 +159,9 @@ void CPU::Step()
 
     // Step GPU by # of elapsed cycles
     m_GPU->Step(m_cycles - preCycles);
+
+    // Step the timer by the # of elapsed cycles
+    m_timer->Step(m_cycles - preCycles);
 }
 
 byte CPU::GetHighByte(ushort dest)
