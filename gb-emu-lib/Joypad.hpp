@@ -16,7 +16,7 @@ Bit 0 - P10 Input Right or Button A (0=Pressed) (Read Only)
 class Joypad : public IMemoryUnit
 {
 public:
-    Joypad();
+    Joypad(ICPU* pCPU);
     ~Joypad();
 
     void SetInput(byte input, byte buttons);
@@ -26,6 +26,8 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
+    ICPU* m_CPU;
+
     byte m_SelectValues;
     byte m_InputValues;
     byte m_ButtonValues;

@@ -1,7 +1,8 @@
 #include "PCH.hpp"
 #include "Joypad.hpp"
 
-Joypad::Joypad() :
+Joypad::Joypad(ICPU* pCPU) :
+    m_CPU(pCPU),
     m_SelectValues(0x00),
     m_InputValues(0x00),
     m_ButtonValues(0x00)
@@ -16,8 +17,17 @@ Joypad::~Joypad()
 
 void Joypad::SetInput(byte input, byte buttons)
 {
+    byte inputChanges = !ISBITSET(m_SelectValues, 4) ? (m_InputValues ^ input) : 0x00;
+    byte buttonChanges = !ISBITSET(m_SelectValues, 5) ? (m_ButtonValues ^ buttons) : 0x00;
+
     m_InputValues = input;
     m_ButtonValues = buttons;
+
+    // If either the input or buttons change and they were requested, trigger interrupt
+    if ((m_CPU != nullptr) && ((inputChanges > 0x00) || (buttonChanges > 0x00)))
+    {
+        m_CPU->TriggerInterrupt(INT60);
+    }
 }
 
 // IMemoryUnit

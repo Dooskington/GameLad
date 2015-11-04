@@ -45,7 +45,7 @@ bool CPU::Initialize(IMMU* pMMU)
     m_APU = std::make_unique<APU>();
 
     // Create the Joypad
-    m_joypad = std::make_unique<Joypad>();
+    m_joypad = std::make_unique<Joypad>(this);
 
     // Create the Serial
     m_serial = std::make_unique<Serial>();

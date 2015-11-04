@@ -11,7 +11,7 @@ TEST_CLASS(JoypadTests)
 public:
     TEST_METHOD(FullInputTest)
     {
-        std::unique_ptr<Joypad> spJoypad = std::unique_ptr<Joypad>(new Joypad());
+        std::unique_ptr<Joypad> spJoypad = std::unique_ptr<Joypad>(new Joypad(nullptr));
 
         // No input, no items selected, expected all bits set
         spJoypad->SetInput(JOYPAD_NONE, JOYPAD_NONE);
