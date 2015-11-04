@@ -23,7 +23,7 @@ byte Serial::ReadByte(const ushort& address)
     {
     case SerialTransferData:
     case SerialTransferControl:
-        // TODO: NYI
+        Logger::Log("Serial::ReadByte is not implemented for address 0x%04X", address);
         return 0x00;
     default:
         Logger::Log("Serial::ReadByte cannot read from address 0x%04X", address);
@@ -37,7 +37,7 @@ bool Serial::WriteByte(const ushort& address, const byte val)
     {
     case SerialTransferData:
     case SerialTransferControl:
-        // TODO: NYI
+        Logger::Log("Serial::WriteByte is not implemented for address 0x%04X", address);
         return true;
     default:
         Logger::Log("Serial::WriteByte cannot write to address 0x%04X", address);
