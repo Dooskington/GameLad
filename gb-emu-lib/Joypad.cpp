@@ -23,7 +23,6 @@ void Joypad::SetInput(byte input, byte buttons)
 // IMemoryUnit
 byte Joypad::ReadByte(const ushort& address)
 {
-    // Set bottom 4 bits
     byte input = 0x00;
 
     switch (address)
@@ -36,7 +35,7 @@ byte Joypad::ReadByte(const ushort& address)
             input |= m_InputValues;
         }
 
-        // Buttons included when 4th bit is LOW (not set)
+        // Buttons included when 5th bit is LOW (not set)
         if (!ISBITSET(m_SelectValues, 5))
         {
             input |= m_ButtonValues;
