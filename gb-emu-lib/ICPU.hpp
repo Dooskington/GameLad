@@ -15,4 +15,5 @@ public:
     virtual void StepFrame() = 0;
     virtual void TriggerInterrupt(byte interrupt) = 0;
     virtual byte* GetCurrentFrame() = 0;
+    virtual void SetInput(byte input, byte buttons) = 0;
 };

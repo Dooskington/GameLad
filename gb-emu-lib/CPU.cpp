@@ -121,6 +121,11 @@ byte* CPU::GetCurrentFrame()
     return m_GPU->GetCurrentFrame();
 }
 
+void CPU::SetInput(byte input, byte buttons)
+{
+    m_joypad->SetInput(input, buttons);
+}
+
 void CPU::Step()
 {
     unsigned long preCycles = m_cycles;
