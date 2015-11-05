@@ -13,6 +13,8 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
+    bool m_Initialized;
+
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
     byte m_Channel1VolumeEnvelope;

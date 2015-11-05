@@ -1,6 +1,8 @@
 #include "PCH.hpp"
 #include "APU.hpp"
 
+#include <SDL.h>
+
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
 // FF12 - NR12 - Channel 1 Volume Envelope (R/W)
@@ -45,6 +47,7 @@
 #define SoundOnOff 0xFF26
 
 APU::APU() :
+    m_Initialized(false),
     m_Channel1Sweep(0x00),
     m_Channel1SoundLength(0x00),
     m_Channel1VolumeEnvelope(0x00),
@@ -68,11 +71,22 @@ APU::APU() :
     m_SoundOnOff(0x00)
 {
     memset(m_WavePatternRAM, 0x00, ARRAYSIZE(m_WavePatternRAM));
+
+    if (SDL_Init(SDL_INIT_AUDIO))
+    {
+        Logger::LogError("[SDL] Failed to initialize: %s\n", SDL_GetError());
+    }
+    else
+    {
+        m_Initialized = true;
+    }
+
     Logger::Log("APU created.");
 }
 
 APU::~APU()
 {
+    SDL_Quit();
     Logger::Log("APU destroyed.");
 }
 
