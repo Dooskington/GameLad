@@ -41,12 +41,6 @@
     <ClCompile Include="MBC3_MBC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MBC4_MBC.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MBC5_MBC.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MMU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -95,12 +89,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MBC3_MBC.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MBC4_MBC.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MBC5_MBC.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MMU.hpp">
