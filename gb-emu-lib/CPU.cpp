@@ -162,11 +162,15 @@ void CPU::Step()
         }
     }
 
+    unsigned long elapsedCycles = m_cycles - preCycles;
     // Step GPU by # of elapsed cycles
-    m_GPU->Step(m_cycles - preCycles);
+    m_GPU->Step(elapsedCycles);
 
     // Step the timer by the # of elapsed cycles
-    m_timer->Step(m_cycles - preCycles);
+    m_timer->Step(elapsedCycles);
+
+    // Step the audio processing unit by the # of elapsed cycles
+    m_APU->Step(elapsedCycles);
 }
 
 byte CPU::GetHighByte(ushort dest)
