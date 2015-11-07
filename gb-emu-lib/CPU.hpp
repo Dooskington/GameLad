@@ -39,6 +39,7 @@ public:
     void StepFrame();
     void TriggerInterrupt(byte interrupt);
     byte* GetCurrentFrame();
+    void SetInput(byte input, byte buttons);
 
 private:
     void Step();

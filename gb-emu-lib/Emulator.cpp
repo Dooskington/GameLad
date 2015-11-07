@@ -47,3 +47,8 @@ byte* Emulator::GetCurrentFrame()
 {
     return m_cpu->GetCurrentFrame();
 }
+
+void Emulator::SetInput(byte input, byte buttons)
+{
+    m_cpu->SetInput(input, buttons);
+}

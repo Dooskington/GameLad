@@ -45,7 +45,7 @@ bool CPU::Initialize(IMMU* pMMU)
     m_APU = std::make_unique<APU>();
 
     // Create the Joypad
-    m_joypad = std::make_unique<Joypad>();
+    m_joypad = std::make_unique<Joypad>(this);
 
     // Create the Serial
     m_serial = std::make_unique<Serial>();
@@ -121,6 +121,11 @@ byte* CPU::GetCurrentFrame()
     return m_GPU->GetCurrentFrame();
 }
 
+void CPU::SetInput(byte input, byte buttons)
+{
+    m_joypad->SetInput(input, buttons);
+}
+
 void CPU::Step()
 {
     unsigned long preCycles = m_cycles;
@@ -157,11 +162,15 @@ void CPU::Step()
         }
     }
 
+    unsigned long elapsedCycles = m_cycles - preCycles;
     // Step GPU by # of elapsed cycles
-    m_GPU->Step(m_cycles - preCycles);
+    m_GPU->Step(elapsedCycles);
 
     // Step the timer by the # of elapsed cycles
-    m_timer->Step(m_cycles - preCycles);
+    m_timer->Step(elapsedCycles);
+
+    // Step the audio processing unit by the # of elapsed cycles
+    m_APU->Step(elapsedCycles);
 }
 
 byte CPU::GetHighByte(ushort dest)

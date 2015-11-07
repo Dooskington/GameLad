@@ -5,8 +5,6 @@
 #include "MBC1_MBC.hpp"
 #include "MBC2_MBC.hpp"
 #include "MBC3_MBC.hpp"
-#include "MBC4_MBC.hpp"
-#include "MBC5_MBC.hpp"
 
 Cartridge::Cartridge()
 {
@@ -143,19 +141,6 @@ bool Cartridge::LoadMBC(unsigned int actualSize)
     case MBC3RAM:
     case MBC3RAMBattery:
         m_MBC = std::unique_ptr<MBC3_MBC>(new MBC3_MBC(m_ROM.get(), m_RAM.get()));
-        return true;
-    case MBC4:
-    case MBC4RAM:
-    case MBC4RAMBattery:
-        m_MBC = std::unique_ptr<MBC4_MBC>(new MBC4_MBC(m_ROM.get(), m_RAM.get()));
-        return true;
-    case MBC5:
-    case MBC5RAM:
-    case MBC5RAMBattery:
-    case MBC5Rumble:
-    case MBC5RumbleRAM:
-    case MBC5RumbleRAMBattery:
-        m_MBC = std::unique_ptr<MBC5_MBC>(new MBC5_MBC(m_ROM.get(), m_RAM.get()));
         return true;
     default:
         Logger::Log("Unsupported Cartridge MBC type: 0x%02X", mbcType);

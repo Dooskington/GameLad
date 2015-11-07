@@ -1,6 +1,8 @@
 #include "PCH.hpp"
 #include "APU.hpp"
 
+#include <SDL.h>
+
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
 // FF12 - NR12 - Channel 1 Volume Envelope (R/W)
@@ -45,45 +47,109 @@
 #define SoundOnOff 0xFF26
 
 APU::APU() :
-    m_SoundOnOffRegister(0x00)
+    m_Initialized(false),
+    m_Channel1Sweep(0x00),
+    m_Channel1SoundLength(0x00),
+    m_Channel1VolumeEnvelope(0x00),
+    m_Channel1FrequencyLo(0x00),
+    m_Channel1FrequencyHi(0x00),
+    m_Channel2SoundLength(0x00),
+    m_Channel2VolumeEnvelope(0x00),
+    m_Channel2FrequencyLo(0x00),
+    m_Channel2FrequencyHi(0x00),
+    m_Channel3SoundOnOff(0x00),
+    m_Channel3SoundLength(0x00),
+    m_Channel3SelectOutputLevel(0x00),
+    m_Channel3FreuqencyLo(0x00),
+    m_Channel3FreuqencyHi(0x00),
+    m_Channel4SoundLength(0x00),
+    m_Channel4VolumeEnvelope(0x00),
+    m_Channel4PolynomialCounter(0x00),
+    m_Channel4Counter(0x00),
+    m_ChannelControlOnOffVolume(0x00),
+    m_OutputTerminal(0x00),
+    m_SoundOnOff(0x00)
 {
+    memset(m_WavePatternRAM, 0x00, ARRAYSIZE(m_WavePatternRAM));
+
+    if (SDL_Init(SDL_INIT_AUDIO))
+    {
+        Logger::LogError("[SDL] Failed to initialize: %s\n", SDL_GetError());
+    }
+    else
+    {
+        m_Initialized = true;
+    }
+
     Logger::Log("APU created.");
 }
 
 APU::~APU()
 {
+    SDL_Quit();
     Logger::Log("APU destroyed.");
+}
+
+void APU::Step(unsigned long cycles)
+{
+    // TODO: Create audio here based on cycles, etc.
 }
 
 // IMemoryUnit
 byte APU::ReadByte(const ushort& address)
 {
+    if ((address >= 0xFF30) && (address <= 0xFF3F))
+    {
+        return m_WavePatternRAM[address - 0xFF30];
+    }
+
     switch (address)
     {
     case Channel1Sweep:
+        return m_Channel1Sweep;
     case Channel1LengthWavePatternDuty:
+        return m_Channel1SoundLength;
     case Channel1VolumeEnvelope:
+        return m_Channel1VolumeEnvelope;
     case Channel1FrequencyLo:
+        // Technically write only
+        return m_Channel1FrequencyLo;
     case Channel1FrequencyHi:
+        return m_Channel1FrequencyHi;
     case Channel2LengthWavePatternDuty:
+        return m_Channel2SoundLength;
     case Channel2VolumeEnvelope:
+        return m_Channel2VolumeEnvelope;
     case Channel2FrequnecyLo:
+        // Technically write only
+        return m_Channel2FrequencyLo;
     case Channel2FrequencyHi:
+        return m_Channel2FrequencyHi;
     case Channel3OnOff:
+        return m_Channel3SoundOnOff;
     case Channel3Length:
+        return m_Channel3SoundLength;
     case Channel3OutputLevel:
+        return m_Channel3SelectOutputLevel;
     case Channel3FrequencyLower:
+        // Technically write only
+        return m_Channel3FreuqencyLo;
     case Channel3FrequnecyHigher:
+        return m_Channel3FreuqencyHi;
     case Channel4Length:
+        return m_Channel4SoundLength;
     case Channel4VolumeEnvelope:
+        return m_Channel4VolumeEnvelope;
     case Channel4PolynomialCounter:
+        return m_Channel4PolynomialCounter;
     case Channel4Counter:
+        return m_Channel4Counter;
     case ChannelControl:
+        return m_ChannelControlOnOffVolume;
     case OutputTerminalSelection:
-        // TODO: NYI
-        return 0x00;
+        return m_OutputTerminal;
     case SoundOnOff:
-        return m_SoundOnOffRegister;
+        return m_SoundOnOff;
     default:
         Logger::Log("APU::ReadByte cannot read from address 0x%04X", address);
         return 0x00;
@@ -92,32 +158,83 @@ byte APU::ReadByte(const ushort& address)
 
 bool APU::WriteByte(const ushort& address, const byte val)
 {
+    if ((address >= 0xFF30) && (address <= 0xFF3F))
+    {
+        m_WavePatternRAM[address - 0xFF30] = val;
+        return true;
+    }
+
     switch (address)
     {
     case Channel1Sweep:
+        m_Channel1Sweep = val;
+        return true;
     case Channel1LengthWavePatternDuty:
+        m_Channel1SoundLength = val;
+        return true;
     case Channel1VolumeEnvelope:
+        m_Channel1VolumeEnvelope = val;
+        return true;
     case Channel1FrequencyLo:
+        m_Channel1FrequencyLo = val;
+        return true;
     case Channel1FrequencyHi:
+        m_Channel1FrequencyHi = val;
+        return true;
     case Channel2LengthWavePatternDuty:
+        m_Channel2SoundLength = val;
+        return true;
     case Channel2VolumeEnvelope:
+        m_Channel2VolumeEnvelope = val;
+        return true;
     case Channel2FrequnecyLo:
+        m_Channel2FrequencyLo = val;
+        return true;
     case Channel2FrequencyHi:
+        m_Channel2FrequencyHi = val;
+        return true;
     case Channel3OnOff:
+        m_Channel3SoundOnOff = val;
+        return true;
     case Channel3Length:
+        m_Channel3SoundLength = val;
+        return true;
     case Channel3OutputLevel:
+        m_Channel3SelectOutputLevel = val;
+        return true;
     case Channel3FrequencyLower:
+        m_Channel3FreuqencyLo = val;
+        return true;
     case Channel3FrequnecyHigher:
+        m_Channel3FreuqencyHi = val;
+        return true;
     case Channel4Length:
+        m_Channel4SoundLength = val;
+        return true;
     case Channel4VolumeEnvelope:
+        m_Channel4VolumeEnvelope = val;
+        return true;
     case Channel4PolynomialCounter:
+        m_Channel4PolynomialCounter = val;
+        return true;
     case Channel4Counter:
+        m_Channel4Counter = val;
+        return true;
     case ChannelControl:
+        m_ChannelControlOnOffVolume = val;
+        return true;
     case OutputTerminalSelection:
-        // TODO: NYI
+        m_OutputTerminal = val;
         return true;
     case SoundOnOff:
-        m_SoundOnOffRegister = val;
+        /*
+        Bit 7 - All sound on/off  (0: stop all sound circuits) (Read/Write)
+        Bit 3 - Sound 4 ON flag (Read Only)
+        Bit 2 - Sound 3 ON flag (Read Only)
+        Bit 1 - Sound 2 ON flag (Read Only)
+        Bit 0 - Sound 1 ON flag (Read Only)
+        */
+        m_SoundOnOff = val & 0x80;
         return true;
     default:
         Logger::Log("APU::WriteByte cannot write to address 0x%04X", address);
