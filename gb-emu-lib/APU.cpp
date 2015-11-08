@@ -1,8 +1,6 @@
 #include "PCH.hpp"
 #include "APU.hpp"
 
-#include <SDL.h>
-
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
 // FF12 - NR12 - Channel 1 Volume Envelope (R/W)
@@ -46,8 +44,40 @@
 #define OutputTerminalSelection 0xFF25
 #define SoundOnOff 0xFF26
 
+#define CHANNEL1 0
+#define CHANNEL2 1
+#define CHANNEL3 2
+#define CHANNEL4 3
+
+void Channel1CallbackStatic(void* pUserdata, Uint8* pStream, int length)
+{
+    reinterpret_cast<APU*>(pUserdata)->Channel1Callback(
+        pStream,
+        length);
+}
+
+void Channel2CallbackStatic(void* pUserdata, Uint8* pStream, int length)
+{
+    reinterpret_cast<APU*>(pUserdata)->Channel2Callback(
+        pStream,
+        length);
+}
+
+void Channel3CallbackStatic(void* pUserdata, Uint8* pStream, int length)
+{
+    reinterpret_cast<APU*>(pUserdata)->Channel3Callback(
+        pStream,
+        length);
+}
+
+void Channel4CallbackStatic(void* pUserdata, Uint8* pStream, int length)
+{
+    reinterpret_cast<APU*>(pUserdata)->Channel4Callback(
+        pStream,
+        length);
+}
+
 APU::APU() :
-    m_Initialized(false),
     m_Channel1Sweep(0x00),
     m_Channel1SoundLength(0x00),
     m_Channel1VolumeEnvelope(0x00),
@@ -70,15 +100,20 @@ APU::APU() :
     m_OutputTerminal(0x00),
     m_SoundOnOff(0x00)
 {
+    memset(m_Initialized, false, ARRAYSIZE(m_Initialized));
+    memset(m_DeviceChannel, 0, ARRAYSIZE(m_DeviceChannel));
     memset(m_WavePatternRAM, 0x00, ARRAYSIZE(m_WavePatternRAM));
 
     if (SDL_Init(SDL_INIT_AUDIO))
     {
-        Logger::LogError("[SDL] Failed to initialize: %s\n", SDL_GetError());
+        Logger::LogError("[SDL] Failed to initialize: %s", SDL_GetError());
     }
     else
     {
-        m_Initialized = true;
+        LoadChannel(CHANNEL1, Channel1CallbackStatic);
+        LoadChannel(CHANNEL2, Channel2CallbackStatic);
+        LoadChannel(CHANNEL3, Channel3CallbackStatic);
+        LoadChannel(CHANNEL4, Channel4CallbackStatic);
     }
 
     Logger::Log("APU created.");
@@ -86,13 +121,83 @@ APU::APU() :
 
 APU::~APU()
 {
+    for (int index = CHANNEL1; index <= CHANNEL4; index++)
+    {
+        if (m_Initialized[index])
+        {
+            SDL_PauseAudioDevice(m_DeviceChannel[index], 1);
+            SDL_CloseAudioDevice(m_DeviceChannel[index]);
+        }
+    }
+
     SDL_Quit();
+
     Logger::Log("APU destroyed.");
 }
 
 void APU::Step(unsigned long cycles)
 {
     // TODO: Create audio here based on cycles, etc.
+}
+
+void APU::Channel1Callback(Uint8* pStream, int length)
+{
+    SDL_memset(pStream, 0x00, length);
+
+    if (!ISBITSET(m_SoundOnOff, 7))
+        return;
+
+    /*int v = 0;
+    for (int index = 0; index < length; index++)
+    {
+        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
+        v += 300;
+    }*/
+}
+
+void APU::Channel2Callback(Uint8* pStream, int length)
+{
+    SDL_memset(pStream, 0x00, length);
+
+    if (!ISBITSET(m_SoundOnOff, 7))
+        return;
+
+    /*int v = 0;
+    for (int index = 0; index < length; index++)
+    {
+        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
+        v += 400;
+    }*/
+}
+
+void APU::Channel3Callback(Uint8* pStream, int length)
+{
+    SDL_memset(pStream, 0x00, length);
+
+    if (!ISBITSET(m_SoundOnOff, 7))
+        return;
+
+    /*int v = 0;
+    for (int index = 0; index < length; index++)
+    {
+        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
+        v += 500;
+    }*/
+}
+
+void APU::Channel4Callback(Uint8* pStream, int length)
+{
+    SDL_memset(pStream, 0x00, length);
+
+    if (!ISBITSET(m_SoundOnOff, 7))
+        return;
+
+    /*int v = 0;
+    for (int index = 0; index < length; index++)
+    {
+        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
+        v += 600;
+    }*/
 }
 
 // IMemoryUnit
@@ -240,4 +345,27 @@ bool APU::WriteByte(const ushort& address, const byte val)
         Logger::Log("APU::WriteByte cannot write to address 0x%04X", address);
         return false;
     }
+}
+
+void APU::LoadChannel(int index, SDL_AudioCallback callback)
+{
+    SDL_AudioSpec want, have;
+
+    SDL_memset(&want, 0, sizeof(want));
+    want.freq = 48000;
+    want.format = AUDIO_U8;
+    want.channels = 2;
+    want.samples = 1024 * 2;
+    want.callback = callback;
+    want.userdata = this;
+
+    m_DeviceChannel[index] = SDL_OpenAudioDevice(nullptr, 0, &want, &have, 0);
+    if (m_DeviceChannel[index] == 0)
+    {
+        Logger::Log("[SDL] Failed to open audio device for channel %d - %s", index + 1, SDL_GetError());
+        return;
+    }
+
+    SDL_PauseAudioDevice(m_DeviceChannel[index], 0);
+    m_Initialized[index] = true;
 }
