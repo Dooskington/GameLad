@@ -31,7 +31,7 @@ public:
     ~CPU();
 
 private:
-    bool Initialize(IMMU* pMMU);
+    bool Initialize(IMMU* pMMU, bool isFromTest);
 
 public:
     bool Initialize();

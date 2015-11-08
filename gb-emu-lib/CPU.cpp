@@ -30,43 +30,8 @@ CPU::~CPU()
     Logger::Log("CPU destroyed.");
 }
 
-bool CPU::Initialize(IMMU* pMMU)
+bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
 {
-    // Create the MMU
-    m_MMU = std::unique_ptr<IMMU>(pMMU);
-
-    // Create the Cartridge
-    m_cartridge = std::make_unique<Cartridge>();
-
-    // Create the GPU
-    m_GPU = std::unique_ptr<GPU>(new GPU(pMMU, this));
-
-    // Create the APU
-    m_APU = std::make_unique<APU>();
-
-    // Create the Joypad
-    m_joypad = std::make_unique<Joypad>(this);
-
-    // Create the Serial
-    m_serial = std::make_unique<Serial>();
-
-    // Create the Timer
-    m_timer = std::unique_ptr<Timer>(new Timer(this));
-
-    m_MMU->RegisterMemoryUnit(0x0000, 0x7FFF, m_cartridge.get());
-    m_MMU->RegisterMemoryUnit(0x8000, 0x9FFF, m_GPU.get());
-    m_MMU->RegisterMemoryUnit(0xA000, 0xBFFF, m_cartridge.get());
-    m_MMU->RegisterMemoryUnit(0xFE00, 0xFE9F, m_GPU.get());
-    // 0xFEA0-0xFEFF - Unusable
-    m_MMU->RegisterMemoryUnit(0xFF00, 0xFF00, m_joypad.get());
-    m_MMU->RegisterMemoryUnit(0xFF01, 0xFF02, m_serial.get());
-    m_MMU->RegisterMemoryUnit(0xFF04, 0xFF07, m_timer.get());
-    m_MMU->RegisterMemoryUnit(0xFF10, 0xFF3F, m_APU.get());
-    m_MMU->RegisterMemoryUnit(0xFF40, 0xFF4C, m_GPU.get());
-    m_MMU->RegisterMemoryUnit(0xFF4E, 0xFF55, m_GPU.get());
-    m_MMU->RegisterMemoryUnit(0xFF57, 0xFF6B, m_GPU.get());
-    m_MMU->RegisterMemoryUnit(0xFF6D, 0xFF6F, m_GPU.get());
-
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x0C] = &CPU::INCC;
@@ -86,12 +51,50 @@ bool CPU::Initialize(IMMU* pMMU)
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
 
+    // Create the MMU
+    m_MMU = std::unique_ptr<IMMU>(pMMU);
+
+    if (!isFromTest)
+    {
+        // Create the Cartridge
+        m_cartridge = std::make_unique<Cartridge>();
+
+        // Create the GPU
+        m_GPU = std::unique_ptr<GPU>(new GPU(pMMU, this));
+
+        // Create the APU
+        m_APU = std::make_unique<APU>();
+
+        // Create the Joypad
+        m_joypad = std::make_unique<Joypad>(this);
+
+        // Create the Serial
+        m_serial = std::make_unique<Serial>();
+
+        // Create the Timer
+        m_timer = std::unique_ptr<Timer>(new Timer(this));
+
+        m_MMU->RegisterMemoryUnit(0x0000, 0x7FFF, m_cartridge.get());
+        m_MMU->RegisterMemoryUnit(0x8000, 0x9FFF, m_GPU.get());
+        m_MMU->RegisterMemoryUnit(0xA000, 0xBFFF, m_cartridge.get());
+        m_MMU->RegisterMemoryUnit(0xFE00, 0xFE9F, m_GPU.get());
+        // 0xFEA0-0xFEFF - Unusable
+        m_MMU->RegisterMemoryUnit(0xFF00, 0xFF00, m_joypad.get());
+        m_MMU->RegisterMemoryUnit(0xFF01, 0xFF02, m_serial.get());
+        m_MMU->RegisterMemoryUnit(0xFF04, 0xFF07, m_timer.get());
+        m_MMU->RegisterMemoryUnit(0xFF10, 0xFF3F, m_APU.get());
+        m_MMU->RegisterMemoryUnit(0xFF40, 0xFF4C, m_GPU.get());
+        m_MMU->RegisterMemoryUnit(0xFF4E, 0xFF55, m_GPU.get());
+        m_MMU->RegisterMemoryUnit(0xFF57, 0xFF6B, m_GPU.get());
+        m_MMU->RegisterMemoryUnit(0xFF6D, 0xFF6F, m_GPU.get());
+    }
+
     return true;
 }
 
 bool CPU::Initialize()
 {
-    return Initialize(new MMU());
+    return Initialize(new MMU(), false);
 }
 
 bool CPU::LoadROM(std::string path)
@@ -163,14 +166,24 @@ void CPU::Step()
     }
 
     unsigned long elapsedCycles = m_cycles - preCycles;
-    // Step GPU by # of elapsed cycles
-    m_GPU->Step(elapsedCycles);
 
-    // Step the timer by the # of elapsed cycles
-    m_timer->Step(elapsedCycles);
+    if (m_GPU != nullptr)
+    {
+        // Step GPU by # of elapsed cycles
+        m_GPU->Step(elapsedCycles);
+    }
 
-    // Step the audio processing unit by the # of elapsed cycles
-    m_APU->Step(elapsedCycles);
+    if (m_timer != nullptr)
+    {
+        // Step the timer by the # of elapsed cycles
+        m_timer->Step(elapsedCycles);
+    }
+
+    if (m_APU != nullptr)
+    {
+        // Step the audio processing unit by the # of elapsed cycles
+        m_APU->Step(elapsedCycles);
+    }
 }
 
 byte CPU::GetHighByte(ushort dest)
