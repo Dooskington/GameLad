@@ -43,6 +43,7 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
     m_operationMap[0x31] = &CPU::LDSPnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0x3E] = &CPU::LDAe;
+    m_operationMap[0x4F] = &CPU::LDCA;
     m_operationMap[0x77] = &CPU::LD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
@@ -406,6 +407,14 @@ void CPU::LDAe()
     m_cycles += 8;
 
     // No flags affected
+}
+
+// 0x4F (LD C, A)
+void CPU::LDCA()
+{
+    m_PC += 1;
+    SetLowByte(&m_BC, GetHighByte(m_AF));
+    m_cycles += 4;
 }
 
 // 0x77 (LD (HL), A)

@@ -70,6 +70,7 @@ private:
     void LDSPnn();          // 0x31
     void LDD_HL_A();        // 0x32
     void LDAe();            // 0x3E
+    void LDCA();            // 0x4F
     void LD_HL_A();         // 0x77
     void XORA();            // 0xAF
     void CALLnn();          // 0xCD
