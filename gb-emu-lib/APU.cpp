@@ -349,6 +349,8 @@ bool APU::WriteByte(const ushort& address, const byte val)
 
 void APU::LoadChannel(int index, SDL_AudioCallback callback)
 {
+    // Audio is currently disabled
+    /*
     SDL_AudioSpec want, have;
 
     SDL_memset(&want, 0, sizeof(want));
@@ -368,4 +370,5 @@ void APU::LoadChannel(int index, SDL_AudioCallback callback)
 
     SDL_PauseAudioDevice(m_DeviceChannel[index], 0);
     m_Initialized[index] = true;
+    */
 }
