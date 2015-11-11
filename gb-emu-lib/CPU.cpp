@@ -143,6 +143,7 @@ void CPU::Step()
     }
     else
     {
+        ushort addr = m_PC;
         // Read through the memory, starting at m_PC
         byte opCode = m_MMU->ReadByte(m_PC);
         opCodeFunction instruction; // Execute the correct function for each OpCode
@@ -164,7 +165,7 @@ void CPU::Step()
         }
         else
         {
-            Logger::LogError("OpCode 0x%02X could not be interpreted.", opCode);
+            Logger::LogError("OpCode 0x%02X at address 0x%04X could not be interpreted.", opCode, addr);
             HALT();
         }
     }
