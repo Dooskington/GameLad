@@ -44,8 +44,11 @@ public:
 private:
     void Step();
 
-    byte GetHighByte(ushort dest);
-    byte GetLowByte(ushort dest);
+    static byte GetHighByte(ushort dest);
+    static byte GetLowByte(ushort dest);
+
+    byte* GetByteRegister(byte val);
+    ushort* GetUShortRegister(byte val);
 
     void SetHighByte(ushort* dest, byte val);
     void SetLowByte(ushort* dest, byte val);
@@ -53,6 +56,7 @@ private:
     void SetFlag(byte flag);
     void ClearFlag(byte flag);
     bool IsFlagSet(byte flag);
+    bool LookupAndCheckFlag(byte val);
 
     void PushByteToSP(byte val);
     void PushUShortToSP(ushort val);
@@ -115,6 +119,8 @@ private:
     ushort m_HL; // General purpose
     ushort m_SP; // Stack pointer
     ushort m_PC; // Program counter
+    byte* m_ByteRegisterMap[0x07 + 1];
+    ushort* m_UShortRegisterMap[0x03 + 1];
 
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)();
