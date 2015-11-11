@@ -66,7 +66,7 @@ public:
         // Load a NOP into the first byte of memory
         byte m_Mem[] = { 0x00 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -88,7 +88,7 @@ public:
         // Load two INCC operators
         byte m_Mem[] = { 0x0C, 0x0C };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -127,7 +127,7 @@ public:
         // Load LDCe and 0x12 into memory
         byte m_Mem[] = { 0x0E, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -150,7 +150,7 @@ public:
         // Load LDDEnn and 0x1234 into memory
         byte m_Mem[] = { 0x11, 0x34, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -173,7 +173,7 @@ public:
         // Load LDA_DE_ and filler
         byte m_Mem[] = { 0x1A, 0x00, 0x00, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Point DE to 0x12 in memory
         spCPU->m_DE = 0x0003;
@@ -199,7 +199,7 @@ public:
         // Load JRNZe and other data to test
         byte m_Mem[] = { 0x20, 0x04, 0x00, 0x00, 0x00, 0x00, 0x20, 0xFA };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->ClearFlag(ZeroFlag);
 
@@ -232,7 +232,7 @@ public:
         // Load LDHLnn
         byte m_Mem[] = { 0x21, 0x34, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -255,7 +255,7 @@ public:
         // Load LDHLnn
         byte m_Mem[] = { 0x31, 0x34, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -278,7 +278,7 @@ public:
         // Load LDD_HL_A
         byte m_Mem[] = { 0x32 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_HL = 0x1234;
         spCPU->m_AF = 0x1200;
@@ -304,7 +304,7 @@ public:
         // Load LDAe
         byte m_Mem[] = { 0x3E, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -327,7 +327,7 @@ public:
         // Load LD_HL_A
         byte m_Mem[] = { 0x77 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_AF = 0x1200;
         spCPU->m_HL = 0x1234;
@@ -353,7 +353,7 @@ public:
         // Load XORA
         byte m_Mem[] = { 0xAF };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_AF = 0x1200;
 
@@ -383,7 +383,7 @@ public:
         // Load LD_0xFF00n_A
         byte m_Mem[] = { 0xE0, 0x12 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_AF = 0x1200;
 
@@ -408,7 +408,7 @@ public:
         // Load LD_0xFF00n_A
         byte m_Mem[] = { 0xE2 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_AF = 0x1200;
         spCPU->m_BC = 0x0012;
@@ -434,7 +434,7 @@ public:
         // Load BIT7h
         byte m_Mem[] = { 0xCB, 0x7C, 0xCB, 0x7C };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)));
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_HL = 0x0000;
 

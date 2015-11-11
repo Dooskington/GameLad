@@ -1,5 +1,11 @@
 #pragma once
 
+#if WINDOWS
+    #include <SDL.h>
+#else
+    #include "SDL2/SDL.h"
+#endif
+
 class APU : public IMemoryUnit
 {
 public:
@@ -7,13 +13,21 @@ public:
     ~APU();
 
     void Step(unsigned long cycles);
+    void Channel1Callback(Uint8* pStream, int length);
+    void Channel2Callback(Uint8* pStream, int length);
+    void Channel3Callback(Uint8* pStream, int length);
+    void Channel4Callback(Uint8* pStream, int length);
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    bool m_Initialized;
+    void LoadChannel(int index, SDL_AudioCallback callback);
+
+private:
+    bool m_Initialized[4];
+    SDL_AudioDeviceID m_DeviceChannel[4];
 
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
