@@ -74,6 +74,7 @@ private:
     void LDCA();            // 0x4F
     void LD_HL_A();         // 0x77
     void XORA();            // 0xAF
+    void PUSHBC();          // 0xC5
     void CALLnn();          // 0xCD
     void LD_0xFF00C_A();    // 0xE0
     void LD_0xFF00n_A();    // 0xE2

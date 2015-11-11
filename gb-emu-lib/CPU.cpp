@@ -47,9 +47,10 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
     m_operationMap[0x4F] = &CPU::LDCA;
     m_operationMap[0x77] = &CPU::LD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
+    m_operationMap[0xC5] = &CPU::PUSHBC;
+    m_operationMap[0xCD] = &CPU::CALLnn;
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
-    m_operationMap[0xCD] = &CPU::CALLnn;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -466,6 +467,16 @@ void CPU::XORA()
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+}
+
+// 0xC5
+void CPU::PUSHBC()
+{
+    m_PC += 1;
+    PushUShortToSP(m_BC);
+    m_cycles += 16;
+
+    // No flags affected
 }
 
 // 0xCD (CALL nn)

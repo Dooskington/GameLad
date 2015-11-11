@@ -428,6 +428,33 @@ public:
         spCPU.reset();
     }
 
+    // 0xC5
+    TEST_METHOD(PUSHBC_Test)
+    {
+        // Load PUSH BC
+        byte m_Mem[] = { 0xC5 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_BC = 0x1234;
+        spCPU->m_SP = 0xFFFE;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x1234, (int)spCPU->m_BC);
+        Assert::AreEqual(0xFFFE, (int)spCPU->m_SP);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
+        Assert::AreEqual(0x1234, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
+
+        spCPU.reset();
+    }
+
     // 0xCD
     TEST_METHOD(CALLnn_Test)
     {
