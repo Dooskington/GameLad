@@ -61,6 +61,7 @@ private:
 
     // OpCode Functions
     void NOP();             // 0x00
+    void LDBe();            // 0x06
     void INCC();            // 0x0C
     void LDCe();            // 0x0E
     void LDDEnn();          // 0x11

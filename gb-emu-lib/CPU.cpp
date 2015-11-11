@@ -34,6 +34,7 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
 {
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
+    m_operationMap[0x06] = &CPU::LDBe;
     m_operationMap[0x0C] = &CPU::INCC;
     m_operationMap[0x0E] = &CPU::LDCe;
     m_operationMap[0x11] = &CPU::LDDEnn;
@@ -259,6 +260,18 @@ void CPU::NOP()
 {
     m_PC += 1;
     m_cycles += 4;
+
+    // No flags affected
+}
+
+// 0x06 (LD B, e)
+void CPU::LDBe()
+{
+    m_PC += 1; // Look at e
+    byte e = m_MMU->ReadByte(m_PC); // Read e
+    SetHighByte(&m_BC, e); // Set B to e
+    m_PC += 1; // Move onto the next instruction
+    m_cycles += 8;
 
     // No flags affected
 }
