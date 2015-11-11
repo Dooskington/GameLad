@@ -54,6 +54,9 @@ private:
     void ClearFlag(byte flag);
     bool IsFlagSet(byte flag);
 
+    void PushByteToSP(byte val);
+    void PushUShortToSP(ushort val);
+
     void HALT();
 
     // OpCode Functions
@@ -69,6 +72,7 @@ private:
     void LDAe();            // 0x3E
     void LD_HL_A();         // 0x77
     void XORA();            // 0xAF
+    void CALLnn();          // 0xCD
     void LD_0xFF00C_A();    // 0xE0
     void LD_0xFF00n_A();    // 0xE2
 

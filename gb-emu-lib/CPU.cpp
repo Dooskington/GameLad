@@ -47,6 +47,7 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
     m_operationMap[0xAF] = &CPU::XORA;
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
+    m_operationMap[0xCD] = &CPU::CALLnn;
 
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
@@ -228,6 +229,18 @@ void CPU::ClearFlag(byte flag)
 bool CPU::IsFlagSet(byte flag)
 {
     return ISBITSET(GetLowByte(m_AF), flag);
+}
+
+void CPU::PushByteToSP(byte val)
+{
+    m_SP--;
+    m_MMU->WriteByte(m_SP, val);
+}
+
+void CPU::PushUShortToSP(ushort val)
+{
+    PushByteToSP(GetHighByte(val));
+    PushByteToSP(GetLowByte(val));
 }
 
 void CPU::HALT()
@@ -431,6 +444,21 @@ void CPU::XORA()
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+}
+
+// 0xCD (CALL nn)
+void CPU::CALLnn()
+{
+    // This instruction pushes the PC to the SP, then sets the PC to the target address(nn).
+    m_PC += 1; // Look at the first byte of nn
+    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
+    m_PC += 2; // Move onto the next instruction
+    PushUShortToSP(m_PC); // Push PC to SP
+    m_PC = nn; // Set the PC to the target address
+
+    m_cycles += 24;
+
+    // No flags affected
 }
 
 // 0xE0 (LD(0xFF00 + n), A)
