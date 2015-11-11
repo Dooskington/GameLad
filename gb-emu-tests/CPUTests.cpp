@@ -92,7 +92,6 @@ public:
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
-        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
 
         // Step the CPU 1 OpCode
         spCPU->Step();
@@ -352,14 +351,12 @@ public:
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
-        spCPU->SetHighByte(&spCPU->m_AF, 0x12); // Set A
-        spCPU->SetLowByte(&spCPU->m_BC, 0xFF); // Set C
+        spCPU->m_AF = 0x1200;
+        spCPU->m_BC = 0x00FF;
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0000, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->GetHighByte(spCPU->m_AF));
-        Assert::AreEqual(0xFF, (int)spCPU->GetLowByte(spCPU->m_BC));
 
         // Step the CPU 1 OpCode
         spCPU->Step();
@@ -367,7 +364,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(4, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->GetLowByte(spCPU->m_BC));
+        Assert::AreEqual(0x0012, (int)spCPU->m_BC);
 
         spCPU.reset();
     }
@@ -441,8 +438,6 @@ public:
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
-        Assert::AreEqual(0x1234, (int)spCPU->m_BC);
-        Assert::AreEqual(0xFFFE, (int)spCPU->m_SP);
 
         // Step the CPU 1 OpCode
         spCPU->Step();
@@ -467,8 +462,6 @@ public:
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
-        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
-        Assert::AreEqual(0xFFFE, (int)spCPU->m_SP);
 
         // Step the CPU 1 OpCode
         spCPU->Step();
