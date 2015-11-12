@@ -6,7 +6,14 @@
 
 CC = g++
 FRAMEWORK_PATH = /Library/Frameworks
-FRAMEWORKS = -framework SDL2
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	FRAMEWORKS = -lSDL2
+else
+	FRAMEWORKS = -framework SDL2
+endif
+
 BIN_NAME = gb-emu
 C_FLAGS = -Wall -std=c++14
 
