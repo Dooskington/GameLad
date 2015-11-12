@@ -14,7 +14,7 @@ private:
             memset(m_data, 0x00, ARRAYSIZE(m_data));
             if (memory != nullptr)
             {
-                memcpy_s(m_data, ARRAYSIZE(m_data), memory, size);
+                memcpy(m_data, memory, size);
             }
         }
 

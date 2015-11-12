@@ -5,7 +5,7 @@
 
 #pragma once
 
-#if WINDOWS
+#if WINDOWS2
     #include "targetver.h"
 
     // Headers for CppUnitTest
