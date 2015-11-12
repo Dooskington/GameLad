@@ -13,7 +13,7 @@
 
     using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #else
-    #define TEST_CLASS(className) class className { };
+    #define TEST_CLASS(className) class className
     #define TEST_METHOD(methodName) void methodName()
 #endif
 
