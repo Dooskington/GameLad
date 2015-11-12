@@ -2,8 +2,6 @@
 
 #include <CPU.hpp>
 
-using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-
 TEST_CLASS(CPUTests)
 {
 private:

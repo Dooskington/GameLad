@@ -2,8 +2,6 @@
 
 #include <GPU.hpp>
 
-using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-
 TEST_CLASS(GPUTests)
 {
 private:
