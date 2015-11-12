@@ -64,7 +64,7 @@ void Render(SDL_Renderer* pRenderer, SDL_Texture* pTexture, Emulator& emulator)
             pData++;
         }
     }
-    
+
     SDL_UnlockTexture(pTexture);
 
     SDL_RenderCopy(pRenderer, pTexture, nullptr, nullptr);

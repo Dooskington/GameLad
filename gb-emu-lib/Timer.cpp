@@ -28,9 +28,9 @@ const ushort FrequencyCounts[]
 #define Frequency16384  0x03
 
 Timer::Counter::Counter(byte frequency) :
+    m_IsRunning(true),
     m_Value(0x00),
     m_Frequency(frequency),
-    m_IsRunning(true),
     m_Cycles(0x00)
 {
 }

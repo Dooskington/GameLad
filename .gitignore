@@ -30,6 +30,8 @@
 
 # Folders
 /bin
+/gb-emu_bin
+/gb-emu-lib_bin
 
 # Other
 .DS_STORE

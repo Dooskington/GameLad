@@ -29,27 +29,33 @@ bool Cartridge::LoadROM(std::string path)
     if (file.is_open())
     {
         size = file.tellg();
+        #if WINDOWS
+               int iSize = static_cast<int>(size.seekpos());
+        #else
+               int iSize = size;
+        #endif
+
         file.seekg(0, std::ios::beg);
 
-        m_ROM = std::unique_ptr<byte>(new byte[static_cast<unsigned int>(size.seekpos())]);
+        m_ROM = std::unique_ptr<byte>(new byte[static_cast<unsigned int>(iSize)]);
 
         if (file.read(reinterpret_cast<char*>(m_ROM.get()), size))
         {
-            Logger::Log("Loaded game rom %s (%d bytes)", path.data(), size.seekpos());
+            Logger::Log("Loaded game rom %s (%d bytes)", path.data(), iSize);
 
-            if (size.seekpos() < 0x014F)
+            if (iSize < 0x014F)
             {
-                Logger::Log("Cartridge doesn't have enough data!", path.data(), size.seekpos());
+                Logger::Log("Cartridge doesn't have enough data!", path.data(), iSize);
                 succeeded = false;
             }
             else
             {
-                succeeded = LoadMBC(static_cast<unsigned int>(size.seekpos()));
+                succeeded = LoadMBC(static_cast<unsigned int>(iSize));
             }
         }
         else
         {
-            Logger::Log("Failed to load game rom %s", path);
+            Logger::Log("Failed to load game rom %s", path.data());
         }
 
         file.close();

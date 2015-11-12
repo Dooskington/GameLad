@@ -412,7 +412,7 @@ void CPU::LDDEnn()
 // 0x1A (LD A, (DE))
 void CPU::LDA_DE_()
 {
-    // loads the value stored at the address pointed to by DE 
+    // loads the value stored at the address pointed to by DE
     // (currently 0x0104) and stores in the A register
     m_PC += 1;
     byte val = m_MMU->ReadByte(m_DE);
@@ -548,7 +548,7 @@ void CPU::PUSHBC()
     m_PC += 1;
     PushUShortToSP(m_BC);
     m_cycles += 16;
-
+std::cout << "TEefefST" << std::endl;
     // No flags affected
 }
 
