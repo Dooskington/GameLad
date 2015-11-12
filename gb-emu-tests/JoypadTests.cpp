@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "CppUnitTest.h"
 
 #include <Emulator.hpp>
 #include <Joypad.hpp>
