@@ -21,7 +21,7 @@ public:
 
     void StepFrame();
     void Stop();
-    bool Initialize(std::string rom);
+    bool Initialize(char* rom);
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);
 

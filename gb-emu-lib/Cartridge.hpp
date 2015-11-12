@@ -84,7 +84,7 @@ public:
     Cartridge();
     ~Cartridge();
 
-    bool LoadROM(std::string path);
+    bool LoadROM(char* path);
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);

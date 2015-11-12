@@ -1,4 +1,4 @@
-#include "pch.hpp"
+#include "PCH.hpp"
 #include <Emulator.hpp>
 
 const Uint32 TimePerFrame = static_cast<Uint32>((1.0 / 60.0) * 1000.0);

@@ -10,7 +10,7 @@
 // Headers for CppUnitTest
 #include "CppUnitTest.h"
 
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 

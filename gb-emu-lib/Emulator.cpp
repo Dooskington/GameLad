@@ -18,7 +18,7 @@ void Emulator::Stop()
     m_cpu.reset();
 }
 
-bool Emulator::Initialize(std::string rom)
+bool Emulator::Initialize(char* rom)
 {
     // Create CPU
     m_cpu = std::make_unique<CPU>();
