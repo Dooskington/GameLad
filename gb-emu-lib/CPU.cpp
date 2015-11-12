@@ -14,11 +14,11 @@ CPU::CPU() :
     m_SP(0x0000),
     m_PC(0x0000)
 {
-    for (int index = 0;index < ARRAYSIZE(m_operationMap);index++)
+    for (unsigned int index = 0;index < ARRAYSIZE(m_operationMap);index++)
     {
         m_operationMap[index] = nullptr;
     }
-    for (int index = 0;index < ARRAYSIZE(m_operationMapCB);index++)
+    for (unsigned int index = 0;index < ARRAYSIZE(m_operationMapCB);index++)
     {
         m_operationMapCB[index] = nullptr;
     }

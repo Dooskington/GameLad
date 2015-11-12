@@ -5,10 +5,12 @@
 
 #pragma once
 
-#include "targetver.h"
+#if WINDOWS
+    #include "targetver.h"
 
-// Headers for CppUnitTest
-#include "CppUnitTest.h"
+    // Headers for CppUnitTest
+    #include "CppUnitTest.h"
+#endif
 
 #include <cstring>
 #include <iostream>
