@@ -81,7 +81,7 @@ public:
             std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
             byte* reg = spCPU->GetByteRegister(flags);
 
-            *reg = (int)value;
+            *reg = value;
 
             switch (flags)
             {
