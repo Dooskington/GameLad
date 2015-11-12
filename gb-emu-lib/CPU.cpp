@@ -548,7 +548,7 @@ void CPU::PUSHBC()
     m_PC += 1;
     PushUShortToSP(m_BC);
     m_cycles += 16;
-std::cout << "TEefefST" << std::endl;
+
     // No flags affected
 }
 
