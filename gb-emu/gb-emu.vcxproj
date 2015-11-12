@@ -91,7 +91,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy $(ProjectDir)res\*.* $(OutDir)res\ /E /Y</Command>
+      <Command>xcopy $(SolutionDir)res\*.* $(OutDir)res\ /E /Y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy Resources</Message>
@@ -116,7 +116,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy $(ProjectDir)res\*.* $(OutDir)res\ /E /Y</Command>
+      <Command>xcopy $(SolutionDir)res\*.* $(OutDir)res\ /E /Y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy Resources</Message>
