@@ -14,8 +14,14 @@ CPU::CPU() :
     m_SP(0x0000),
     m_PC(0x0000)
 {
-    memset(m_operationMap, 0, ARRAYSIZE(m_operationMap));
-    memset(m_operationMapCB, 0, ARRAYSIZE(m_operationMapCB));
+    for (int index = 0;index < ARRAYSIZE(m_operationMap);index++)
+    {
+        m_operationMap[index] = nullptr;
+    }
+    for (int index = 0;index < ARRAYSIZE(m_operationMapCB);index++)
+    {
+        m_operationMapCB[index] = nullptr;
+    }
 
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
