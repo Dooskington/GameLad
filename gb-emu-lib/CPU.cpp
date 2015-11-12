@@ -51,30 +51,14 @@ CPU::CPU() :
     110 ? (F?)
     111 A
     */
-    // Ensure proper endianness (it's possible for some PCs to have they bytes swapped)
-    ushort value = 0x1234;
-    if (*reinterpret_cast<byte*>(&value) == 0x34)   // Low byte first?
-    {
-        m_ByteRegisterMap[0x00] = reinterpret_cast<byte*>(&m_BC) + 1;   // ushort memory is [C][B]
-        m_ByteRegisterMap[0x01] = reinterpret_cast<byte*>(&m_BC);
-        m_ByteRegisterMap[0x02] = reinterpret_cast<byte*>(&m_DE) + 1;
-        m_ByteRegisterMap[0x03] = reinterpret_cast<byte*>(&m_DE);
-        m_ByteRegisterMap[0x04] = reinterpret_cast<byte*>(&m_HL) + 1;
-        m_ByteRegisterMap[0x05] = reinterpret_cast<byte*>(&m_HL);
-        m_ByteRegisterMap[0x06] = reinterpret_cast<byte*>(&m_AF);       // Should not be used (F)
-        m_ByteRegisterMap[0x07] = reinterpret_cast<byte*>(&m_AF) + 1;
-    }
-    else
-    {
-        m_ByteRegisterMap[0x00] = reinterpret_cast<byte*>(&m_BC);       // ushort memory is [B][C]
-        m_ByteRegisterMap[0x01] = reinterpret_cast<byte*>(&m_BC) + 1;
-        m_ByteRegisterMap[0x02] = reinterpret_cast<byte*>(&m_DE);
-        m_ByteRegisterMap[0x03] = reinterpret_cast<byte*>(&m_DE) + 1;
-        m_ByteRegisterMap[0x04] = reinterpret_cast<byte*>(&m_HL);
-        m_ByteRegisterMap[0x05] = reinterpret_cast<byte*>(&m_HL) + 1;
-        m_ByteRegisterMap[0x06] = reinterpret_cast<byte*>(&m_AF) + 1;   // Should not be used (F)
-        m_ByteRegisterMap[0x07] = reinterpret_cast<byte*>(&m_AF);
-    }
+    m_ByteRegisterMap[0x00] = reinterpret_cast<byte*>(&m_BC) + 1;   // ushort memory is [C][B]
+    m_ByteRegisterMap[0x01] = reinterpret_cast<byte*>(&m_BC);
+    m_ByteRegisterMap[0x02] = reinterpret_cast<byte*>(&m_DE) + 1;
+    m_ByteRegisterMap[0x03] = reinterpret_cast<byte*>(&m_DE);
+    m_ByteRegisterMap[0x04] = reinterpret_cast<byte*>(&m_HL) + 1;
+    m_ByteRegisterMap[0x05] = reinterpret_cast<byte*>(&m_HL);
+    m_ByteRegisterMap[0x06] = reinterpret_cast<byte*>(&m_AF);       // Should not be used (F)
+    m_ByteRegisterMap[0x07] = reinterpret_cast<byte*>(&m_AF) + 1;
 
     /*
     I'm not 100% sure about this, so ensure the lookup is right for each opcode before using
