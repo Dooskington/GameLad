@@ -60,6 +60,89 @@ private:
     };
 
 public:
+    // Misc tests
+    TEST_METHOD(GetHighByte_Test)
+    {
+        ushort value = 0x1234;
+        Assert::AreEqual(0x12, (int)CPU::GetHighByte(value));
+    }
+
+    TEST_METHOD(GetLowByte_Test)
+    {
+        ushort value = 0x1234;
+        Assert::AreEqual(0x34, (int)CPU::GetLowByte(value));
+    }
+
+    TEST_METHOD(GetByteRegister_Test)
+    {
+        int value = 0x12;
+        for (byte flags = 0x00; flags <= 0x07;flags++, value++)
+        {
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            byte* reg = spCPU->GetByteRegister(flags);
+
+            *reg = value;
+
+            switch (flags)
+            {
+            case 0x00:  // B
+                Assert::AreEqual(value << 8, (int)spCPU->m_BC);
+                break;
+            case 0x01:  // C
+                Assert::AreEqual(value, (int)spCPU->m_BC);
+                break;
+            case 0x02:  // D
+                Assert::AreEqual(value << 8, (int)spCPU->m_DE);
+                break;
+            case 0x03:  // E
+                Assert::AreEqual(value, (int)spCPU->m_DE);
+                break;
+            case 0x04:  // H
+                Assert::AreEqual(value << 8, (int)spCPU->m_HL);
+                break;
+            case 0x05:  // L
+                Assert::AreEqual(value, (int)spCPU->m_HL);
+                break;
+            case 0x07:  // A
+                Assert::AreEqual(value << 8, (int)spCPU->m_AF);
+                break;
+            }
+
+            spCPU.reset();
+        }
+    }
+
+    TEST_METHOD(GetUShortRegister_Test)
+    {
+        int value = 0x1234;
+        for (byte flags = 0x00; flags <= 0x03;flags++, value++)
+        {
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            ushort* reg = spCPU->GetUShortRegister(flags);
+
+            *reg = (int)value;
+
+            switch (flags)
+            {
+            case 0x00:  // BC
+                Assert::AreEqual(value, (int)spCPU->m_BC);
+                break;
+            case 0x01:  // DE
+                Assert::AreEqual(value, (int)spCPU->m_DE);
+                break;
+            case 0x02:  // HL
+                Assert::AreEqual(value, (int)spCPU->m_HL);
+                break;
+            case 0x03:  // AF
+                Assert::AreEqual(value, (int)spCPU->m_AF);
+                break;
+            }
+
+            spCPU.reset();
+        }
+    }
+
+    // OpCode Test
     // 0x00
     TEST_METHOD(NOP_Test)
     {
@@ -210,7 +293,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->GetHighByte(spCPU->m_AF));
+        Assert::AreEqual(0x1200, (int)spCPU->m_AF);
 
         spCPU.reset();
     }
@@ -338,7 +421,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->GetHighByte(spCPU->m_AF));
+        Assert::AreEqual(0x1200, (int)spCPU->m_AF);
 
         spCPU.reset();
     }
@@ -415,12 +498,13 @@ public:
         // Verify expectations after
         Assert::AreEqual(4, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x00, (int)spCPU->GetHighByte(spCPU->m_AF));
-        
+
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x0080, (int)spCPU->m_AF);
 
         spCPU.reset();
     }

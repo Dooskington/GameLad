@@ -14,24 +14,6 @@ CPU::CPU() :
     m_SP(0x0000),
     m_PC(0x0000)
 {
-    Logger::Log("CPU created.");
-}
-
-CPU::~CPU()
-{
-    m_timer.reset();
-    m_serial.reset();
-    m_joypad.reset();
-    m_APU.reset();
-    m_GPU.reset();
-    m_cartridge.reset();
-    m_MMU.reset();
-
-    Logger::Log("CPU destroyed.");
-}
-
-bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
-{
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x06] = &CPU::LDBe;
@@ -55,6 +37,61 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
     // Initialize the operationMapCB
     m_operationMapCB[0x7C] = &CPU::BIT7h;
 
+    // Initialize the register map
+    /*
+    I'm not 100% sure about this, so ensure the lookup is right for each opcode before using
+    GetByteRegister.
+
+    000 B
+    001 C
+    010 D
+    011 E
+    100 H
+    101 L
+    110 ? (F?)
+    111 A
+    */
+    m_ByteRegisterMap[0x00] = reinterpret_cast<byte*>(&m_BC) + 1;   // ushort memory is [C][B]
+    m_ByteRegisterMap[0x01] = reinterpret_cast<byte*>(&m_BC);
+    m_ByteRegisterMap[0x02] = reinterpret_cast<byte*>(&m_DE) + 1;
+    m_ByteRegisterMap[0x03] = reinterpret_cast<byte*>(&m_DE);
+    m_ByteRegisterMap[0x04] = reinterpret_cast<byte*>(&m_HL) + 1;
+    m_ByteRegisterMap[0x05] = reinterpret_cast<byte*>(&m_HL);
+    m_ByteRegisterMap[0x06] = reinterpret_cast<byte*>(&m_AF);       // Should not be used (F)
+    m_ByteRegisterMap[0x07] = reinterpret_cast<byte*>(&m_AF) + 1;
+
+    /*
+    I'm not 100% sure about this, so ensure the lookup is right for each opcode before using
+    GetUShortRegister.
+
+    00 = BC
+    01 = DE
+    10 = HL
+    11 = AF
+    */
+    m_UShortRegisterMap[0x00] = &m_BC;
+    m_UShortRegisterMap[0x01] = &m_DE;
+    m_UShortRegisterMap[0x02] = &m_HL;
+    m_UShortRegisterMap[0x03] = &m_AF;
+
+    Logger::Log("CPU created.");
+}
+
+CPU::~CPU()
+{
+    m_timer.reset();
+    m_serial.reset();
+    m_joypad.reset();
+    m_APU.reset();
+    m_GPU.reset();
+    m_cartridge.reset();
+    m_MMU.reset();
+
+    Logger::Log("CPU destroyed.");
+}
+
+bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
+{
     // Create the MMU
     m_MMU = std::unique_ptr<IMMU>(pMMU);
 
@@ -201,6 +238,18 @@ byte CPU::GetLowByte(ushort dest)
     return (dest & 0xFF);
 }
 
+byte* CPU::GetByteRegister(byte val)
+{
+    // Bottom 3 bits only
+    return m_ByteRegisterMap[val & 0x07];
+}
+
+ushort* CPU::GetUShortRegister(byte val)
+{
+    // Bottom 2 bits only
+    return m_UShortRegisterMap[val & 0x03];
+}
+
 void CPU::SetHighByte(ushort* dest, byte val)
 {
     byte low = GetLowByte(*dest);
@@ -233,6 +282,29 @@ void CPU::ClearFlag(byte flag)
 bool CPU::IsFlagSet(byte flag)
 {
     return ISBITSET(GetLowByte(m_AF), flag);
+}
+
+bool CPU::LookupAndCheckFlag(byte value)
+{
+    /*
+    000 NZ
+    001 Z
+    010 NC
+    011 C
+    */
+    switch (value)
+    {
+    case 0x00:
+        return !IsFlagSet(ZeroFlag);
+    case 0x01:
+        return IsFlagSet(ZeroFlag);
+    case 0x02:
+        return !IsFlagSet(CarryFlag);
+    case 0x03:
+        return IsFlagSet(CarryFlag);
+    }
+
+    return false;
 }
 
 void CPU::PushByteToSP(byte val)
