@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "Joypad.hpp"
 
 Joypad::Joypad(ICPU* pCPU) :

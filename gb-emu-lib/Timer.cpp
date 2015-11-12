@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "Timer.hpp"
 
 // FF04 - DIV - Divider Register (R/W)

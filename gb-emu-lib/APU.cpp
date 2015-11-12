@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "APU.hpp"
 
 // FF10 - NR10 - Channel 1 Sweep register (R / W)

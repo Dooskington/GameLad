@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "Emulator.hpp"
 
 #include "CPU.hpp"

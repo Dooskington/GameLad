@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "CPU.hpp"
 
 // The number of CPU cycles per frame
