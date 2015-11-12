@@ -15,6 +15,14 @@
 #else
     #define TEST_CLASS(className) class className
     #define TEST_METHOD(methodName) void methodName()
+
+    class Assert
+    {
+    public:
+        static void AreEqual(int expected, int actual) { }
+        static void IsTrue(bool condition) { }
+        static void IsFalse(bool condition) { Assert::IsTrue(!condition); }
+    };
 #endif
 
 #include <cstring>
