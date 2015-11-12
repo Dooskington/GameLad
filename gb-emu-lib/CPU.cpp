@@ -138,7 +138,7 @@ bool CPU::Initialize()
     return Initialize(new MMU(), false);
 }
 
-bool CPU::LoadROM(char* path)
+bool CPU::LoadROM(const char* path)
 {
     return m_cartridge->LoadROM(path);
 }

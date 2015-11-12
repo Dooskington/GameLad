@@ -35,7 +35,7 @@ private:
 
 public:
     bool Initialize();
-    bool LoadROM(char* path);
+    bool LoadROM(const char* path);
     void StepFrame();
     void TriggerInterrupt(byte interrupt);
     byte* GetCurrentFrame();

@@ -20,7 +20,7 @@ Cartridge::~Cartridge()
     Logger::Log("Cartridge destroyed.");
 }
 
-bool Cartridge::LoadROM(char* path)
+bool Cartridge::LoadROM(const char* path)
 {
     bool succeeded = false;
     std::streampos size;
