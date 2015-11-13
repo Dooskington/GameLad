@@ -53,7 +53,9 @@ public:
         // Test ROM and RAM read
         Assert::AreEqual(0xDE, (int)spMBC->ReadByte(0x1234));
         Assert::AreEqual(0xAF, (int)spMBC->ReadByte(0x4321));   // Default bank test
+        ::Logger::Disable();
         Assert::AreEqual(0x00, (int)spMBC->ReadByte(0xABCD));   // RAM is not enabled
+        ::Logger::Enable();
 
         // Change ROM to bank 2
         Assert::IsTrue(spMBC->WriteByte(0x2000, 0x02));
@@ -105,7 +107,9 @@ public:
 
         // Disable RAM
         Assert::IsTrue(spMBC->WriteByte(0x0000, 0x00));
+        ::Logger::Disable();
         Assert::AreEqual(0x00, (int)spMBC->ReadByte(0xA123));   // RAM is not enabled
+        ::Logger::Enable();
 
         spMBC.reset();
     }
@@ -128,7 +132,9 @@ public:
         // Test ROM and RAM read
         Assert::AreEqual(0xDE, (int)spMBC->ReadByte(0x1234));
         Assert::AreEqual(0xAF, (int)spMBC->ReadByte(0x4321));   // Default bank test
+        ::Logger::Disable();
         Assert::AreEqual(0x00, (int)spMBC->ReadByte(0xABCD));   // RAM is not enabled
+        ::Logger::Enable();
 
         // Change ROM to bank 2
         Assert::IsTrue(spMBC->WriteByte(0x2000, 0x02));

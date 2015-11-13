@@ -46,6 +46,10 @@
         static void AreEqual(int expected, int actual) { }
         static void IsTrue(bool condition) { }
         static void IsFalse(bool condition) { Assert::IsTrue(!condition); }
+
+    private:
+        static bool m_Failed;
+        static const char* m_Name;
     };
 #endif
 
