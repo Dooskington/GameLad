@@ -31,8 +31,14 @@ LIB_BIN_PATH = gb-emu-lib_bin
 LIB_SRC_FILES := $(wildcard $(LIB_SRC_PATH)/*.cpp)
 LIB_OBJ_FILES := $(LIB_SRC_FILES:$(LIB_SRC_PATH)%.cpp=$(LIB_BIN_PATH)%.o)
 
+all: build
+
 # Build the emulator and run it
-all: lib emu tests
+run: build
+	@./$(BIN_PATH)/$(BIN_NAME)
+
+# Build the emulator
+build: lib emu tests
 	@echo "*** Build complete ***"
 
 # Build the emulator library. This is required for the base emulator.
@@ -64,7 +70,7 @@ tests: build_tests
 
 build_tests: $(TEST_OBJ_FILES)
 	@echo "*** Building gb-emu-tests ***"
-	@$(CC) $(TEST_OBJ_FILES) -o $(BIN_PATH)/$(BIN_NAME)-tests -F $(FRAMEWORK_PATH) $(FRAMEWORKS) -L$(LIB_BIN_PAHT) -I$(LIB_BIN_PATH) 
+	@$(CC) $(TEST_OBJ_FILES) -o $(BIN_PATH)/$(BIN_NAME)-tests -F $(FRAMEWORK_PATH) $(FRAMEWORKS) -L$(LIB_BIN_PATH) -I$(LIB_BIN_PATH) 
 
 $(BIN_PATH)/%.o: $(TEST_SRC_PATH)/%.cpp
 	@echo "*** Compiling" $< " ***"
