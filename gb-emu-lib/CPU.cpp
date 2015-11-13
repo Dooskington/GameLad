@@ -327,6 +327,20 @@ void CPU::PushUShortToSP(ushort val)
     PushByteToSP(GetLowByte(val));
 }
 
+ushort CPU::PopUShort()
+{
+    ushort val = m_MMU->ReadUShort(m_SP);
+    m_SP += 2;
+    return val;
+}
+
+byte CPU::PopByte()
+{
+    byte val = m_MMU->ReadByte(m_SP);
+    m_SP++;
+    return val;
+}
+
 void CPU::HALT()
 {
     m_isHalted = true;
@@ -436,7 +450,7 @@ void CPU::RLA()
     SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
 
     // Set bit 0 of C to the old CarryFlag
-    carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0);
+    SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
     // Affects Z, clears N, clears H, affects C
     SetFlag(ZeroFlag);
@@ -581,8 +595,8 @@ void CPU::XORA()
 void CPU::POPBC()
 {
     m_PC += 1;
-    m_BC = m_MMU->ReadUShort(m_SP);
-    m_SP += 2;
+
+    m_BC = PopUShort();
     m_cycles += 12;
 
     // No flags affected
@@ -668,7 +682,7 @@ void CPU::RLC()
     SetLowByte(&m_BC, GetLowByte(m_BC) << 1);
 
     // Set bit 0 of C to the old CarryFlag
-    carry ? SETBIT(GetLowByte(m_BC), 0) : CLEARBIT(GetLowByte(m_BC), 0);
+    SetLowByte(&m_BC, carry ? SETBIT(GetLowByte(m_BC), 0) : CLEARBIT(GetLowByte(m_BC), 0));
 
     // Affects Z, clears N, clears H, affects C
     SetFlag(ZeroFlag);

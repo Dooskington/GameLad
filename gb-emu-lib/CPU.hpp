@@ -60,6 +60,8 @@ private:
 
     void PushByteToSP(byte val);
     void PushUShortToSP(ushort val);
+    ushort PopUShort();
+    byte PopByte();
 
     void HALT();
 

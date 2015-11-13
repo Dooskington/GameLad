@@ -58,6 +58,13 @@ private:
 
 public:
     // Misc tests
+    TEST_METHOD(Endian_Test)
+    {
+        ushort value = 0x1234; // [0x34 0x12]
+        Assert::AreEqual(0x12, (int)*(reinterpret_cast<byte*>(&value) + 1));
+        Assert::AreEqual(0x34, (int)*(reinterpret_cast<byte*>(&value)));
+    }
+
     TEST_METHOD(GetHighByte_Test)
     {
         ushort value = 0x1234;
@@ -273,7 +280,7 @@ public:
     TEST_METHOD(RLA_Test)
     {
         // Load RLA
-        byte m_Mem[] = { 0x17 };
+        byte m_Mem[] = { 0x17, 0x17 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -290,6 +297,12 @@ public:
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0x9C90, (int)spCPU->m_AF);
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+
+        spCPU->Step();
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x3990, (int)spCPU->m_AF);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -663,7 +676,7 @@ public:
     TEST_METHOD(RLC_Test)
     {
         // Load RLC
-        byte m_Mem[] = { 0xCB, 0x11 };
+        byte m_Mem[] = { 0xCB, 0x11, 0xCB, 0x11 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -680,6 +693,14 @@ public:
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x009C, (int)spCPU->m_BC);
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0004, (int)spCPU->m_PC);
+        Assert::AreEqual(0x0039, (int)spCPU->m_BC);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
