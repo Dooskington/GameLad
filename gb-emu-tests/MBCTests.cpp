@@ -1,12 +1,9 @@
 #include "stdafx.h"
-#include "CppUnitTest.h"
 
 #include <ROMOnly_MBC.hpp>
 #include <MBC1_MBC.hpp>
 #include <MBC2_MBC.hpp>
 #include <MBC3_MBC.hpp>
-
-using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 TEST_CLASS(MBCTests)
 {

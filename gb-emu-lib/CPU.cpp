@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "CPU.hpp"
 
 // The number of CPU cycles per frame
@@ -14,6 +14,15 @@ CPU::CPU() :
     m_SP(0x0000),
     m_PC(0x0000)
 {
+    for (unsigned int index = 0;index < ARRAYSIZE(m_operationMap);index++)
+    {
+        m_operationMap[index] = nullptr;
+    }
+    for (unsigned int index = 0;index < ARRAYSIZE(m_operationMapCB);index++)
+    {
+        m_operationMapCB[index] = nullptr;
+    }
+
     // Initialize the operationMap
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x06] = &CPU::LDBe;
@@ -138,7 +147,7 @@ bool CPU::Initialize()
     return Initialize(new MMU(), false);
 }
 
-bool CPU::LoadROM(std::string path)
+bool CPU::LoadROM(const char* path)
 {
     return m_cartridge->LoadROM(path);
 }
@@ -548,7 +557,7 @@ void CPU::PUSHBC()
     m_PC += 1;
     PushUShortToSP(m_BC);
     m_cycles += 16;
-std::cout << "TEefefST" << std::endl;
+
     // No flags affected
 }
 

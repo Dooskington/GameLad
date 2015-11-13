@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "Cartridge.hpp"
 
 #include "ROMOnly_MBC.hpp"
@@ -20,7 +20,7 @@ Cartridge::~Cartridge()
     Logger::Log("Cartridge destroyed.");
 }
 
-bool Cartridge::LoadROM(std::string path)
+bool Cartridge::LoadROM(const char* path)
 {
     bool succeeded = false;
     std::streampos size;
@@ -41,11 +41,11 @@ bool Cartridge::LoadROM(std::string path)
 
         if (file.read(reinterpret_cast<char*>(m_ROM.get()), size))
         {
-            Logger::Log("Loaded game rom %s (%d bytes)", path.data(), iSize);
+            Logger::Log("Loaded game rom %s (%d bytes)", path, iSize);
 
             if (iSize < 0x014F)
             {
-                Logger::Log("Cartridge doesn't have enough data!", path.data(), iSize);
+                Logger::Log("Cartridge doesn't have enough data!", path, iSize);
                 succeeded = false;
             }
             else
@@ -55,7 +55,7 @@ bool Cartridge::LoadROM(std::string path)
         }
         else
         {
-            Logger::Log("Failed to load game rom %s", path.data());
+            Logger::Log("Failed to load game rom %s", path);
         }
 
         file.close();

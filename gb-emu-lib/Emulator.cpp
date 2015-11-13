@@ -1,4 +1,4 @@
-#include "PCH.hpp"
+#include "pch.hpp"
 #include "Emulator.hpp"
 
 #include "CPU.hpp"
@@ -18,7 +18,7 @@ void Emulator::Stop()
     m_cpu.reset();
 }
 
-bool Emulator::Initialize(std::string rom)
+bool Emulator::Initialize(const char* rom)
 {
     // Create CPU
     m_cpu = std::make_unique<CPU>();
