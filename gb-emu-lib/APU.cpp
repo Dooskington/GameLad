@@ -115,8 +115,6 @@ APU::APU() :
         LoadChannel(CHANNEL3, Channel3CallbackStatic);
         LoadChannel(CHANNEL4, Channel4CallbackStatic);
     }
-
-    Logger::Log("APU created.");
 }
 
 APU::~APU()

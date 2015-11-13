@@ -47,13 +47,10 @@ MBC3_MBC::MBC3_MBC(byte* pROM, byte* pRAM) :
     m_isRAMEnabled(false)
 {
     memset(m_RTCRegisters, 0x00, ARRAYSIZE(m_RTCRegisters));
-
-    Logger::Log("MBC3_MBC created.");
 }
 
 MBC3_MBC::~MBC3_MBC()
 {
-    Logger::Log("MBC3_MBC destroyed.");
 }
 
 // IMemoryUnit

@@ -7,12 +7,10 @@ Joypad::Joypad(ICPU* pCPU) :
     m_InputValues(0x00),
     m_ButtonValues(0x00)
 {
-    Logger::Log("Joypad created.");
 }
 
 Joypad::~Joypad()
 {
-    Logger::Log("Joypad destroyed.");
 }
 
 void Joypad::SetInput(byte input, byte buttons)

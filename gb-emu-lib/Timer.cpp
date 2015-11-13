@@ -92,16 +92,12 @@ Timer::Timer(ICPU* pCPU) :
 {
     m_DividerCounter = std::unique_ptr<Counter>(new Counter(Frequency16384));
     m_TimerCounter = std::unique_ptr<Counter>(new Counter(Frequency4096));
-
-    Logger::Log("Timer created.");
 }
 
 Timer::~Timer()
 {
     m_DividerCounter.reset();
     m_TimerCounter.reset();
-
-    Logger::Log("Timer destroyed.");
 }
 
 
