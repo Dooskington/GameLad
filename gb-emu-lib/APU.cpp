@@ -129,8 +129,6 @@ APU::~APU()
     }
 
     SDL_Quit();
-
-    Logger::Log("APU destroyed.");
 }
 
 void APU::Step(unsigned long cycles)
