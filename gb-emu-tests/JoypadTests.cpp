@@ -1,10 +1,7 @@
 #include "stdafx.h"
-#include "CppUnitTest.h"
 
 #include <Emulator.hpp>
 #include <Joypad.hpp>
-
-using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #define INPUT_ONLY      0x20
 #define BUTTONS_ONLY    0x10

@@ -5,12 +5,27 @@
 
 #pragma once
 
-#include "targetver.h"
+#if WINDOWS2
+    #include "targetver.h"
 
-// Headers for CppUnitTest
-#include "CppUnitTest.h"
+    // Headers for CppUnitTest
+    #include "CppUnitTest.h"
 
-#include <string>
+    using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+#else
+    #define TEST_CLASS(className) class className
+    #define TEST_METHOD(methodName) void methodName()
+
+    class Assert
+    {
+    public:
+        static void AreEqual(int expected, int actual) { }
+        static void IsTrue(bool condition) { }
+        static void IsFalse(bool condition) { Assert::IsTrue(!condition); }
+    };
+#endif
+
+#include <cstring>
 #include <iostream>
 #include <fstream>
 
