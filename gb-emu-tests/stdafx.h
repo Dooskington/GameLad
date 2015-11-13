@@ -43,9 +43,12 @@
     class Assert
     {
     public:
-        static void AreEqual(int expected, int actual) { }
-        static void IsTrue(bool condition) { }
-        static void IsFalse(bool condition) { Assert::IsTrue(!condition); }
+        static void Reset(const char* name);
+        static bool HasFailed();
+
+        static void AreEqual(int expected, int actual);
+        static void IsTrue(bool condition);
+        static void IsFalse(bool condition);
 
     private:
         static bool m_Failed;
