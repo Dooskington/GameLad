@@ -69,6 +69,7 @@ private:
     void INCC();            // 0x0C
     void LDCe();            // 0x0E
     void LDDEnn();          // 0x11
+    void RLA();             // 0x17
     void LDA_DE_();         // 0x1A
     void JRNZe();           // 0x20
     void LDHLnn();          // 0x21
@@ -78,12 +79,14 @@ private:
     void LDCA();            // 0x4F
     void LD_HL_A();         // 0x77
     void XORA();            // 0xAF
+    void POPBC();           // 0xC1
     void PUSHBC();          // 0xC5
     void CALLnn();          // 0xCD
     void LD_0xFF00C_A();    // 0xE0
     void LD_0xFF00n_A();    // 0xE2
 
     // OpCode 0xCB functions
+    void RLC();             // 0x11
     void BIT7h();           // 0x7C
 
 private:

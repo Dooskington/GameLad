@@ -29,6 +29,7 @@ CPU::CPU() :
     m_operationMap[0x0C] = &CPU::INCC;
     m_operationMap[0x0E] = &CPU::LDCe;
     m_operationMap[0x11] = &CPU::LDDEnn;
+    m_operationMap[0x17] = &CPU::RLA;
     m_operationMap[0x1A] = &CPU::LDA_DE_;
     m_operationMap[0x20] = &CPU::JRNZe;
     m_operationMap[0x21] = &CPU::LDHLnn;
@@ -38,12 +39,14 @@ CPU::CPU() :
     m_operationMap[0x4F] = &CPU::LDCA;
     m_operationMap[0x77] = &CPU::LD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
+    m_operationMap[0xC1] = &CPU::POPBC;
     m_operationMap[0xC5] = &CPU::PUSHBC;
     m_operationMap[0xCD] = &CPU::CALLnn;
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
 
     // Initialize the operationMapCB
+    m_operationMapCB[0x11] = &CPU::RLC;
     m_operationMapCB[0x7C] = &CPU::BIT7h;
 
     // Initialize the register map
@@ -414,6 +417,33 @@ void CPU::LDDEnn()
     // No flags affected
 }
 
+// 0x17 (RL A)
+void CPU::RLA()
+{
+    m_PC += 1;
+    m_cycles += 8;
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(GetHighByte(m_AF), 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift C left
+    SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
+
+    // Set bit 0 of C to the old CarryFlag
+    carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+}
+
 // 0x1A (LD A, (DE))
 void CPU::LDA_DE_()
 {
@@ -547,6 +577,17 @@ void CPU::XORA()
     ClearFlag(CarryFlag);
 }
 
+// 0xC1
+void CPU::POPBC()
+{
+    m_PC += 1;
+    m_BC = m_MMU->ReadUShort(m_SP);
+    m_SP += 2;
+    m_cycles += 12;
+
+    // No flags affected
+}
+
 // 0xC5
 void CPU::PUSHBC()
 {
@@ -608,10 +649,37 @@ void CPU::LD_0xFF00C_A()
     CPU 0xCB INSTRUCTION MAP
 */
 
+// 0x11 (RL C)
+void CPU::RLC()
+{
+    m_PC += 1;
+    m_cycles += 8;
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(GetLowByte(m_BC), 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift C left
+    SetLowByte(&m_BC, GetLowByte(m_BC) << 1);
+
+    // Set bit 0 of C to the old CarryFlag
+    carry ? SETBIT(GetLowByte(m_BC), 0) : CLEARBIT(GetLowByte(m_BC), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+}
+
 // 0x7C (BIT 7, h)
 void CPU::BIT7h()
 {
-    m_PC++;
+    m_PC += 1;
     m_cycles += 8;
 
     // Test bit 7 in H
