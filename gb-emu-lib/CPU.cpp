@@ -39,6 +39,7 @@ CPU::CPU() :
     m_operationMap[0x4F] = &CPU::LDCA;
     m_operationMap[0x77] = &CPU::LD_HL_A;
     m_operationMap[0xAF] = &CPU::XORA;
+    m_operationMap[0xC1] = &CPU::POPBC;
     m_operationMap[0xC5] = &CPU::PUSHBC;
     m_operationMap[0xCD] = &CPU::CALLnn;
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
@@ -578,6 +579,17 @@ void CPU::XORA()
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+}
+
+// 0xC1
+void CPU::POPBC()
+{
+    m_PC += 1;
+    m_BC = m_MMU->ReadUShort(m_SP);
+    m_SP += 2;
+    m_cycles += 12;
+
+    // No flags affected
 }
 
 // 0xC5
