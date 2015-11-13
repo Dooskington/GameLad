@@ -5,26 +5,6 @@
 
 #pragma once
 
-#if WINDOWS2
-    #include "targetver.h"
-
-    // Headers for CppUnitTest
-    #include "CppUnitTest.h"
-
-    using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-#else
-    #define TEST_CLASS(className) class className
-    #define TEST_METHOD(methodName) void methodName()
-
-    class Assert
-    {
-    public:
-        static void AreEqual(int expected, int actual) { }
-        static void IsTrue(bool condition) { }
-        static void IsFalse(bool condition) { Assert::IsTrue(!condition); }
-    };
-#endif
-
 #include <cstring>
 #include <iostream>
 #include <fstream>
@@ -33,6 +13,49 @@
 #include <memory>
 
 #include <map>
+
+#if WINDOWS2
+#include "targetver.h"
+
+// Headers for CppUnitTest
+#include "CppUnitTest.h"
+
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+#else
+#define TEST_CLASS(className) class className
+#define TEST_METHOD(methodName) void methodName()
+#define TEST_DECL(className, methodName) extern void className::methodName()
+#define TEST_SETUP(className) \
+        { \
+            className obj;
+#define TEST_CALL(className, methodName) \
+        Assert::Reset(#className "::" #methodName); \
+        obj.methodName(); \
+        if(Assert::HasFailed()) \
+        { \
+            failed++; \
+        } \
+        else \
+        { \
+            passed++; \
+        }
+#define TEST_CLEANUP() }
+
+class Assert
+{
+public:
+    static void Reset(const char* name);
+    static bool HasFailed();
+
+    static void AreEqual(int expected, int actual);
+    static void IsTrue(bool condition);
+    static void IsFalse(bool condition);
+
+private:
+    static bool m_Failed;
+    static const char* m_Name;
+};
+#endif
 
 #if WINDOWS
     #include <SDL.h>
