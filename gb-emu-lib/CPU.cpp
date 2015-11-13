@@ -450,7 +450,7 @@ void CPU::RLA()
     SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
 
     // Set bit 0 of C to the old CarryFlag
-    SetHighByte(&m_AF, carry ? m_AF, SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
+    SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
     // Affects Z, clears N, clears H, affects C
     SetFlag(ZeroFlag);
