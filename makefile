@@ -15,7 +15,7 @@ else
 endif
 
 BIN_NAME = gb-emu
-C_FLAGS = -Wall -std=c++14 -g
+C_FLAGS = -Wall -std=c++14 -g -O2
 
 SRC_PATH = gb-emu
 BIN_PATH = gb-emu_bin
