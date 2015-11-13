@@ -30,7 +30,7 @@
     #define TEST_CALL(className, methodName) \
         Assert::Reset(#className "::" #methodName); \
         obj.methodName(); \
-        if(Assert::HasFailed()) \
+        if (Assert::HasFailed()) \
         { \
             failed++; \
         } \
@@ -38,7 +38,7 @@
         { \
             passed++; \
         }
-    #define TEST_CLEANUP() 
+    #define TEST_CLEANUP() }
 
     class Assert
     {
