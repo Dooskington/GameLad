@@ -14,6 +14,7 @@ int main(int arg, char** argv)
 
     std::cout << "----------------------------------" << std::endl;
     TEST_SETUP(CPUTests);
+    TEST_CALL(CPUTests, Endian_Test);
     TEST_CALL(CPUTests, GetHighByte_Test);
     TEST_CALL(CPUTests, GetLowByte_Test);
     TEST_CALL(CPUTests, GetByteRegister_Test);
