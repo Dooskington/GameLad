@@ -6,7 +6,11 @@ This is mostly a learning project to explore the fun world of emulation.  It is 
 
 ### Compiling
 
-To compile on Windows, use the Visual Studio 2013 project. To compile on Mac OSX, use make.
+To compile on Windows, use the Visual Studio 2015 project.
+
+To compile on Mac OSX, use make.
+
+To compile on Linux, use make.  Note: You may need to pull down SDL2 manually using apt get or pacman.
 
 ### Dependencies
 
