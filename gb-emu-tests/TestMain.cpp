@@ -23,6 +23,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, INCC_Test);
     TEST_CALL(CPUTests, LDCe_Test);
     TEST_CALL(CPUTests, LDDEnn_Test);
+    TEST_CALL(CPUTests, RLA_Test);
     TEST_CALL(CPUTests, LDA_DE__Test);
     TEST_CALL(CPUTests, JRNZe_Test);
     TEST_CALL(CPUTests, LDHLnn_Test);
@@ -32,10 +33,12 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDCA_Test);
     TEST_CALL(CPUTests, LD_HL_A_Test);
     TEST_CALL(CPUTests, XORA_Test);
+    TEST_CALL(CPUTests, POPBC_Test);
     TEST_CALL(CPUTests, PUSHBC_Test);
     TEST_CALL(CPUTests, CALLnn_Test);
     TEST_CALL(CPUTests, LD_0xFF00n_A_Test);
     TEST_CALL(CPUTests, LD_0xFF00C_A_Test);
+    TEST_CALL(CPUTests, RLC_Test);
     TEST_CALL(CPUTests, BIT7h_Test);
     TEST_CLEANUP();
 
