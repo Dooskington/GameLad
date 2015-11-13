@@ -63,6 +63,7 @@ bool Joypad::WriteByte(const ushort& address, const byte val)
     case JoypadAddress:
         // Only save BIT 5 and 4, the rest are unused/read only
         m_SelectValues = (val & 0x30);
+        return true;
     default:
         Logger::Log("Joypad::WriteByte cannot write to address 0x%04X", address);
         return false;
