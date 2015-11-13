@@ -5,6 +5,15 @@
 
 #pragma once
 
+#include <cstring>
+#include <iostream>
+#include <fstream>
+
+#include <cstdarg>
+#include <memory>
+
+#include <map>
+
 #if WINDOWS
     #include "targetver.h"
 
@@ -15,24 +24,37 @@
 #else
     #define TEST_CLASS(className) class className
     #define TEST_METHOD(methodName) void methodName()
+    #define TEST_SETUP(className) \
+        { \
+            className obj;
+    #define TEST_CALL(className, methodName) \
+        Assert::Reset(#className "::" #methodName); \
+        obj.methodName(); \
+        if (Assert::HasFailed()) \
+        { \
+            failed++; \
+        } \
+        else \
+        { \
+            passed++; \
+        }
+    #define TEST_CLEANUP() }
 
     class Assert
     {
     public:
-        static void AreEqual(int expected, int actual) { }
-        static void IsTrue(bool condition) { }
-        static void IsFalse(bool condition) { Assert::IsTrue(!condition); }
+        static void Reset(const char* name);
+        static bool HasFailed();
+
+        static void AreEqual(int expected, int actual);
+        static void IsTrue(bool condition);
+        static void IsFalse(bool condition);
+
+    private:
+        static bool m_Failed;
+        static const char* m_Name;
     };
 #endif
-
-#include <cstring>
-#include <iostream>
-#include <fstream>
-
-#include <cstdarg>
-#include <memory>
-
-#include <map>
 
 #if WINDOWS
     #include <SDL.h>

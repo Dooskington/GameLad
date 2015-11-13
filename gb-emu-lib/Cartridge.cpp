@@ -8,7 +8,6 @@
 
 Cartridge::Cartridge()
 {
-    Logger::Log("Cartridge created.");
 }
 
 Cartridge::~Cartridge()
@@ -16,8 +15,6 @@ Cartridge::~Cartridge()
     m_MBC.reset();
     m_ROM.reset();
     m_RAM.reset();
-
-    Logger::Log("Cartridge destroyed.");
 }
 
 bool Cartridge::LoadROM(const char* path)

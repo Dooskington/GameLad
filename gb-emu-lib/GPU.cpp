@@ -63,13 +63,10 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
 {
     SETMODE(ModeReadingOAM);
     memset(m_DisplayPixels, 0x00, ARRAYSIZE(m_DisplayPixels));
-
-    Logger::Log("GPU created.");
 }
 
 GPU::~GPU()
 {
-    Logger::Log("GPU destroyed.");
 }
 
 /*

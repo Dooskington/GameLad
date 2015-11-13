@@ -23,12 +23,10 @@ MBC1_MBC::MBC1_MBC(byte* pROM, byte* pRAM) :
     m_ROMRAMMode(ROMBankMode),
     m_isRAMEnabled(false)
 {
-    Logger::Log("MBC1_MBC created.");
 }
 
 MBC1_MBC::~MBC1_MBC()
 {
-    Logger::Log("MBC1_MBC destroyed.");
 }
 
 // IMemoryUnit

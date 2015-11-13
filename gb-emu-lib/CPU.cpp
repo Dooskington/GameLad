@@ -85,8 +85,6 @@ CPU::CPU() :
     m_UShortRegisterMap[0x01] = &m_DE;
     m_UShortRegisterMap[0x02] = &m_HL;
     m_UShortRegisterMap[0x03] = &m_AF;
-
-    Logger::Log("CPU created.");
 }
 
 CPU::~CPU()
@@ -98,8 +96,6 @@ CPU::~CPU()
     m_GPU.reset();
     m_cartridge.reset();
     m_MMU.reset();
-
-    Logger::Log("CPU destroyed.");
 }
 
 bool CPU::Initialize(IMMU* pMMU, bool isFromTest)

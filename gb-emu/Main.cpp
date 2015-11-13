@@ -10,7 +10,6 @@ struct SDLWindowDeleter
         if (window != nullptr)
         {
             SDL_DestroyWindow(window);
-            Logger::Log("SDL_Window destroyed.");
         }
     }
 };
@@ -22,7 +21,6 @@ struct SDLRendererDeleter
         if (renderer != nullptr)
         {
             SDL_DestroyRenderer(renderer);
-            Logger::Log("SDL_Renderer destroyed.");
         }
     }
 };
@@ -34,7 +32,6 @@ struct SDLTextureDeleter
         if (texture != nullptr)
         {
             SDL_DestroyTexture(texture);
-            Logger::Log("SDL_Texture destroyed.");
         }
     }
 };

@@ -68,9 +68,9 @@ $(BIN_PATH)/%.o: $(SRC_PATH)/%.cpp
 tests: build_tests
 	@echo "*** gb-emu-test Built ***"
 
-build_tests: $(TEST_OBJ_FILES)
+build_tests: $(OBJ_FILES) $(TEST_OBJ_FILES)
 	@echo "*** Building gb-emu-tests ***"
-	@$(CC) $(TEST_OBJ_FILES) -o $(BIN_PATH)/$(BIN_NAME)-tests -F $(FRAMEWORK_PATH) $(FRAMEWORKS) -L$(LIB_BIN_PATH) -I$(LIB_BIN_PATH) 
+	@$(CC) $(LIB_OBJ_FILES) $(TEST_OBJ_FILES) -o $(BIN_PATH)/$(BIN_NAME)-tests -F $(FRAMEWORK_PATH) $(FRAMEWORKS) -L$(LIB_BIN_PATH) -I$(LIB_BIN_PATH) -lgb-emu 
 
 $(BIN_PATH)/%.o: $(TEST_SRC_PATH)/%.cpp
 	@echo "*** Compiling" $< " ***"

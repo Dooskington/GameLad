@@ -63,14 +63,11 @@ const byte BIOS[] =
 MMU::MMU() :
     m_isBooting(true)
 {
-    Logger::Log("MMU created.");
-
     RegisterMemoryUnit(0x0000, 0xFFFF, nullptr);
 }
 
 MMU::~MMU()
 {
-    Logger::Log("MMU destroyed.");
 }
 
 void MMU::RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit)

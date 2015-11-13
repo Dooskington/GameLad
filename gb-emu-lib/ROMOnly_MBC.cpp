@@ -11,12 +11,10 @@ ROMOnly_MBC::ROMOnly_MBC(byte* pROM, byte* pRAM) :
     m_ROM(pROM),
     m_RAM(pRAM)
 {
-    Logger::Log("ROMOnly_MBC created.");
 }
 
 ROMOnly_MBC::~ROMOnly_MBC()
 {
-    Logger::Log("ROMOnly_MBC destroyed.");
 }
 
 // IMemoryUnit

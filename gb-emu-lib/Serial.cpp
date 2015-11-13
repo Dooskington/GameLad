@@ -8,12 +8,10 @@
 
 Serial::Serial()
 {
-    Logger::Log("Serial created.");
 }
 
 Serial::~Serial()
 {
-    Logger::Log("Serial destroyed.");
 }
 
 // IMemoryUnit
