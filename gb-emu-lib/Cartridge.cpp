@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "Cartridge.hpp"
 
-#include "ROMOnly_MBC.hpp"
 #include "MBC.hpp"
 
 Cartridge::Cartridge()

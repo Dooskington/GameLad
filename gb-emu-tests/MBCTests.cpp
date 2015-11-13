@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-#include <ROMOnly_MBC.hpp>
 #include <MBC.hpp>
 
 TEST_CLASS(MBCTests)

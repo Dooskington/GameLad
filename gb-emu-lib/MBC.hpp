@@ -1,5 +1,7 @@
 #pragma once
 
+#define ROMOnly             0x00
+
 #define MBC1                0x01
 #define MBC1RAM             0x02
 #define MBC1RAMBattery      0x03
@@ -16,9 +18,29 @@
 class MBC : public IMemoryUnit
 {
 public:
+    MBC(byte* pROM, byte* pRAM);
+    ~MBC();
+
+public:
     // IMemoryUnit
     virtual byte ReadByte(const ushort& address) = 0;
     virtual bool WriteByte(const ushort& address, const byte val) = 0;
+    
+protected:
+    byte* m_ROM;
+    byte* m_RAM;
+    bool m_isRAMEnabled;
+};
+
+class ROMOnly_MBC : public MBC
+{
+public:
+    ROMOnly_MBC(byte* pROM, byte* pRAM);
+    ~ROMOnly_MBC();
+
+    // IMemoryUnit
+    byte ReadByte(const ushort& address);
+    bool WriteByte(const ushort& address, const byte val);
 };
 
 class MBC1_MBC : public MBC
@@ -32,13 +54,9 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    byte* m_ROM;
-    byte* m_RAM;
     byte m_ROMBankLower;
     byte m_ROMRAMBankUpper;
     byte m_ROMRAMMode;
-
-    bool m_isRAMEnabled;
 };
 
 class MBC2_MBC : public MBC
@@ -52,11 +70,7 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    byte* m_ROM;
-    byte m_RAM[0x1FF + 1];
     byte m_ROMBank;
-
-    bool m_isRAMEnabled;
 };
 
 class MBC3_MBC : public MBC
@@ -70,12 +84,7 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    byte* m_ROM;
-    byte* m_RAM;
-
     byte m_ROMBank;
     byte m_RAMBank;
     byte m_RTCRegisters[0x05];
-
-    bool m_isRAMEnabled;
 };

@@ -24,7 +24,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ROMOnly_MBC.cpp" />
     <ClCompile Include="Serial.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
@@ -42,7 +41,6 @@
     <ClInclude Include="MBC.hpp" />
     <ClInclude Include="MMU.hpp" />
     <ClInclude Include="pch.hpp" />
-    <ClInclude Include="ROMOnly_MBC.hpp" />
     <ClInclude Include="Serial.hpp" />
     <ClInclude Include="Timer.hpp" />
   </ItemGroup>
