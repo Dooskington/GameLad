@@ -2,9 +2,7 @@
 #include "Cartridge.hpp"
 
 #include "ROMOnly_MBC.hpp"
-#include "MBC1_MBC.hpp"
-#include "MBC2_MBC.hpp"
-#include "MBC3_MBC.hpp"
+#include "MBC.hpp"
 
 Cartridge::Cartridge()
 {
