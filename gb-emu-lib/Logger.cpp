@@ -1,8 +1,25 @@
 #include "pch.hpp"
 #include "Logger.hpp"
 
+bool Logger::m_IsEnabled = true;
+
+void Logger::Disable()
+{
+    m_IsEnabled = false;
+}
+
+void Logger::Enable()
+{
+    m_IsEnabled = true;
+}
+
 void Logger::Log(const char* message, ...)
 {
+    if (!m_IsEnabled)
+    {
+        return;
+    }
+
     va_list argPointer;
     va_start(argPointer, message);
 

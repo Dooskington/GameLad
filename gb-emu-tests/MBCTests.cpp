@@ -25,7 +25,9 @@ public:
         Assert::AreEqual(0xAB, (int)spMBC->ReadByte(0xABCD));
 
         // Test ROM and RAM write
+        ::Logger::Disable();
         Assert::IsFalse(spMBC->WriteByte(0x5432, 0xEF));
+        ::Logger::Enable();
         Assert::IsTrue(spMBC->WriteByte(0xABCD, 0xEF));
         Assert::AreEqual(0xEF, (int)spMBC->ReadByte(0xABCD));
         Assert::AreEqual((int)ram[0x0BCD], (int)spMBC->ReadByte(0xABCD));
