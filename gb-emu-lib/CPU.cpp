@@ -35,6 +35,7 @@ CPU::CPU() :
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
 
     // Initialize the operationMapCB
+    m_operationMapCB[0x11] = &CPU::RLC;
     m_operationMapCB[0x7C] = &CPU::BIT7h;
 
     // Initialize the register map
@@ -548,7 +549,7 @@ void CPU::PUSHBC()
     m_PC += 1;
     PushUShortToSP(m_BC);
     m_cycles += 16;
-std::cout << "TEefefST" << std::endl;
+
     // No flags affected
 }
 
@@ -603,10 +604,37 @@ void CPU::LD_0xFF00C_A()
     CPU 0xCB INSTRUCTION MAP
 */
 
+// 0x11 (RL C)
+void CPU::RLC()
+{
+    m_PC += 1;
+    m_cycles += 8;
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(GetLowByte(m_BC), 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift C left
+    SetLowByte(&m_BC, GetLowByte(m_BC) << 1);
+
+    // Set bit 0 of C to the old CarryFlag
+    carry ? SETBIT(GetLowByte(m_BC), 0) : CLEARBIT(GetLowByte(m_BC), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+}
+
 // 0x7C (BIT 7, h)
 void CPU::BIT7h()
 {
-    m_PC++;
+    m_PC += 1;
     m_cycles += 8;
 
     // Test bit 7 in H

@@ -84,6 +84,7 @@ private:
     void LD_0xFF00n_A();    // 0xE2
 
     // OpCode 0xCB functions
+    void RLC();             // 0x11
     void BIT7h();           // 0x7C
 
 private:
