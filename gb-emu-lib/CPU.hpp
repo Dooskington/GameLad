@@ -69,6 +69,7 @@ private:
     void INCC();            // 0x0C
     void LDCe();            // 0x0E
     void LDDEnn();          // 0x11
+    void RLA();             // 0x17
     void LDA_DE_();         // 0x1A
     void JRNZe();           // 0x20
     void LDHLnn();          // 0x21

@@ -29,6 +29,7 @@ CPU::CPU() :
     m_operationMap[0x0C] = &CPU::INCC;
     m_operationMap[0x0E] = &CPU::LDCe;
     m_operationMap[0x11] = &CPU::LDDEnn;
+    m_operationMap[0x17] = &CPU::RLA;
     m_operationMap[0x1A] = &CPU::LDA_DE_;
     m_operationMap[0x20] = &CPU::JRNZe;
     m_operationMap[0x21] = &CPU::LDHLnn;
@@ -417,6 +418,33 @@ void CPU::LDDEnn()
     m_cycles += 8;
 
     // No flags affected
+}
+
+// 0x17 (RL A)
+void CPU::RLA()
+{
+    m_PC += 1;
+    m_cycles += 8;
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(GetHighByte(m_AF), 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift C left
+    SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
+
+    // Set bit 0 of C to the old CarryFlag
+    carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
 }
 
 // 0x1A (LD A, (DE))
