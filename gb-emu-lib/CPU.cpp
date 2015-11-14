@@ -252,7 +252,7 @@ CPU::CPU() :
     //m_operationMap[0xC2] TODO
     //m_operationMap[0xC3] TODO
     //m_operationMap[0xC4] TODO
-    m_operationMap[0xC5] = &CPU::PUSHBC;
+    m_operationMap[0xC5] = &CPU::PUSHrr;
     //m_operationMap[0xC6] TODO
     //m_operationMap[0xC7] TODO
     //m_operationMap[0xC8] TODO
@@ -270,7 +270,7 @@ CPU::CPU() :
     //m_operationMap[0xD2] TODO
     //m_operationMap[0xD3] TODO
     //m_operationMap[0xD4] TODO
-    //m_operationMap[0xD5] TODO
+    m_operationMap[0xD5] = &CPU::PUSHrr;
     //m_operationMap[0xD6] TODO
     //m_operationMap[0xD7] TODO
     //m_operationMap[0xD8] TODO
@@ -288,7 +288,7 @@ CPU::CPU() :
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
     //m_operationMap[0xE3] TODO
     //m_operationMap[0xE4] TODO
-    //m_operationMap[0xE5] TODO
+    m_operationMap[0xE5] = &CPU::PUSHrr;
     //m_operationMap[0xE6] TODO
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
@@ -306,7 +306,7 @@ CPU::CPU() :
     //m_operationMap[0xF2] TODO
     //m_operationMap[0xF3] TODO
     //m_operationMap[0xF4] TODO
-    //m_operationMap[0xF5] TODO
+    m_operationMap[0xF5] = &CPU::PUSHrr;
     //m_operationMap[0xF6] TODO
     //m_operationMap[0xF7] TODO
     //m_operationMap[0xF8] TODO
@@ -951,7 +951,7 @@ void CPU::NOP(const byte& opCode)
 
     8 Cycles
 
-    No flags affected
+    Flags affected(znhc): ----
 */
 void CPU::LDrn(const byte& opCode)
 {
@@ -971,7 +971,7 @@ void CPU::LDrn(const byte& opCode)
 
     4 Cycles
 
-    No flags affected
+    Flags affected(znhc): ----
 */
 void CPU::LDrR(const byte& opCode)
 {
@@ -991,7 +991,7 @@ void CPU::LDrR(const byte& opCode)
 
     12 Cycles
 
-    No flags affected
+    Flags affected(znhc): ----
 */
 void CPU::LDrrnn(const byte& opCode)
 {
@@ -1076,6 +1076,29 @@ void CPU::XORr(const byte& opCode)
     ClearFlag(CarryFlag);
 
     m_cycles += 4;
+}
+
+/*
+    PUSH rr
+    11qq0101
+
+    The contents of the register pair rr are pushed to the external memory stack.
+    The stack pointer holds the 16 bit address of the current top of the stack. 
+    This instruction first decrements SP and loads the high order byte of register
+    pair rr to the memory address specified by the SP. The SP is decremented again,
+    and then the low order byte is then loaded to the new memory address. The operand
+    rr identifies register pair BC, DE, HL, or AF.
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::PUSHrr(const byte& opCode)
+{
+    ushort* rr = GetUShortRegister(opCode >> 4, true);
+    PushUShortToSP(*rr);
+
+    m_cycles += 16;
 }
 
 // 0x17 (RL A)
@@ -1163,41 +1186,11 @@ void CPU::LD_HL_A(const byte& opCode)
     // No flags affected
 }
 
-// 0xAF (XOR A)
-void CPU::XORA(const byte& opCode)
-{
-    SetHighByte(&m_AF, GetHighByte(m_AF) ^ GetHighByte(m_AF));
-    m_cycles += 4;
-
-    // Affects Z and clears NHC
-    if (GetHighByte(m_AF) == 0x00)
-    {
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        ClearFlag(ZeroFlag);
-    }
-
-    ClearFlag(AddFlag);
-    ClearFlag(HalfCarryFlag);
-    ClearFlag(CarryFlag);
-}
-
 // 0xC1
 void CPU::POPBC(const byte& opCode)
 {
     m_BC = PopUShort();
     m_cycles += 12;
-
-    // No flags affected
-}
-
-// 0xC5
-void CPU::PUSHBC(const byte& opCode)
-{
-    PushUShortToSP(m_BC);
-    m_cycles += 16;
 
     // No flags affected
 }

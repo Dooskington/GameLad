@@ -1212,6 +1212,31 @@ public:
         spCPU.reset();
     }
 
+    // 0xD5
+    TEST_METHOD(PUSHDE_Test)
+    {
+        // Load PUSH DE
+        byte m_Mem[] = { 0xD5 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_DE = 0x1234;
+        spCPU->m_SP = 0xFFFE;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
+        Assert::AreEqual(0x1234, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
+
+        spCPU.reset();
+    }
+
     // 0xE0
     TEST_METHOD(LD_0xFF00n_A_Test)
     {
@@ -1259,6 +1284,56 @@ public:
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0xFF12));
+
+        spCPU.reset();
+    }
+
+    // 0xE5
+    TEST_METHOD(PUSHHL_Test)
+    {
+        // Load PUSH HL
+        byte m_Mem[] = { 0xE5 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_HL = 0x1234;
+        spCPU->m_SP = 0xFFFE;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
+        Assert::AreEqual(0x1234, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
+
+        spCPU.reset();
+    }
+
+    // 0xF5
+    TEST_METHOD(PUSHAF_Test)
+    {
+        // Load PUSH AF
+        byte m_Mem[] = { 0xF5 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x1234;
+        spCPU->m_SP = 0xFFFE;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
+        Assert::AreEqual(0x1234, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
 
         spCPU.reset();
     }
