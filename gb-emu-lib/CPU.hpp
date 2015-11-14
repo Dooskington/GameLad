@@ -62,6 +62,8 @@ private:
     void PushUShortToSP(ushort val);
     ushort PopUShort();
     byte PopByte();
+    byte ReadBytePC();
+    ushort ReadUShortPC();
 
     void HALT();
 
@@ -85,8 +87,8 @@ private:
     void POPBC(const byte& opCode);           // 0xC1
     void PUSHBC(const byte& opCode);          // 0xC5
     void CALLnn(const byte& opCode);          // 0xCD
-    void LD_0xFF00C_A(const byte& opCode);    // 0xE0
-    void LD_0xFF00n_A(const byte& opCode);    // 0xE2
+    void LD_0xFF00n_A(const byte& opCode);    // 0xE0
+    void LD_0xFF00C_A(const byte& opCode);    // 0xE2
 
     // Z80 Instruction Set - CB
     void RLC(const byte& opCode);             // 0x11

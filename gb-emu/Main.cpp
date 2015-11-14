@@ -151,7 +151,7 @@ int main(int argc, char** argv)
                 // Sleep for (16ms - elapsed frame time)
                 SDL_Delay(delay);
             }
-            else
+            else if (frameElapsedTime > TimePerFrame)
             {
                 Logger::Log("Frame time was too long: %dms  (Expect less than %dms)", frameElapsedTime, TimePerFrame);
             }

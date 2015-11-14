@@ -751,13 +751,12 @@ void CPU::Step()
     {
         ushort addr = m_PC;
         // Read through the memory, starting at m_PC
-        byte opCode = m_MMU->ReadByte(m_PC);
+        byte opCode = ReadBytePC();
         opCodeFunction instruction; // Execute the correct function for each OpCode
 
         if (opCode == 0xCB)
         {
-            m_PC += 1;
-            opCode = m_MMU->ReadByte(m_PC);
+            opCode = ReadBytePC();
             instruction = m_operationMapCB[opCode];
         }
         else
@@ -902,6 +901,20 @@ byte CPU::PopByte()
     return val;
 }
 
+byte CPU::ReadBytePC()
+{
+    byte val = m_MMU->ReadByte(m_PC);
+    m_PC++;
+    return val;
+}
+
+ushort CPU::ReadUShortPC()
+{
+    ushort val = m_MMU->ReadUShort(m_PC);
+    m_PC += 2;
+    return val;
+}
+
 void CPU::HALT()
 {
     m_isHalted = true;
@@ -915,7 +928,6 @@ void CPU::HALT()
 // 0x00 (NOP)
 void CPU::NOP(const byte& opCode)
 {
-    m_PC += 1;
     m_cycles += 4;
 
     // No flags affected
@@ -934,12 +946,10 @@ void CPU::NOP(const byte& opCode)
 */
 void CPU::LDrn(const byte& opCode)
 {
-    m_PC += 1; // Look at n
-    byte n = m_MMU->ReadByte(m_PC);
+    byte n = ReadBytePC();
     byte* r = GetByteRegister(opCode >> 3);
     (*r) = n;
 
-    m_PC += 1;
     m_cycles += 8;
 }
 
@@ -981,7 +991,6 @@ void CPU::INCr(const byte& opCode)
         ClearFlag(HalfCarryFlag);
     }
 
-    m_PC += 1;
     m_cycles += 4;
 }
 
@@ -1017,17 +1026,14 @@ void CPU::XORr(const byte& opCode)
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_PC += 1;
     m_cycles += 4;
 }
 
 // 0x11 (LD DE, nn)
 void CPU::LDDEnn(const byte& opCode)
 {
-    m_PC += 1; // Look at the first byte of nn
-    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
+    ushort nn = ReadUShortPC(); // Read nn
     m_DE = nn;
-    m_PC += 2; // Move onto the next instruction
     m_cycles += 8;
 
     // No flags affected
@@ -1036,7 +1042,6 @@ void CPU::LDDEnn(const byte& opCode)
 // 0x17 (RL A)
 void CPU::RLA(const byte& opCode)
 {
-    m_PC += 1;
     m_cycles += 8;
 
     // Grab the current CarryFlag val
@@ -1065,7 +1070,6 @@ void CPU::LDA_DE_(const byte& opCode)
 {
     // loads the value stored at the address pointed to by DE
     // (currently 0x0104) and stores in the A register
-    m_PC += 1;
     byte val = m_MMU->ReadByte(m_DE);
     SetHighByte(&m_AF, val);
     m_cycles += 8;
@@ -1076,18 +1080,15 @@ void CPU::LDA_DE_(const byte& opCode)
 // 0x20 0xFB (JR NZ, e)
 void CPU::JRNZe(const byte& opCode)
 {
+    sbyte arg = static_cast<sbyte>(ReadBytePC());
+
     if (IsFlagSet(ZeroFlag))
     {
-        m_PC += 2;
         m_cycles += 8;
     }
     else
     {
-        m_PC += 1;
-        sbyte arg = static_cast<sbyte>(m_MMU->ReadByte(m_PC));
-        m_PC += 1;
         m_PC += arg;
-
         m_cycles += 12;
     }
 
@@ -1097,10 +1098,8 @@ void CPU::JRNZe(const byte& opCode)
 // 0x21 (LD HL, nn)
 void CPU::LDHLnn(const byte& opCode)
 {
-    m_PC += 1; // Look at the first byte of nn
-    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
+    ushort nn = ReadUShortPC(); // Read nn
     m_HL = nn;
-    m_PC += 2; // Move onto the next instruction
     m_cycles += 8;
 
     // No flags affected
@@ -1109,10 +1108,8 @@ void CPU::LDHLnn(const byte& opCode)
 // 0x51 (LD SP, nn)
 void CPU::LDSPnn(const byte& opCode)
 {
-    m_PC += 1; // Look at the first byte of nn
-    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
+    ushort nn = ReadUShortPC(); // Read nn
     m_SP = nn;
-    m_PC += 2; // Move onto the next instruction
     m_cycles += 8;
 
     // No flags affected
@@ -1121,8 +1118,6 @@ void CPU::LDSPnn(const byte& opCode)
 // 0x52 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
 {
-    m_PC += 1;
-
     if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
     {
         HALT();
@@ -1138,7 +1133,6 @@ void CPU::LDD_HL_A(const byte& opCode)
 // 0x4F (LD C, A)
 void CPU::LDCA(const byte& opCode)
 {
-    m_PC += 1;
     SetLowByte(&m_BC, GetHighByte(m_AF));
     m_cycles += 4;
 }
@@ -1147,8 +1141,6 @@ void CPU::LDCA(const byte& opCode)
 // Identical to 0x52, except does not decrement
 void CPU::LD_HL_A(const byte& opCode)
 {
-    m_PC += 1;
-
     if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
     {
         HALT();
@@ -1162,7 +1154,6 @@ void CPU::LD_HL_A(const byte& opCode)
 // 0xAF (XOR A)
 void CPU::XORA(const byte& opCode)
 {
-    m_PC += 1;
     SetHighByte(&m_AF, GetHighByte(m_AF) ^ GetHighByte(m_AF));
     m_cycles += 4;
 
@@ -1184,8 +1175,6 @@ void CPU::XORA(const byte& opCode)
 // 0xC1
 void CPU::POPBC(const byte& opCode)
 {
-    m_PC += 1;
-
     m_BC = PopUShort();
     m_cycles += 12;
 
@@ -1195,7 +1184,6 @@ void CPU::POPBC(const byte& opCode)
 // 0xC5
 void CPU::PUSHBC(const byte& opCode)
 {
-    m_PC += 1;
     PushUShortToSP(m_BC);
     m_cycles += 16;
 
@@ -1206,9 +1194,7 @@ void CPU::PUSHBC(const byte& opCode)
 void CPU::CALLnn(const byte& opCode)
 {
     // This instruction pushes the PC to the SP, then sets the PC to the target address(nn).
-    m_PC += 1; // Look at the first byte of nn
-    ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
-    m_PC += 2; // Move onto the next instruction
+    ushort nn = ReadUShortPC(); // Read nn
     PushUShortToSP(m_PC); // Push PC to SP
     m_PC = nn; // Set the PC to the target address
 
@@ -1220,15 +1206,13 @@ void CPU::CALLnn(const byte& opCode)
 // 0xE0 (LD(0xFF00 + n), A)
 void CPU::LD_0xFF00n_A(const byte& opCode)
 {
-    m_PC += 1; // Look at n
-    byte n = m_MMU->ReadByte(m_PC); // Read n
+    byte n = ReadBytePC(); // Read n
 
     if (!m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF))) // Load A into 0xFF00 + n
     {
         HALT();
     }
 
-    m_PC += 1;
     m_cycles += 8;
 
     // No flags affected
@@ -1237,8 +1221,6 @@ void CPU::LD_0xFF00n_A(const byte& opCode)
 // 0xE2 (LD(0xFF00 + C), A)
 void CPU::LD_0xFF00C_A(const byte& opCode)
 {
-    m_PC += 1;
-
     if (!m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF))) // Load A into 0xFF00 + C
     {
         HALT();
@@ -1256,7 +1238,6 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 // 0x11 (RL C)
 void CPU::RLC(const byte& opCode)
 {
-    m_PC += 1;
     m_cycles += 8;
 
     // Grab the current CarryFlag val
@@ -1283,7 +1264,6 @@ void CPU::RLC(const byte& opCode)
 // 0x7C (BIT 7, h)
 void CPU::BIT7h(const byte& opCode)
 {
-    m_PC += 1;
     m_cycles += 8;
 
     // Test bit 7 in H
