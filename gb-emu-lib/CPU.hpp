@@ -65,31 +65,32 @@ private:
 
     void HALT();
 
-    // OpCode Functions
-    void NOP();             // 0x00
-    void LDBe();            // 0x06
-    void INCC();            // 0x0C
-    void LDCe();            // 0x0E
-    void LDDEnn();          // 0x11
-    void RLA();             // 0x17
-    void LDA_DE_();         // 0x1A
-    void JRNZe();           // 0x20
-    void LDHLnn();          // 0x21
-    void LDSPnn();          // 0x31
-    void LDD_HL_A();        // 0x32
-    void LDAe();            // 0x3E
-    void LDCA();            // 0x4F
-    void LD_HL_A();         // 0x77
-    void XORA();            // 0xAF
-    void POPBC();           // 0xC1
-    void PUSHBC();          // 0xC5
-    void CALLnn();          // 0xCD
-    void LD_0xFF00n_A();    // 0xE0
-    void LD_0xFF00C_A();    // 0xE2
+    // TODO: Organize the following...
+    // Z80 Instruction Set
+    void NOP(const byte& opCode);             // 0x00
+    void LDrn(const byte& opCode);
+    void INCr(const byte& opCode);
+    void XORr(const byte& opCode);
 
-    // OpCode 0xCB functions
-    void RLC();             // 0x11
-    void BIT7h();           // 0x7C
+    void LDDEnn(const byte& opCode);          // 0x11
+    void RLA(const byte& opCode);             // 0x17
+    void LDA_DE_(const byte& opCode);         // 0x1A
+    void JRNZe(const byte& opCode);           // 0x20
+    void LDHLnn(const byte& opCode);          // 0x21
+    void LDSPnn(const byte& opCode);          // 0x31
+    void LDD_HL_A(const byte& opCode);        // 0x32
+    void LDCA(const byte& opCode);            // 0x4F
+    void LD_HL_A(const byte& opCode);         // 0x77
+    void XORA(const byte& opCode);            // 0xAF
+    void POPBC(const byte& opCode);           // 0xC1
+    void PUSHBC(const byte& opCode);          // 0xC5
+    void CALLnn(const byte& opCode);          // 0xCD
+    void LD_0xFF00n_A(const byte& opCode);    // 0xE0
+    void LD_0xFF00C_A(const byte& opCode);    // 0xE2
+
+    // Z80 Instruction Set - CB
+    void RLC(const byte& opCode);             // 0x11
+    void BIT7h(const byte& opCode);           // 0x7C
 
 private:
     // MMU (Memory Map Unit)
@@ -128,7 +129,7 @@ private:
     ushort* m_UShortRegisterMap[0x03 + 1];
 
     // OpCode Function Map
-    typedef void(CPU::*opCodeFunction)();
+    typedef void(CPU::*opCodeFunction)(const byte& opCode);
     opCodeFunction m_operationMap[0xFF + 1];
     opCodeFunction m_operationMapCB[0xFF + 1];
 };

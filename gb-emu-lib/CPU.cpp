@@ -23,31 +23,592 @@ CPU::CPU() :
         m_operationMapCB[index] = nullptr;
     }
 
-    // Initialize the operationMap
+    // TODO: Do something with the hundreds of lines below. All this should probably
+    // be in its own file. I apologize in advance for this large monstrosity. But it works.
+
+    /*
+        Z80 Command Set
+    */
+
+    // 00
     m_operationMap[0x00] = &CPU::NOP;
-    m_operationMap[0x06] = &CPU::LDBe;
-    m_operationMap[0x0C] = &CPU::INCC;
-    m_operationMap[0x0E] = &CPU::LDCe;
+    //m_operationMap[0x01] TODO
+    //m_operationMap[0x02] TODO
+    //m_operationMap[0x03] TODO
+    m_operationMap[0x04] = &CPU::INCr;
+    //m_operationMap[0x05] TODO
+    m_operationMap[0x06] = &CPU::LDrn;
+    //m_operationMap[0x07] TODO
+    //m_operationMap[0x08] TODO
+    //m_operationMap[0x09] TODO
+    //m_operationMap[0x0A] TODO
+    //m_operationMap[0x0B] TODO
+    m_operationMap[0x0C] = &CPU::INCr;
+    //m_operationMap[0x0D] TODO
+    m_operationMap[0x0E] = &CPU::LDrn;
+    //m_operationMap[0x0F] TODO
+
+    // 10
+    //m_operationMap[0x10] TODO
     m_operationMap[0x11] = &CPU::LDDEnn;
+    //m_operationMap[0x12] TODO
+    //m_operationMap[0x13] TODO
+    m_operationMap[0x14] = &CPU::INCr;
+    //m_operationMap[0x15] TODO
+    m_operationMap[0x16] = &CPU::LDrn;
     m_operationMap[0x17] = &CPU::RLA;
+    //m_operationMap[0x18] TODO
+    //m_operationMap[0x19] TODO
     m_operationMap[0x1A] = &CPU::LDA_DE_;
+    //m_operationMap[0x1B] TODO
+    m_operationMap[0x1C] = &CPU::INCr;
+    //m_operationMap[0x1D] TODO
+    m_operationMap[0x1E] = &CPU::LDrn;
+    //m_operationMap[0x1F] TODO
+
+    // 20
     m_operationMap[0x20] = &CPU::JRNZe;
     m_operationMap[0x21] = &CPU::LDHLnn;
+    //m_operationMap[0x22] TODO
+    //m_operationMap[0x23] TODO
+    m_operationMap[0x24] = &CPU::INCr;
+    //m_operationMap[0x25] TODO
+    m_operationMap[0x26] = &CPU::LDrn;
+    //m_operationMap[0x27] TODO
+    //m_operationMap[0x28] TODO
+    //m_operationMap[0x29] TODO
+    //m_operationMap[0x2A] TODO
+    //m_operationMap[0x2B] TODO
+    m_operationMap[0x2C] = &CPU::INCr;
+    //m_operationMap[0x2D] TODO
+    m_operationMap[0x2E] = &CPU::LDrn;
+    //m_operationMap[0x2F] TODO
+
+    // 30
+    //m_operationMap[0x30] TODO
     m_operationMap[0x31] = &CPU::LDSPnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
-    m_operationMap[0x3E] = &CPU::LDAe;
-    m_operationMap[0x4F] = &CPU::LDCA;
-    m_operationMap[0x77] = &CPU::LD_HL_A;
-    m_operationMap[0xAF] = &CPU::XORA;
-    m_operationMap[0xC1] = &CPU::POPBC;
-    m_operationMap[0xC5] = &CPU::PUSHBC;
-    m_operationMap[0xCD] = &CPU::CALLnn;
-    m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
-    m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
+    //m_operationMap[0x33] TODO
+    //m_operationMap[0x34] TODO
+    //m_operationMap[0x35] TODO
+    //m_operationMap[0x36] TODO
+    //m_operationMap[0x37] TODO
+    //m_operationMap[0x38] TODO
+    //m_operationMap[0x39] TODO
+    //m_operationMap[0x3A] TODO
+    //m_operationMap[0x3B] TODO
+    m_operationMap[0x3C] = &CPU::INCr;
+    //m_operationMap[0x3D] TODO
+    m_operationMap[0x3E] = &CPU::LDrn;
+    //m_operationMap[0x3F] TODO
 
-    // Initialize the operationMapCB
+    // 40
+    //m_operationMap[0x40] TODO
+    //m_operationMap[0x41] TODO
+    //m_operationMap[0x42] TODO
+    //m_operationMap[0x43] TODO
+    //m_operationMap[0x44] TODO
+    //m_operationMap[0x45] TODO
+    //m_operationMap[0x46] TODO
+    //m_operationMap[0x47] TODO
+    //m_operationMap[0x48] TODO
+    //m_operationMap[0x49] TODO
+    //m_operationMap[0x4A] TODO
+    //m_operationMap[0x4B] TODO
+    //m_operationMap[0x4C] TODO
+    //m_operationMap[0x4D] TODO
+    //m_operationMap[0x4E] TODO
+    m_operationMap[0x4F] = &CPU::LDCA;
+
+    // 50
+    //m_operationMap[0x50] TODO
+    //m_operationMap[0x51] TODO
+    //m_operationMap[0x52] TODO
+    //m_operationMap[0x53] TODO
+    //m_operationMap[0x54] TODO
+    //m_operationMap[0x55] TODO
+    //m_operationMap[0x56] TODO
+    //m_operationMap[0x57] TODO
+    //m_operationMap[0x58] TODO
+    //m_operationMap[0x59] TODO
+    //m_operationMap[0x5A] TODO
+    //m_operationMap[0x5B] TODO
+    //m_operationMap[0x5C] TODO
+    //m_operationMap[0x5D] TODO
+    //m_operationMap[0x5E] TODO
+    //m_operationMap[0x5F] TODO
+
+    // 60
+    //m_operationMap[0x60] TODO
+    //m_operationMap[0x61] TODO
+    //m_operationMap[0x62] TODO
+    //m_operationMap[0x63] TODO
+    //m_operationMap[0x64] TODO
+    //m_operationMap[0x65] TODO
+    //m_operationMap[0x66] TODO
+    //m_operationMap[0x67] TODO
+    //m_operationMap[0x68] TODO
+    //m_operationMap[0x69] TODO
+    //m_operationMap[0x6A] TODO
+    //m_operationMap[0x6B] TODO
+    //m_operationMap[0x6C] TODO
+    //m_operationMap[0x6D] TODO
+    //m_operationMap[0x6E] TODO
+    //m_operationMap[0x6F] TODO
+
+    // 70
+    //m_operationMap[0x70] TODO
+    //m_operationMap[0x71] TODO
+    //m_operationMap[0x72] TODO
+    //m_operationMap[0x73] TODO
+    //m_operationMap[0x74] TODO
+    //m_operationMap[0x75] TODO
+    //m_operationMap[0x76] TODO
+    m_operationMap[0x77] = &CPU::LD_HL_A;
+    //m_operationMap[0x78] TODO
+    //m_operationMap[0x79] TODO
+    //m_operationMap[0x7A] TODO
+    //m_operationMap[0x7B] TODO
+    //m_operationMap[0x7C] TODO
+    //m_operationMap[0x7D] TODO
+    //m_operationMap[0x7E] TODO
+    //m_operationMap[0x7F] TODO
+
+    // 80
+    //m_operationMap[0x80] TODO
+    //m_operationMap[0x81] TODO
+    //m_operationMap[0x82] TODO
+    //m_operationMap[0x83] TODO
+    //m_operationMap[0x84] TODO
+    //m_operationMap[0x85] TODO
+    //m_operationMap[0x86] TODO
+    //m_operationMap[0x87] TODO
+    //m_operationMap[0x88] TODO
+    //m_operationMap[0x89] TODO
+    //m_operationMap[0x8A] TODO
+    //m_operationMap[0x8B] TODO
+    //m_operationMap[0x8C] TODO
+    //m_operationMap[0x8D] TODO
+    //m_operationMap[0x8E] TODO
+    //m_operationMap[0x8F] TODO
+
+    // 90
+    //m_operationMap[0x90] TODO
+    //m_operationMap[0x91] TODO
+    //m_operationMap[0x92] TODO
+    //m_operationMap[0x93] TODO
+    //m_operationMap[0x94] TODO
+    //m_operationMap[0x95] TODO
+    //m_operationMap[0x96] TODO
+    //m_operationMap[0x97] TODO
+    //m_operationMap[0x98] TODO
+    //m_operationMap[0x99] TODO
+    //m_operationMap[0x9A] TODO
+    //m_operationMap[0x9B] TODO
+    //m_operationMap[0x9C] TODO
+    //m_operationMap[0x9D] TODO
+    //m_operationMap[0x9E] TODO
+    //m_operationMap[0x9F] TODO
+
+    // A0
+    //m_operationMap[0xA0] TODO
+    //m_operationMap[0xA1] TODO
+    //m_operationMap[0xA2] TODO
+    //m_operationMap[0xA3] TODO
+    //m_operationMap[0xA4] TODO
+    //m_operationMap[0xA5] TODO
+    //m_operationMap[0xA6] TODO
+    //m_operationMap[0xA7] TODO
+    m_operationMap[0xA8] = &CPU::XORr;
+    m_operationMap[0xA9] = &CPU::XORr;
+    m_operationMap[0xAA] = &CPU::XORr;
+    m_operationMap[0xAB] = &CPU::XORr;
+    m_operationMap[0xAC] = &CPU::XORr;
+    m_operationMap[0xAD] = &CPU::XORr;
+    //m_operationMap[0xAE] TODO
+    m_operationMap[0xAF] = &CPU::XORr;
+
+    // B0
+    //m_operationMap[0xB0] TODO
+    //m_operationMap[0xB1] TODO
+    //m_operationMap[0xB2] TODO
+    //m_operationMap[0xB3] TODO
+    //m_operationMap[0xB4] TODO
+    //m_operationMap[0xB5] TODO
+    //m_operationMap[0xB6] TODO
+    //m_operationMap[0xB7] TODO
+    //m_operationMap[0xB8] TODO
+    //m_operationMap[0xB9] TODO
+    //m_operationMap[0xBA] TODO
+    //m_operationMap[0xBB] TODO
+    //m_operationMap[0xBC] TODO
+    //m_operationMap[0xBD] TODO
+    //m_operationMap[0xBE] TODO
+    //m_operationMap[0xBF] TODO
+
+    // C0
+    //m_operationMap[0xC0] TODO
+    m_operationMap[0xC1] = &CPU::POPBC;
+    //m_operationMap[0xC2] TODO
+    //m_operationMap[0xC3] TODO
+    //m_operationMap[0xC4] TODO
+    m_operationMap[0xC5] = &CPU::PUSHBC;
+    //m_operationMap[0xC6] TODO
+    //m_operationMap[0xC7] TODO
+    //m_operationMap[0xC8] TODO
+    //m_operationMap[0xC9] TODO
+    //m_operationMap[0xCA] TODO
+    //m_operationMap[0xCB] TODO
+    //m_operationMap[0xCC] TODO
+    m_operationMap[0xCD] = &CPU::CALLnn;
+    //m_operationMap[0xCE] TODO
+    //m_operationMap[0xCF] TODO
+
+    // D0
+    //m_operationMap[0xD0] TODO
+    //m_operationMap[0xD1] TODO
+    //m_operationMap[0xD2] TODO
+    //m_operationMap[0xD3] TODO
+    //m_operationMap[0xD4] TODO
+    //m_operationMap[0xD5] TODO
+    //m_operationMap[0xD6] TODO
+    //m_operationMap[0xD7] TODO
+    //m_operationMap[0xD8] TODO
+    //m_operationMap[0xD9] TODO
+    //m_operationMap[0xDA] TODO
+    //m_operationMap[0xDB] TODO
+    //m_operationMap[0xDC] TODO
+    //m_operationMap[0xDD] TODO
+    //m_operationMap[0xDE] TODO
+    //m_operationMap[0xDF] TODO
+
+    // E0
+    m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
+    //m_operationMap[0xE1] TODO
+    m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
+    //m_operationMap[0xE3] TODO
+    //m_operationMap[0xE4] TODO
+    //m_operationMap[0xE5] TODO
+    //m_operationMap[0xE6] TODO
+    //m_operationMap[0xE7] TODO
+    //m_operationMap[0xE8] TODO
+    //m_operationMap[0xE9] TODO
+    //m_operationMap[0xEA] TODO
+    //m_operationMap[0xEB] TODO
+    //m_operationMap[0xEC] TODO
+    //m_operationMap[0xED] TODO
+    //m_operationMap[0xEE] TODO
+    //m_operationMap[0xEF] TODO
+
+    // F0
+    //m_operationMap[0xF0] TODO
+    //m_operationMap[0xF1] TODO
+    //m_operationMap[0xF2] TODO
+    //m_operationMap[0xF3] TODO
+    //m_operationMap[0xF4] TODO
+    //m_operationMap[0xF5] TODO
+    //m_operationMap[0xF6] TODO
+    //m_operationMap[0xF7] TODO
+    //m_operationMap[0xF8] TODO
+    //m_operationMap[0xF9] TODO
+    //m_operationMap[0xFA] TODO
+    //m_operationMap[0xFB] TODO
+    //m_operationMap[0xFC] TODO
+    //m_operationMap[0xFD] TODO
+    //m_operationMap[0xFE] TODO
+    //m_operationMap[0xFF] TODO
+
+    /*
+        Z80 Command Set - CB
+    */
+
+    // 00
+    //m_operationMapCB[0x00] TODO
+    //m_operationMapCB[0x01] TODO
+    //m_operationMapCB[0x02] TODO
+    //m_operationMapCB[0x03] TODO
+    //m_operationMapCB[0x04] TODO
+    //m_operationMapCB[0x05] TODO
+    //m_operationMapCB[0x06] TODO
+    //m_operationMapCB[0x07] TODO
+    //m_operationMapCB[0x08] TODO
+    //m_operationMapCB[0x09] TODO
+    //m_operationMapCB[0x0A] TODO
+    //m_operationMapCB[0x0B] TODO
+    //m_operationMapCB[0x0C] TODO
+    //m_operationMapCB[0x0D] TODO
+    //m_operationMapCB[0x0E] TODO
+    //m_operationMapCB[0x0F] TODO
+
+    // 10
+    //m_operationMapCB[0x10] TODO
     m_operationMapCB[0x11] = &CPU::RLC;
+    //m_operationMapCB[0x12] TODO
+    //m_operationMapCB[0x13] TODO
+    //m_operationMapCB[0x14] TODO
+    //m_operationMapCB[0x15] TODO
+    //m_operationMapCB[0x16] TODO
+    //m_operationMapCB[0x17] TODO
+    //m_operationMapCB[0x18] TODO
+    //m_operationMapCB[0x19] TODO
+    //m_operationMapCB[0x1A] TODO
+    //m_operationMapCB[0x1B] TODO
+    //m_operationMapCB[0x1C] TODO
+    //m_operationMapCB[0x1D] TODO
+    //m_operationMapCB[0x1E] TODO
+    //m_operationMapCB[0x1F] TODO
+
+    // 20
+    //m_operationMapCB[0x20] TODO
+    //m_operationMapCB[0x21] TODO
+    //m_operationMapCB[0x22] TODO
+    //m_operationMapCB[0x23] TODO
+    //m_operationMapCB[0x24] TODO
+    //m_operationMapCB[0x25] TODO
+    //m_operationMapCB[0x26] TODO
+    //m_operationMapCB[0x27] TODO
+    //m_operationMapCB[0x28] TODO
+    //m_operationMapCB[0x29] TODO
+    //m_operationMapCB[0x2A] TODO
+    //m_operationMapCB[0x2B] TODO
+    //m_operationMapCB[0x2C] TODO
+    //m_operationMapCB[0x2D] TODO
+    //m_operationMapCB[0x2E] TODO
+    //m_operationMapCB[0x2F] TODO
+
+    // 30
+    //m_operationMapCB[0x30] UNUSED!
+    //m_operationMapCB[0x31] UNUSED!
+    //m_operationMapCB[0x32] UNUSED!
+    //m_operationMapCB[0x33] UNUSED!
+    //m_operationMapCB[0x34] UNUSED!
+    //m_operationMapCB[0x35] UNUSED!
+    //m_operationMapCB[0x36] UNUSED!
+    //m_operationMapCB[0x37] UNUSED!
+    //m_operationMapCB[0x38] TODO
+    //m_operationMapCB[0x39] TODO
+    //m_operationMapCB[0x3A] TODO
+    //m_operationMapCB[0x3B] TODO
+    //m_operationMapCB[0x3C] TODO
+    //m_operationMapCB[0x3D] TODO
+    //m_operationMapCB[0x3E] TODO
+    //m_operationMapCB[0x3F] TODO
+
+    // 40
+    //m_operationMapCB[0x40] TODO
+    //m_operationMapCB[0x41] TODO
+    //m_operationMapCB[0x42] TODO
+    //m_operationMapCB[0x43] TODO
+    //m_operationMapCB[0x44] TODO
+    //m_operationMapCB[0x45] TODO
+    //m_operationMapCB[0x46] TODO
+    //m_operationMapCB[0x47] TODO
+    //m_operationMapCB[0x48] TODO
+    //m_operationMapCB[0x49] TODO
+    //m_operationMapCB[0x4A] TODO
+    //m_operationMapCB[0x4B] TODO
+    //m_operationMapCB[0x4C] TODO
+    //m_operationMapCB[0x4D] TODO
+    //m_operationMapCB[0x4E] TODO
+    //m_operationMapCB[0x4F] TODO
+
+    // 50
+    //m_operationMapCB[0x50] TODO
+    //m_operationMapCB[0x51] TODO
+    //m_operationMapCB[0x52] TODO
+    //m_operationMapCB[0x53] TODO
+    //m_operationMapCB[0x54] TODO
+    //m_operationMapCB[0x55] TODO
+    //m_operationMapCB[0x56] TODO
+    //m_operationMapCB[0x57] TODO
+    //m_operationMapCB[0x58] TODO
+    //m_operationMapCB[0x59] TODO
+    //m_operationMapCB[0x5A] TODO
+    //m_operationMapCB[0x5B] TODO
+    //m_operationMapCB[0x5C] TODO
+    //m_operationMapCB[0x5D] TODO
+    //m_operationMapCB[0x5E] TODO
+    //m_operationMapCB[0x5F] TODO
+
+    // 60
+    //m_operationMapCB[0x60] TODO
+    //m_operationMapCB[0x61] TODO
+    //m_operationMapCB[0x62] TODO
+    //m_operationMapCB[0x63] TODO
+    //m_operationMapCB[0x64] TODO
+    //m_operationMapCB[0x65] TODO
+    //m_operationMapCB[0x66] TODO
+    //m_operationMapCB[0x67] TODO
+    //m_operationMapCB[0x68] TODO
+    //m_operationMapCB[0x69] TODO
+    //m_operationMapCB[0x6A] TODO
+    //m_operationMapCB[0x6B] TODO
+    //m_operationMapCB[0x6C] TODO
+    //m_operationMapCB[0x6D] TODO
+    //m_operationMapCB[0x6E] TODO
+    //m_operationMapCB[0x6F] TODO
+
+    // 70
+    //m_operationMapCB[0x70] TODO
+    //m_operationMapCB[0x71] TODO
+    //m_operationMapCB[0x72] TODO
+    //m_operationMapCB[0x73] TODO
+    //m_operationMapCB[0x74] TODO
+    //m_operationMapCB[0x75] TODO
+    //m_operationMapCB[0x76] TODO
+    //m_operationMapCB[0x77] TODO
+    //m_operationMapCB[0x78] TODO
+    //m_operationMapCB[0x79] TODO
+    //m_operationMapCB[0x7A] TODO
+    //m_operationMapCB[0x7B] TODO
     m_operationMapCB[0x7C] = &CPU::BIT7h;
+    //m_operationMapCB[0x7D] TODO
+    //m_operationMapCB[0x7E] TODO
+    //m_operationMapCB[0x7F] TODO
+
+    // 80
+    //m_operationMapCB[0x80] TODO
+    //m_operationMapCB[0x81] TODO
+    //m_operationMapCB[0x82] TODO
+    //m_operationMapCB[0x83] TODO
+    //m_operationMapCB[0x84] TODO
+    //m_operationMapCB[0x85] TODO
+    //m_operationMapCB[0x86] TODO
+    //m_operationMapCB[0x87] TODO
+    //m_operationMapCB[0x88] TODO
+    //m_operationMapCB[0x89] TODO
+    //m_operationMapCB[0x8A] TODO
+    //m_operationMapCB[0x8B] TODO
+    //m_operationMapCB[0x8C] TODO
+    //m_operationMapCB[0x8D] TODO
+    //m_operationMapCB[0x8E] TODO
+    //m_operationMapCB[0x8F] TODO
+
+    // 90
+    //m_operationMapCB[0x90] TODO
+    //m_operationMapCB[0x91] TODO
+    //m_operationMapCB[0x92] TODO
+    //m_operationMapCB[0x93] TODO
+    //m_operationMapCB[0x94] TODO
+    //m_operationMapCB[0x95] TODO
+    //m_operationMapCB[0x96] TODO
+    //m_operationMapCB[0x97] TODO
+    //m_operationMapCB[0x98] TODO
+    //m_operationMapCB[0x99] TODO
+    //m_operationMapCB[0x9A] TODO
+    //m_operationMapCB[0x9B] TODO
+    //m_operationMapCB[0x9C] TODO
+    //m_operationMapCB[0x9D] TODO
+    //m_operationMapCB[0x9E] TODO
+    //m_operationMapCB[0x9F] TODO
+
+    // A0
+    //m_operationMapCB[0xA0] TODO
+    //m_operationMapCB[0xA1] TODO
+    //m_operationMapCB[0xA2] TODO
+    //m_operationMapCB[0xA3] TODO
+    //m_operationMapCB[0xA4] TODO
+    //m_operationMapCB[0xA5] TODO
+    //m_operationMapCB[0xA6] TODO
+    //m_operationMapCB[0xA7] TODO
+    //m_operationMapCB[0xA8] TODO
+    //m_operationMapCB[0xA9] TODO
+    //m_operationMapCB[0xAA] TODO
+    //m_operationMapCB[0xAB] TODO
+    //m_operationMapCB[0xAC] TODO
+    //m_operationMapCB[0xAD] TODO
+    //m_operationMapCB[0xAE] TODO
+    //m_operationMapCB[0xAF] TODO
+
+    // B0
+    //m_operationMapCB[0xB0] TODO
+    //m_operationMapCB[0xB1] TODO
+    //m_operationMapCB[0xB2] TODO
+    //m_operationMapCB[0xB3] TODO
+    //m_operationMapCB[0xB4] TODO
+    //m_operationMapCB[0xB5] TODO
+    //m_operationMapCB[0xB6] TODO
+    //m_operationMapCB[0xB7] TODO
+    //m_operationMapCB[0xB8] TODO
+    //m_operationMapCB[0xB9] TODO
+    //m_operationMapCB[0xBA] TODO
+    //m_operationMapCB[0xBB] TODO
+    //m_operationMapCB[0xBC] TODO
+    //m_operationMapCB[0xBD] TODO
+    //m_operationMapCB[0xBE] TODO
+    //m_operationMapCB[0xBF] TODO
+
+    // C0
+    //m_operationMapCB[0xC0] TODO
+    //m_operationMapCB[0xC1] TODO
+    //m_operationMapCB[0xC2] TODO
+    //m_operationMapCB[0xC3] TODO
+    //m_operationMapCB[0xC4] TODO
+    //m_operationMapCB[0xC5] TODO
+    //m_operationMapCB[0xC6] TODO
+    //m_operationMapCB[0xC7] TODO
+    //m_operationMapCB[0xC8] TODO
+    //m_operationMapCB[0xC9] TODO
+    //m_operationMapCB[0xCA] TODO
+    //m_operationMapCB[0xCB] TODO
+    //m_operationMapCB[0xCC] TODO
+    //m_operationMapCB[0xCD] TODO
+    //m_operationMapCB[0xCE] TODO
+    //m_operationMapCB[0xCF] TODO
+
+    // D0
+    //m_operationMapCB[0xD0] TODO
+    //m_operationMapCB[0xD1] TODO
+    //m_operationMapCB[0xD2] TODO
+    //m_operationMapCB[0xD3] TODO
+    //m_operationMapCB[0xD4] TODO
+    //m_operationMapCB[0xD5] TODO
+    //m_operationMapCB[0xD6] TODO
+    //m_operationMapCB[0xD7] TODO
+    //m_operationMapCB[0xD8] TODO
+    //m_operationMapCB[0xD9] TODO
+    //m_operationMapCB[0xDA] TODO
+    //m_operationMapCB[0xDB] TODO
+    //m_operationMapCB[0xDC] TODO
+    //m_operationMapCB[0xDD] TODO
+    //m_operationMapCB[0xDE] TODO
+    //m_operationMapCB[0xDF] TODO
+
+    // E0
+    //m_operationMapCB[0xE0] TODO
+    //m_operationMapCB[0xE1] TODO
+    //m_operationMapCB[0xE2] TODO
+    //m_operationMapCB[0xE3] TODO
+    //m_operationMapCB[0xE4] TODO
+    //m_operationMapCB[0xE5] TODO
+    //m_operationMapCB[0xE6] TODO
+    //m_operationMapCB[0xE7] TODO
+    //m_operationMapCB[0xE8] TODO
+    //m_operationMapCB[0xE9] TODO
+    //m_operationMapCB[0xEA] TODO
+    //m_operationMapCB[0xEB] TODO
+    //m_operationMapCB[0xEC] TODO
+    //m_operationMapCB[0xED] TODO
+    //m_operationMapCB[0xEE] TODO
+    //m_operationMapCB[0xEF] TODO
+
+    // F0
+    //m_operationMapCB[0xF0] TODO
+    //m_operationMapCB[0xF1] TODO
+    //m_operationMapCB[0xF2] TODO
+    //m_operationMapCB[0xF3] TODO
+    //m_operationMapCB[0xF4] TODO
+    //m_operationMapCB[0xF5] TODO
+    //m_operationMapCB[0xF6] TODO
+    //m_operationMapCB[0xF7] TODO
+    //m_operationMapCB[0xF8] TODO
+    //m_operationMapCB[0xF9] TODO
+    //m_operationMapCB[0xFA] TODO
+    //m_operationMapCB[0xFB] TODO
+    //m_operationMapCB[0xFC] TODO
+    //m_operationMapCB[0xFD] TODO
+    //m_operationMapCB[0xFE] TODO
+    //m_operationMapCB[0xFF] TODO
 
     // Initialize the register map
     /*
@@ -184,7 +745,7 @@ void CPU::Step()
 
     if (m_isHalted)
     {
-        NOP();
+        NOP(0x00);
     }
     else
     {
@@ -206,7 +767,7 @@ void CPU::Step()
 
         if (instruction != nullptr)
         {
-            (this->*instruction)();
+            (this->*instruction)(opCode);
         }
         else
         {
@@ -352,7 +913,7 @@ void CPU::HALT()
 */
 
 // 0x00 (NOP)
-void CPU::NOP()
+void CPU::NOP(const byte& opCode)
 {
     m_PC += 1;
     m_cycles += 4;
@@ -360,33 +921,47 @@ void CPU::NOP()
     // No flags affected
 }
 
-// 0x06 (LD B, e)
-void CPU::LDBe()
+/*
+    LD r, n
+    00rrr110 nnnnnnnn
+
+    The 8-bit integer n is loaded to any register r, where r identifies register
+    A, B, C, D, E, H, or L.
+
+    8 Cycles
+
+    No flags affected
+*/
+void CPU::LDrn(const byte& opCode)
 {
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetHighByte(&m_BC, e); // Set B to e
-    m_PC += 1; // Move onto the next instruction
+    m_PC += 1; // Look at n
+    byte n = m_MMU->ReadByte(m_PC);
+    byte* r = GetByteRegister(opCode >> 3);
+    (*r) = n;
+
+    m_PC += 1;
     m_cycles += 8;
-
-    // No flags affected
 }
 
-// 0x0C (INC C)
-void CPU::INCC()
+/*
+    INC r
+    00rrr100
+
+    Register r is incremented, where r identifies register A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z0h-
+    Affects Z, Clears N, affects H
+*/
+void CPU::INCr(const byte& opCode)
 {
-    m_PC += 1;
+    byte* r = GetByteRegister(opCode >> 3);
+    bool isBit3Before = ISBITSET(*r, 3);
+    *r += 1;
+    bool isBit3After = ISBITSET(*r, 3);
 
-    byte C = GetLowByte(m_BC);
-    bool isBit3Before = ISBITSET(C, 3);
-    C += 1;
-    bool isBit3After = ISBITSET(C, 3);
-    SetLowByte(&m_BC, C);
-    m_cycles += 4;
-
-    // Flags affected: z0h- (znhc)
-    // Affects Z, clears N, affects H
-    if (C == 0x00)
+    if (*r == 0x00)
     {
         SetFlag(ZeroFlag);
     }
@@ -405,22 +980,49 @@ void CPU::INCC()
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    m_PC += 1;
+    m_cycles += 4;
 }
 
-// 0x0E (LD C, e)
-void CPU::LDCe()
-{
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetLowByte(&m_BC, e); // Set C to e
-    m_PC += 1; // Move onto the next instruction
-    m_cycles += 8;
+/*
+    XOR r
+    10110rrr
 
-    // No flags affected
+    The logical exclusive-OR operation is performed between the register specified in the r
+    operand and the byte contained in the accumulator. The result is stored in the accumulator.
+    Register r can be A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z000
+    Affects Z, clears n, clears h, clears c
+*/
+void CPU::XORr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    SetHighByte(&m_AF, *r ^ GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_PC += 1;
+    m_cycles += 4;
 }
 
 // 0x11 (LD DE, nn)
-void CPU::LDDEnn()
+void CPU::LDDEnn(const byte& opCode)
 {
     m_PC += 1; // Look at the first byte of nn
     ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
@@ -432,7 +1034,7 @@ void CPU::LDDEnn()
 }
 
 // 0x17 (RL A)
-void CPU::RLA()
+void CPU::RLA(const byte& opCode)
 {
     m_PC += 1;
     m_cycles += 8;
@@ -459,7 +1061,7 @@ void CPU::RLA()
 }
 
 // 0x1A (LD A, (DE))
-void CPU::LDA_DE_()
+void CPU::LDA_DE_(const byte& opCode)
 {
     // loads the value stored at the address pointed to by DE
     // (currently 0x0104) and stores in the A register
@@ -472,7 +1074,7 @@ void CPU::LDA_DE_()
 }
 
 // 0x20 0xFB (JR NZ, e)
-void CPU::JRNZe()
+void CPU::JRNZe(const byte& opCode)
 {
     if (IsFlagSet(ZeroFlag))
     {
@@ -493,7 +1095,7 @@ void CPU::JRNZe()
 }
 
 // 0x21 (LD HL, nn)
-void CPU::LDHLnn()
+void CPU::LDHLnn(const byte& opCode)
 {
     m_PC += 1; // Look at the first byte of nn
     ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
@@ -504,8 +1106,8 @@ void CPU::LDHLnn()
     // No flags affected
 }
 
-// 0x31 (LD SP, nn)
-void CPU::LDSPnn()
+// 0x51 (LD SP, nn)
+void CPU::LDSPnn(const byte& opCode)
 {
     m_PC += 1; // Look at the first byte of nn
     ushort nn = m_MMU->ReadUShort(m_PC); // Read nn
@@ -516,8 +1118,8 @@ void CPU::LDSPnn()
     // No flags affected
 }
 
-// 0x32 (LDD (HL), A)
-void CPU::LDD_HL_A()
+// 0x52 (LDD (HL), A)
+void CPU::LDD_HL_A(const byte& opCode)
 {
     m_PC += 1;
 
@@ -533,20 +1135,8 @@ void CPU::LDD_HL_A()
     // No flags affected
 }
 
-// 0x3E (LD A, e)
-void CPU::LDAe()
-{
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetHighByte(&m_AF, e); // Set A to e
-    m_PC += 1; // Move onto the next instruction
-    m_cycles += 8;
-
-    // No flags affected
-}
-
 // 0x4F (LD C, A)
-void CPU::LDCA()
+void CPU::LDCA(const byte& opCode)
 {
     m_PC += 1;
     SetLowByte(&m_BC, GetHighByte(m_AF));
@@ -554,8 +1144,8 @@ void CPU::LDCA()
 }
 
 // 0x77 (LD (HL), A)
-// Identical to 0x32, except does not decrement
-void CPU::LD_HL_A()
+// Identical to 0x52, except does not decrement
+void CPU::LD_HL_A(const byte& opCode)
 {
     m_PC += 1;
 
@@ -570,7 +1160,7 @@ void CPU::LD_HL_A()
 }
 
 // 0xAF (XOR A)
-void CPU::XORA()
+void CPU::XORA(const byte& opCode)
 {
     m_PC += 1;
     SetHighByte(&m_AF, GetHighByte(m_AF) ^ GetHighByte(m_AF));
@@ -592,7 +1182,7 @@ void CPU::XORA()
 }
 
 // 0xC1
-void CPU::POPBC()
+void CPU::POPBC(const byte& opCode)
 {
     m_PC += 1;
 
@@ -603,7 +1193,7 @@ void CPU::POPBC()
 }
 
 // 0xC5
-void CPU::PUSHBC()
+void CPU::PUSHBC(const byte& opCode)
 {
     m_PC += 1;
     PushUShortToSP(m_BC);
@@ -613,7 +1203,7 @@ void CPU::PUSHBC()
 }
 
 // 0xCD (CALL nn)
-void CPU::CALLnn()
+void CPU::CALLnn(const byte& opCode)
 {
     // This instruction pushes the PC to the SP, then sets the PC to the target address(nn).
     m_PC += 1; // Look at the first byte of nn
@@ -628,7 +1218,7 @@ void CPU::CALLnn()
 }
 
 // 0xE0 (LD(0xFF00 + n), A)
-void CPU::LD_0xFF00n_A()
+void CPU::LD_0xFF00n_A(const byte& opCode)
 {
     m_PC += 1; // Look at n
     byte n = m_MMU->ReadByte(m_PC); // Read n
@@ -645,7 +1235,7 @@ void CPU::LD_0xFF00n_A()
 }
 
 // 0xE2 (LD(0xFF00 + C), A)
-void CPU::LD_0xFF00C_A()
+void CPU::LD_0xFF00C_A(const byte& opCode)
 {
     m_PC += 1;
 
@@ -664,7 +1254,7 @@ void CPU::LD_0xFF00C_A()
 */
 
 // 0x11 (RL C)
-void CPU::RLC()
+void CPU::RLC(const byte& opCode)
 {
     m_PC += 1;
     m_cycles += 8;
@@ -691,7 +1281,7 @@ void CPU::RLC()
 }
 
 // 0x7C (BIT 7, h)
-void CPU::BIT7h()
+void CPU::BIT7h(const byte& opCode)
 {
     m_PC += 1;
     m_cycles += 8;
