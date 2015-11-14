@@ -70,6 +70,7 @@ private:
     void NOP(const byte& opCode);             // 0x00
     void LDrn(const byte& opCode);
     void INCr(const byte& opCode);
+    void XORr(const byte& opCode);
 
     void LDDEnn(const byte& opCode);          // 0x11
     void RLA(const byte& opCode);             // 0x17

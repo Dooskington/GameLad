@@ -219,14 +219,14 @@ CPU::CPU() :
     //m_operationMap[0xA5] TODO
     //m_operationMap[0xA6] TODO
     //m_operationMap[0xA7] TODO
-    //m_operationMap[0xA8] TODO
-    //m_operationMap[0xA9] TODO
-    //m_operationMap[0xAA] TODO
-    //m_operationMap[0xAB] TODO
-    //m_operationMap[0xAC] TODO
-    //m_operationMap[0xAD] TODO
+    m_operationMap[0xA8] = &CPU::XORr;
+    m_operationMap[0xA9] = &CPU::XORr;
+    m_operationMap[0xAA] = &CPU::XORr;
+    m_operationMap[0xAB] = &CPU::XORr;
+    m_operationMap[0xAC] = &CPU::XORr;
+    m_operationMap[0xAD] = &CPU::XORr;
     //m_operationMap[0xAE] TODO
-    m_operationMap[0xAF] = &CPU::XORA;
+    m_operationMap[0xAF] = &CPU::XORr;
 
     // B0
     //m_operationMap[0xB0] TODO
@@ -980,6 +980,42 @@ void CPU::INCr(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    m_PC += 1;
+    m_cycles += 4;
+}
+
+/*
+    XOR r
+    10110rrr
+
+    The logical exclusive-OR operation is performed between the register specified in the r
+    operand and the byte contained in the accumulator. The result is stored in the accumulator.
+    Register r can be A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z000
+    Affects Z, clears n, clears h, clears c
+*/
+void CPU::XORr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    SetHighByte(&m_AF, *r ^ GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
 
     m_PC += 1;
     m_cycles += 4;
