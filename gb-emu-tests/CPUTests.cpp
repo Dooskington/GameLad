@@ -137,8 +137,8 @@ public:
             case 0x02:  // HL
                 Assert::AreEqual(value, (int)spCPU->m_HL);
                 break;
-            case 0x03:  // AF
-                Assert::AreEqual(value, (int)spCPU->m_AF);
+            case 0x03:  // SP
+                Assert::AreEqual(value, (int)spCPU->m_SP);
                 break;
             }
 

@@ -640,12 +640,12 @@ CPU::CPU() :
     00 = BC
     01 = DE
     10 = HL
-    11 = AF
+    11 = SP
     */
     m_UShortRegisterMap[0x00] = &m_BC;
     m_UShortRegisterMap[0x01] = &m_DE;
     m_UShortRegisterMap[0x02] = &m_HL;
-    m_UShortRegisterMap[0x03] = &m_AF;
+    m_UShortRegisterMap[0x03] = &m_SP;
 }
 
 CPU::~CPU()
