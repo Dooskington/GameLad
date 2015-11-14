@@ -122,7 +122,7 @@ public:
         for (byte flags = 0x00; flags <= 0x03;flags++, value++)
         {
             std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
-            ushort* reg = spCPU->GetUShortRegister(flags);
+            ushort* reg = spCPU->GetUShortRegister(flags, false);
 
             *reg = (int)value;
 

@@ -48,7 +48,7 @@ private:
     static byte GetLowByte(ushort dest);
 
     byte* GetByteRegister(byte val);
-    ushort* GetUShortRegister(byte val);
+    ushort* GetUShortRegister(byte val, bool useAF);
 
     void SetHighByte(ushort* dest, byte val);
     void SetLowByte(ushort* dest, byte val);

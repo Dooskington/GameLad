@@ -812,10 +812,19 @@ byte* CPU::GetByteRegister(byte val)
     return m_ByteRegisterMap[val & 0x07];
 }
 
-ushort* CPU::GetUShortRegister(byte val)
+ushort* CPU::GetUShortRegister(byte val, bool useAF)
 {
-    // Bottom 2 bits only
-    return m_UShortRegisterMap[val & 0x03];
+    // Some instructions (PUSH rr and POP rr) use a dumb alternate mapping,
+    // which replaces 0x03 (normally SP) with AF.
+    if ((val & 0x03) == 0x03)
+    {
+        return useAF ? &m_AF : m_UShortRegisterMap[0x03];
+    }
+    else
+    {
+        // Bottom 2 bits only
+        return m_UShortRegisterMap[val & 0x03];
+    }
 }
 
 void CPU::SetHighByte(ushort* dest, byte val)
@@ -986,7 +995,7 @@ void CPU::LDrR(const byte& opCode)
 */
 void CPU::LDrrnn(const byte& opCode)
 {
-    ushort* rr = GetUShortRegister(opCode >> 4);
+    ushort* rr = GetUShortRegister(opCode >> 4, false);
     ushort nn = ReadUShortPC(); // Read nn
     (*rr) = nn;
 
