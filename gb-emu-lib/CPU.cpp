@@ -32,7 +32,7 @@ CPU::CPU() :
 
     // 00
     m_operationMap[0x00] = &CPU::NOP;
-    //m_operationMap[0x01] TODO
+    m_operationMap[0x01] = &CPU::LDrrnn;
     //m_operationMap[0x02] TODO
     //m_operationMap[0x03] TODO
     m_operationMap[0x04] = &CPU::INCr;
@@ -50,7 +50,7 @@ CPU::CPU() :
 
     // 10
     //m_operationMap[0x10] TODO
-    m_operationMap[0x11] = &CPU::LDDEnn;
+    m_operationMap[0x11] = &CPU::LDrrnn;
     //m_operationMap[0x12] TODO
     //m_operationMap[0x13] TODO
     m_operationMap[0x14] = &CPU::INCr;
@@ -68,7 +68,7 @@ CPU::CPU() :
 
     // 20
     m_operationMap[0x20] = &CPU::JRNZe;
-    m_operationMap[0x21] = &CPU::LDHLnn;
+    m_operationMap[0x21] = &CPU::LDrrnn;
     //m_operationMap[0x22] TODO
     //m_operationMap[0x23] TODO
     m_operationMap[0x24] = &CPU::INCr;
@@ -86,7 +86,7 @@ CPU::CPU() :
 
     // 30
     //m_operationMap[0x30] TODO
-    m_operationMap[0x31] = &CPU::LDSPnn;
+    m_operationMap[0x31] = &CPU::LDrrnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     //m_operationMap[0x33] TODO
     //m_operationMap[0x34] TODO
@@ -974,6 +974,26 @@ void CPU::LDrR(const byte& opCode)
 }
 
 /*
+    LD rr, nn
+    00rr0001 nnnnnnnn nnnnnnnn
+
+    The 2-byte integer nn is loaded into the rr register pair, where rr defines
+    the BC, DL, HL, or SP register pairs.
+
+    12 Cycles
+
+    No flags affected
+*/
+void CPU::LDrrnn(const byte& opCode)
+{
+    ushort* rr = GetUShortRegister(opCode >> 4);
+    ushort nn = ReadUShortPC(); // Read nn
+    (*rr) = nn;
+
+    m_cycles += 12;
+}
+
+/*
     INC r
     00rrr100
 
@@ -1049,16 +1069,6 @@ void CPU::XORr(const byte& opCode)
     m_cycles += 4;
 }
 
-// 0x11 (LD DE, nn)
-void CPU::LDDEnn(const byte& opCode)
-{
-    ushort nn = ReadUShortPC(); // Read nn
-    m_DE = nn;
-    m_cycles += 8;
-
-    // No flags affected
-}
-
 // 0x17 (RL A)
 void CPU::RLA(const byte& opCode)
 {
@@ -1111,26 +1121,6 @@ void CPU::JRNZe(const byte& opCode)
         m_PC += arg;
         m_cycles += 12;
     }
-
-    // No flags affected
-}
-
-// 0x21 (LD HL, nn)
-void CPU::LDHLnn(const byte& opCode)
-{
-    ushort nn = ReadUShortPC(); // Read nn
-    m_HL = nn;
-    m_cycles += 8;
-
-    // No flags affected
-}
-
-// 0x51 (LD SP, nn)
-void CPU::LDSPnn(const byte& opCode)
-{
-    ushort nn = ReadUShortPC(); // Read nn
-    m_SP = nn;
-    m_cycles += 8;
 
     // No flags affected
 }
