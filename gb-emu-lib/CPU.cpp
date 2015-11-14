@@ -248,7 +248,7 @@ CPU::CPU() :
 
     // C0
     //m_operationMap[0xC0] TODO
-    m_operationMap[0xC1] = &CPU::POPBC;
+    m_operationMap[0xC1] = &CPU::POPrr;
     //m_operationMap[0xC2] TODO
     //m_operationMap[0xC3] TODO
     //m_operationMap[0xC4] TODO
@@ -266,7 +266,7 @@ CPU::CPU() :
 
     // D0
     //m_operationMap[0xD0] TODO
-    //m_operationMap[0xD1] TODO
+    m_operationMap[0xD1] = &CPU::POPrr;
     //m_operationMap[0xD2] TODO
     //m_operationMap[0xD3] TODO
     //m_operationMap[0xD4] TODO
@@ -284,7 +284,7 @@ CPU::CPU() :
 
     // E0
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
-    //m_operationMap[0xE1] TODO
+    m_operationMap[0xE1] = &CPU::POPrr;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
     //m_operationMap[0xE3] TODO
     //m_operationMap[0xE4] TODO
@@ -302,7 +302,7 @@ CPU::CPU() :
 
     // F0
     //m_operationMap[0xF0] TODO
-    //m_operationMap[0xF1] TODO
+    m_operationMap[0xF1] = &CPU::POPrr;
     //m_operationMap[0xF2] TODO
     //m_operationMap[0xF3] TODO
     //m_operationMap[0xF4] TODO
@@ -1083,7 +1083,7 @@ void CPU::XORr(const byte& opCode)
     11qq0101
 
     The contents of the register pair rr are pushed to the external memory stack.
-    The stack pointer holds the 16 bit address of the current top of the stack. 
+    The stack pointer holds the 16-bit address of the current top of the stack. 
     This instruction first decrements SP and loads the high order byte of register
     pair rr to the memory address specified by the SP. The SP is decremented again,
     and then the low order byte is then loaded to the new memory address. The operand
@@ -1099,6 +1099,29 @@ void CPU::PUSHrr(const byte& opCode)
     PushUShortToSP(*rr);
 
     m_cycles += 16;
+}
+
+/*
+    POP rr
+    11qq0001
+
+    The top two bytes of the external memory stack are popped into register pair qq.
+    The stack pointer holds the 16-bit address of the current top of the stack. This
+    instruction first loads to the low order portion of rr. The SP is incremented and
+    the contents of the corresponding adjacent memory ocation are loaded into the high
+    order portion of rr. The SP is then incremented again. The operand rr identifies
+    register pair BC, DE, HL, or AF.
+
+    12 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::POPrr(const byte& opCode)
+{
+    ushort* rr = GetUShortRegister(opCode >> 4, true);
+    (*rr) = PopUShort();
+
+    m_cycles += 12;
 }
 
 // 0x17 (RL A)
@@ -1182,15 +1205,6 @@ void CPU::LD_HL_A(const byte& opCode)
     }
 
     m_cycles += 8;
-
-    // No flags affected
-}
-
-// 0xC1
-void CPU::POPBC(const byte& opCode)
-{
-    m_BC = PopUShort();
-    m_cycles += 12;
 
     // No flags affected
 }
