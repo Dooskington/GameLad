@@ -37,7 +37,7 @@ CPU::CPU() :
     //m_operationMap[0x03] TODO
     //m_operationMap[0x04] TODO
     //m_operationMap[0x05] TODO
-    m_operationMap[0x06] = &CPU::LDBe;
+    m_operationMap[0x06] = &CPU::LDrn;
     //m_operationMap[0x07] TODO
     //m_operationMap[0x08] TODO
     //m_operationMap[0x09] TODO
@@ -45,7 +45,7 @@ CPU::CPU() :
     //m_operationMap[0x0B] TODO
     m_operationMap[0x0C] = &CPU::INCC;
     //m_operationMap[0x0D] TODO
-    m_operationMap[0x0E] = &CPU::LDCe;
+    m_operationMap[0x0E] = &CPU::LDrn;
     //m_operationMap[0x0F] TODO
 
     // 10
@@ -55,7 +55,7 @@ CPU::CPU() :
     //m_operationMap[0x13] TODO
     //m_operationMap[0x14] TODO
     //m_operationMap[0x15] TODO
-    //m_operationMap[0x16] TODO
+    m_operationMap[0x16] = &CPU::LDrn;
     m_operationMap[0x17] = &CPU::RLA;
     //m_operationMap[0x18] TODO
     //m_operationMap[0x19] TODO
@@ -63,7 +63,7 @@ CPU::CPU() :
     //m_operationMap[0x1B] TODO
     //m_operationMap[0x1C] TODO
     //m_operationMap[0x1D] TODO
-    //m_operationMap[0x1E] TODO
+    m_operationMap[0x1E] = &CPU::LDrn;
     //m_operationMap[0x1F] TODO
 
     // 20
@@ -73,7 +73,7 @@ CPU::CPU() :
     //m_operationMap[0x23] TODO
     //m_operationMap[0x24] TODO
     //m_operationMap[0x25] TODO
-    //m_operationMap[0x26] TODO
+    m_operationMap[0x26] = &CPU::LDrn;
     //m_operationMap[0x27] TODO
     //m_operationMap[0x28] TODO
     //m_operationMap[0x29] TODO
@@ -81,7 +81,7 @@ CPU::CPU() :
     //m_operationMap[0x2B] TODO
     //m_operationMap[0x2C] TODO
     //m_operationMap[0x2D] TODO
-    //m_operationMap[0x2E] TODO
+    m_operationMap[0x2E] = &CPU::LDrn;
     //m_operationMap[0x2F] TODO
 
     // 30
@@ -99,7 +99,7 @@ CPU::CPU() :
     //m_operationMap[0x3B] TODO
     //m_operationMap[0x3C] TODO
     //m_operationMap[0x3D] TODO
-    m_operationMap[0x3E] = &CPU::LDAe;
+    m_operationMap[0x3E] = &CPU::LDrn;
     //m_operationMap[0x3F] TODO
 
     // 40
@@ -924,24 +924,23 @@ void CPU::NOP(const byte& opCode)
 /*
     LD r, n
     00rrr110 nnnnnnnn
+
     The 8-bit integer n is loaded to any register r, where r identifies register
     A, B, C, D, E, H, or L.
+
+    8 Cycles
+
+    No flags affected
 */
 void CPU::LDrn(const byte& opCode)
 {
+    m_PC += 1; // Look at n
+    byte n = m_MMU->ReadByte(m_PC);
+    byte* r = GetByteRegister(opCode >> 3);
+    (*r) = n;
 
-}
-
-// 0x06 (LD B, e)
-void CPU::LDBe(const byte& opCode)
-{
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetHighByte(&m_BC, e); // Set B to e
-    m_PC += 1; // Move onto the next instruction
+    m_PC += 1;
     m_cycles += 8;
-
-    // No flags affected
 }
 
 // 0x0C (INC C)
@@ -977,18 +976,6 @@ void CPU::INCC(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
-}
-
-// 0x0E (LD C, e)
-void CPU::LDCe(const byte& opCode)
-{
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetLowByte(&m_BC, e); // Set C to e
-    m_PC += 1; // Move onto the next instruction
-    m_cycles += 8;
-
-    // No flags affected
 }
 
 // 0x11 (LD DE, nn)
@@ -1100,18 +1087,6 @@ void CPU::LDD_HL_A(const byte& opCode)
     }
 
     m_HL--;
-    m_cycles += 8;
-
-    // No flags affected
-}
-
-// 0x5E (LD A, e)
-void CPU::LDAe(const byte& opCode)
-{
-    m_PC += 1; // Look at e
-    byte e = m_MMU->ReadByte(m_PC); // Read e
-    SetHighByte(&m_AF, e); // Set A to e
-    m_PC += 1; // Move onto the next instruction
     m_cycles += 8;
 
     // No flags affected

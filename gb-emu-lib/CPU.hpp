@@ -68,9 +68,8 @@ private:
     // Z80 Instruction Set
     void NOP(const byte& opCode);             // 0x00
     void LDrn(const byte& opCode);
-    void LDBe(const byte& opCode);            // 0x06
+
     void INCC(const byte& opCode);            // 0x0C
-    void LDCe(const byte& opCode);            // 0x0E
     void LDDEnn(const byte& opCode);          // 0x11
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
@@ -78,7 +77,6 @@ private:
     void LDHLnn(const byte& opCode);          // 0x21
     void LDSPnn(const byte& opCode);          // 0x31
     void LDD_HL_A(const byte& opCode);        // 0x32
-    void LDAe(const byte& opCode);            // 0x3E
     void LDCA(const byte& opCode);            // 0x4F
     void LD_HL_A(const byte& opCode);         // 0x77
     void XORA(const byte& opCode);            // 0xAF

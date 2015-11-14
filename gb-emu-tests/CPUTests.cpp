@@ -170,7 +170,7 @@ public:
     }
 
     // 0x06
-    TEST_METHOD(LDBe_Test)
+    TEST_METHOD(LDBn_Test)
     {
         // Load LDBe and 0x12 into memory
         byte m_Mem[] = { 0x06, 0x12 };
@@ -231,7 +231,7 @@ public:
     }
 
     // 0x0E
-    TEST_METHOD(LDCe_Test)
+    TEST_METHOD(LDCn_Test)
     {
         // Load LDCe and 0x12 into memory
         byte m_Mem[] = { 0x0E, 0x12 };
@@ -272,6 +272,28 @@ public:
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
         Assert::AreEqual(0x1234, (int)spCPU->m_DE);
+
+        spCPU.reset();
+    }
+
+    // 0x16
+    TEST_METHOD(LDDn_Test)
+    {
+        byte m_Mem[] = { 0x16, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x1200, (int)spCPU->m_DE);
 
         spCPU.reset();
     }
@@ -334,6 +356,28 @@ public:
         spCPU.reset();
     }
 
+    // 0x1E
+    TEST_METHOD(LDEn_Test)
+    {
+        byte m_Mem[] = { 0x1E, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x0012, (int)spCPU->m_DE);
+
+        spCPU.reset();
+    }
+
     // 0x20
     TEST_METHOD(JRNZe_Test)
     {
@@ -390,6 +434,50 @@ public:
         spCPU.reset();
     }
 
+    // 0x26
+    TEST_METHOD(LDHn_Test)
+    {
+        byte m_Mem[] = { 0x26, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x1200, (int)spCPU->m_HL);
+
+        spCPU.reset();
+    }
+
+    // 0x2E
+    TEST_METHOD(LDLn_Test)
+    {
+        byte m_Mem[] = { 0x2E, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x0012, (int)spCPU->m_HL);
+
+        spCPU.reset();
+    }
+
     // 0x31
     TEST_METHOD(LDSPnn_Test)
     {
@@ -440,7 +528,7 @@ public:
     }
 
     // 0x3E
-    TEST_METHOD(LDAe_Test)
+    TEST_METHOD(LDAn_Test)
     {
         // Load LDAe
         byte m_Mem[] = { 0x3E, 0x12 };
