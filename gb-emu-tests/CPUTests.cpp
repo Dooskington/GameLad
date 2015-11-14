@@ -158,7 +158,7 @@ public:
             {
                 if (left == 0x06 || right == 0x06) continue;
 
-                byte m_Mem[] = { (0x40 | (left << 3) | right) };
+                byte m_Mem[] = { (byte)(0x40 | (left << 3) | right) };
                 std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
                 spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
