@@ -35,7 +35,7 @@ CPU::CPU() :
     //m_operationMap[0x01] TODO
     //m_operationMap[0x02] TODO
     //m_operationMap[0x03] TODO
-    //m_operationMap[0x04] TODO
+    m_operationMap[0x04] = &CPU::INCr;
     //m_operationMap[0x05] TODO
     m_operationMap[0x06] = &CPU::LDrn;
     //m_operationMap[0x07] TODO
@@ -43,7 +43,7 @@ CPU::CPU() :
     //m_operationMap[0x09] TODO
     //m_operationMap[0x0A] TODO
     //m_operationMap[0x0B] TODO
-    m_operationMap[0x0C] = &CPU::INCC;
+    m_operationMap[0x0C] = &CPU::INCr;
     //m_operationMap[0x0D] TODO
     m_operationMap[0x0E] = &CPU::LDrn;
     //m_operationMap[0x0F] TODO
@@ -53,7 +53,7 @@ CPU::CPU() :
     m_operationMap[0x11] = &CPU::LDDEnn;
     //m_operationMap[0x12] TODO
     //m_operationMap[0x13] TODO
-    //m_operationMap[0x14] TODO
+    m_operationMap[0x14] = &CPU::INCr;
     //m_operationMap[0x15] TODO
     m_operationMap[0x16] = &CPU::LDrn;
     m_operationMap[0x17] = &CPU::RLA;
@@ -61,7 +61,7 @@ CPU::CPU() :
     //m_operationMap[0x19] TODO
     m_operationMap[0x1A] = &CPU::LDA_DE_;
     //m_operationMap[0x1B] TODO
-    //m_operationMap[0x1C] TODO
+    m_operationMap[0x1C] = &CPU::INCr;
     //m_operationMap[0x1D] TODO
     m_operationMap[0x1E] = &CPU::LDrn;
     //m_operationMap[0x1F] TODO
@@ -71,7 +71,7 @@ CPU::CPU() :
     m_operationMap[0x21] = &CPU::LDHLnn;
     //m_operationMap[0x22] TODO
     //m_operationMap[0x23] TODO
-    //m_operationMap[0x24] TODO
+    m_operationMap[0x24] = &CPU::INCr;
     //m_operationMap[0x25] TODO
     m_operationMap[0x26] = &CPU::LDrn;
     //m_operationMap[0x27] TODO
@@ -79,7 +79,7 @@ CPU::CPU() :
     //m_operationMap[0x29] TODO
     //m_operationMap[0x2A] TODO
     //m_operationMap[0x2B] TODO
-    //m_operationMap[0x2C] TODO
+    m_operationMap[0x2C] = &CPU::INCr;
     //m_operationMap[0x2D] TODO
     m_operationMap[0x2E] = &CPU::LDrn;
     //m_operationMap[0x2F] TODO
@@ -97,7 +97,7 @@ CPU::CPU() :
     //m_operationMap[0x39] TODO
     //m_operationMap[0x3A] TODO
     //m_operationMap[0x3B] TODO
-    //m_operationMap[0x3C] TODO
+    m_operationMap[0x3C] = &CPU::INCr;
     //m_operationMap[0x3D] TODO
     m_operationMap[0x3E] = &CPU::LDrn;
     //m_operationMap[0x3F] TODO
@@ -943,21 +943,25 @@ void CPU::LDrn(const byte& opCode)
     m_cycles += 8;
 }
 
-// 0x0C (INC C)
-void CPU::INCC(const byte& opCode)
+/*
+    INC r
+    00rrr100
+
+    Register r is incremented, where r identifies register A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z0h-
+    Affects Z, Clears N, affects H
+*/
+void CPU::INCr(const byte& opCode)
 {
-    m_PC += 1;
+    byte* r = GetByteRegister(opCode >> 3);
+    bool isBit3Before = ISBITSET(*r, 3);
+    *r += 1;
+    bool isBit3After = ISBITSET(*r, 3);
 
-    byte C = GetLowByte(m_BC);
-    bool isBit3Before = ISBITSET(C, 3);
-    C += 1;
-    bool isBit3After = ISBITSET(C, 3);
-    SetLowByte(&m_BC, C);
-    m_cycles += 4;
-
-    // Flags affected: z0h- (znhc)
-    // Affects Z, clears N, affects H
-    if (C == 0x00)
+    if (*r == 0x00)
     {
         SetFlag(ZeroFlag);
     }
@@ -976,6 +980,9 @@ void CPU::INCC(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    m_PC += 1;
+    m_cycles += 4;
 }
 
 // 0x11 (LD DE, nn)

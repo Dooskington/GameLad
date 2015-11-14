@@ -22,10 +22,10 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, GetByteRegister_Test);
     TEST_CALL(CPUTests, GetUShortRegister_Test);
 
+    // TODO: Organize the following...
     // Z80 Instruction Set Tests
     TEST_CALL(CPUTests, NOP_Test);
     TEST_CALL(CPUTests, LDBn_Test);
-    TEST_CALL(CPUTests, INCC_Test);
     TEST_CALL(CPUTests, LDCn_Test);
     TEST_CALL(CPUTests, LDDEnn_Test);
     TEST_CALL(CPUTests, LDDn_Test);
@@ -47,6 +47,13 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, CALLnn_Test);
     TEST_CALL(CPUTests, LD_0xFF00n_A_Test);
     TEST_CALL(CPUTests, LD_0xFF00C_A_Test);
+    TEST_CALL(CPUTests, INCA_Test);
+    TEST_CALL(CPUTests, INCB_Test);
+    TEST_CALL(CPUTests, INCC_Test);
+    TEST_CALL(CPUTests, INCD_Test);
+    TEST_CALL(CPUTests, INCE_Test);
+    TEST_CALL(CPUTests, INCH_Test);
+    TEST_CALL(CPUTests, INCL_Test);
 
     // Z80 Instruction Set - CB Tests
     TEST_CALL(CPUTests, RLC_Test);

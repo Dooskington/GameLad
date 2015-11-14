@@ -65,11 +65,12 @@ private:
 
     void HALT();
 
+    // TODO: Organize the following...
     // Z80 Instruction Set
     void NOP(const byte& opCode);             // 0x00
     void LDrn(const byte& opCode);
+    void INCr(const byte& opCode);
 
-    void INCC(const byte& opCode);            // 0x0C
     void LDDEnn(const byte& opCode);          // 0x11
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
