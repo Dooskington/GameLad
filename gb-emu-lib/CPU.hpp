@@ -62,6 +62,8 @@ private:
     void PushUShortToSP(ushort val);
     ushort PopUShort();
     byte PopByte();
+    byte ReadBytePC();
+    ushort ReadUShortPC();
 
     void HALT();
 
