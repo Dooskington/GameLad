@@ -395,76 +395,76 @@ CPU::CPU() :
     //m_operationMapCB[0x3F] TODO
 
     // 40
-    //m_operationMapCB[0x40] TODO
-    //m_operationMapCB[0x41] TODO
-    //m_operationMapCB[0x42] TODO
-    //m_operationMapCB[0x43] TODO
-    //m_operationMapCB[0x44] TODO
-    //m_operationMapCB[0x45] TODO
+    m_operationMapCB[0x40] = &CPU::BITbr;
+    m_operationMapCB[0x41] = &CPU::BITbr;
+    m_operationMapCB[0x42] = &CPU::BITbr;
+    m_operationMapCB[0x43] = &CPU::BITbr;
+    m_operationMapCB[0x44] = &CPU::BITbr;
+    m_operationMapCB[0x45] = &CPU::BITbr;
     //m_operationMapCB[0x46] TODO
-    //m_operationMapCB[0x47] TODO
-    //m_operationMapCB[0x48] TODO
-    //m_operationMapCB[0x49] TODO
-    //m_operationMapCB[0x4A] TODO
-    //m_operationMapCB[0x4B] TODO
-    //m_operationMapCB[0x4C] TODO
-    //m_operationMapCB[0x4D] TODO
+    m_operationMapCB[0x47] = &CPU::BITbr;
+    m_operationMapCB[0x48] = &CPU::BITbr;
+    m_operationMapCB[0x49] = &CPU::BITbr;
+    m_operationMapCB[0x4A] = &CPU::BITbr;
+    m_operationMapCB[0x4B] = &CPU::BITbr;
+    m_operationMapCB[0x4C] = &CPU::BITbr;
+    m_operationMapCB[0x4D] = &CPU::BITbr;
     //m_operationMapCB[0x4E] TODO
-    //m_operationMapCB[0x4F] TODO
+    m_operationMapCB[0x4F] = &CPU::BITbr;
 
     // 50
-    //m_operationMapCB[0x50] TODO
-    //m_operationMapCB[0x51] TODO
-    //m_operationMapCB[0x52] TODO
-    //m_operationMapCB[0x53] TODO
-    //m_operationMapCB[0x54] TODO
-    //m_operationMapCB[0x55] TODO
+    m_operationMapCB[0x50] = &CPU::BITbr;
+    m_operationMapCB[0x51] = &CPU::BITbr;
+    m_operationMapCB[0x52] = &CPU::BITbr;
+    m_operationMapCB[0x53] = &CPU::BITbr;
+    m_operationMapCB[0x54] = &CPU::BITbr;
+    m_operationMapCB[0x55] = &CPU::BITbr;
     //m_operationMapCB[0x56] TODO
-    //m_operationMapCB[0x57] TODO
-    //m_operationMapCB[0x58] TODO
-    //m_operationMapCB[0x59] TODO
-    //m_operationMapCB[0x5A] TODO
-    //m_operationMapCB[0x5B] TODO
-    //m_operationMapCB[0x5C] TODO
-    //m_operationMapCB[0x5D] TODO
+    m_operationMapCB[0x57] = &CPU::BITbr;
+    m_operationMapCB[0x58] = &CPU::BITbr;
+    m_operationMapCB[0x59] = &CPU::BITbr;
+    m_operationMapCB[0x5A] = &CPU::BITbr;
+    m_operationMapCB[0x5B] = &CPU::BITbr;
+    m_operationMapCB[0x5C] = &CPU::BITbr;
+    m_operationMapCB[0x5D] = &CPU::BITbr;
     //m_operationMapCB[0x5E] TODO
-    //m_operationMapCB[0x5F] TODO
+    m_operationMapCB[0x5F] = &CPU::BITbr;
 
     // 60
-    //m_operationMapCB[0x60] TODO
-    //m_operationMapCB[0x61] TODO
-    //m_operationMapCB[0x62] TODO
-    //m_operationMapCB[0x63] TODO
-    //m_operationMapCB[0x64] TODO
-    //m_operationMapCB[0x65] TODO
+    m_operationMapCB[0x60] = &CPU::BITbr;
+    m_operationMapCB[0x61] = &CPU::BITbr;
+    m_operationMapCB[0x62] = &CPU::BITbr;
+    m_operationMapCB[0x63] = &CPU::BITbr;
+    m_operationMapCB[0x64] = &CPU::BITbr;
+    m_operationMapCB[0x65] = &CPU::BITbr;
     //m_operationMapCB[0x66] TODO
-    //m_operationMapCB[0x67] TODO
-    //m_operationMapCB[0x68] TODO
-    //m_operationMapCB[0x69] TODO
-    //m_operationMapCB[0x6A] TODO
-    //m_operationMapCB[0x6B] TODO
-    //m_operationMapCB[0x6C] TODO
-    //m_operationMapCB[0x6D] TODO
+    m_operationMapCB[0x67] = &CPU::BITbr;
+    m_operationMapCB[0x68] = &CPU::BITbr;
+    m_operationMapCB[0x69] = &CPU::BITbr;
+    m_operationMapCB[0x6A] = &CPU::BITbr;
+    m_operationMapCB[0x6B] = &CPU::BITbr;
+    m_operationMapCB[0x6C] = &CPU::BITbr;
+    m_operationMapCB[0x6D] = &CPU::BITbr;
     //m_operationMapCB[0x6E] TODO
-    //m_operationMapCB[0x6F] TODO
+    m_operationMapCB[0x6F] = &CPU::BITbr;
 
     // 70
-    //m_operationMapCB[0x70] TODO
-    //m_operationMapCB[0x71] TODO
-    //m_operationMapCB[0x72] TODO
-    //m_operationMapCB[0x73] TODO
-    //m_operationMapCB[0x74] TODO
-    //m_operationMapCB[0x75] TODO
+    m_operationMapCB[0x70] = &CPU::BITbr;
+    m_operationMapCB[0x71] = &CPU::BITbr;
+    m_operationMapCB[0x72] = &CPU::BITbr;
+    m_operationMapCB[0x73] = &CPU::BITbr;
+    m_operationMapCB[0x74] = &CPU::BITbr;
+    m_operationMapCB[0x75] = &CPU::BITbr;
     //m_operationMapCB[0x76] TODO
-    //m_operationMapCB[0x77] TODO
-    //m_operationMapCB[0x78] TODO
-    //m_operationMapCB[0x79] TODO
-    //m_operationMapCB[0x7A] TODO
-    //m_operationMapCB[0x7B] TODO
-    m_operationMapCB[0x7C] = &CPU::BIT7h;
-    //m_operationMapCB[0x7D] TODO
+    m_operationMapCB[0x77] = &CPU::BITbr;
+    m_operationMapCB[0x78] = &CPU::BITbr;
+    m_operationMapCB[0x79] = &CPU::BITbr;
+    m_operationMapCB[0x7A] = &CPU::BITbr;
+    m_operationMapCB[0x7B] = &CPU::BITbr;
+    m_operationMapCB[0x7C] = &CPU::BITbr;
+    m_operationMapCB[0x7D] = &CPU::BITbr;
     //m_operationMapCB[0x7E] TODO
-    //m_operationMapCB[0x7F] TODO
+    m_operationMapCB[0x7F] = &CPU::BITbr;
 
     // 80
     //m_operationMapCB[0x80] TODO
@@ -1238,6 +1238,41 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
     CPU 0xCB INSTRUCTION MAP
 */
 
+/*
+BIT b, r
+11001011 01bbbrrr
+
+This instruction tests bit b in register r and sets the Z flag accordingly.
+
+8 Cycles
+
+Flags affected(znhc): z01-
+Affects Z, clears n, sets h
+*/
+void CPU::BITbr(const byte& opCode)
+{
+    m_cycles += 8;
+
+    byte bit = (opCode >> 3) & 0x07;
+    byte* r = GetByteRegister(opCode);
+
+    // Test bit b in r
+    if (!ISBITSET(*r, bit))
+    {
+        // Z is set if specified bit is 0
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        // Reset otherwise
+        ClearFlag(ZeroFlag);
+    }
+
+    SetFlag(HalfCarryFlag); // H is set
+    ClearFlag(AddFlag); // N is reset
+}
+
+
 // 0x11 (RL C)
 void CPU::RLC(const byte& opCode)
 {
@@ -1262,25 +1297,4 @@ void CPU::RLC(const byte& opCode)
     SetFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
-}
-
-// 0x7C (BIT 7, h)
-void CPU::BIT7h(const byte& opCode)
-{
-    m_cycles += 8;
-
-    // Test bit 7 in H
-    if (!ISBITSET(GetHighByte(m_HL), 7))
-    {
-        // Z is set if specified bit is 0
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        // Reset otherwise
-        ClearFlag(ZeroFlag);
-    }
-
-    SetFlag(HalfCarryFlag); // H is set
-    ClearFlag(AddFlag); // N is reset
 }
