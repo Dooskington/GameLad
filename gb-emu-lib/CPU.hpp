@@ -90,6 +90,7 @@ private:
 
     // Z80 Instruction Set - CB
     void BITbr(const byte& opCode);
+    void RESbr(const byte& opCode);
 
     void RLC(const byte& opCode);             // 0x11
     void BIT7h(const byte& opCode);           // 0x7C
