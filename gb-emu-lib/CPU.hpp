@@ -84,8 +84,8 @@ private:
     void POPBC();           // 0xC1
     void PUSHBC();          // 0xC5
     void CALLnn();          // 0xCD
-    void LD_0xFF00C_A();    // 0xE0
-    void LD_0xFF00n_A();    // 0xE2
+    void LD_0xFF00n_A();    // 0xE0
+    void LD_0xFF00C_A();    // 0xE2
 
     // OpCode 0xCB functions
     void RLC();             // 0x11
