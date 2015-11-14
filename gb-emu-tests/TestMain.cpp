@@ -24,6 +24,7 @@ int main(int arg, char** argv)
 
     // TODO: Organize the following...
     // Z80 Instruction Set Tests
+    TEST_CALL(CPUTests, LDrr_Test);
     TEST_CALL(CPUTests, NOP_Test);
     TEST_CALL(CPUTests, LDBn_Test);
     TEST_CALL(CPUTests, LDCn_Test);
@@ -39,7 +40,6 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDSPnn_Test);
     TEST_CALL(CPUTests, LDD_HL_A_Test);
     TEST_CALL(CPUTests, LDAn_Test);
-    TEST_CALL(CPUTests, LDCA_Test);
     TEST_CALL(CPUTests, LD_HL_A_Test);
     TEST_CALL(CPUTests, POPBC_Test);
     TEST_CALL(CPUTests, PUSHBC_Test);

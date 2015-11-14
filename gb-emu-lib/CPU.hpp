@@ -71,6 +71,7 @@ private:
     // Z80 Instruction Set
     void NOP(const byte& opCode);             // 0x00
     void LDrn(const byte& opCode);
+    void LDrR(const byte& opCode);
     void INCr(const byte& opCode);
     void XORr(const byte& opCode);
 
@@ -81,7 +82,6 @@ private:
     void LDHLnn(const byte& opCode);          // 0x21
     void LDSPnn(const byte& opCode);          // 0x31
     void LDD_HL_A(const byte& opCode);        // 0x32
-    void LDCA(const byte& opCode);            // 0x4F
     void LD_HL_A(const byte& opCode);         // 0x77
     void XORA(const byte& opCode);            // 0xAF
     void POPBC(const byte& opCode);           // 0xC1

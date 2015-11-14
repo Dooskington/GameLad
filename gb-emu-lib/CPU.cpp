@@ -103,58 +103,58 @@ CPU::CPU() :
     //m_operationMap[0x3F] TODO
 
     // 40
-    //m_operationMap[0x40] TODO
-    //m_operationMap[0x41] TODO
-    //m_operationMap[0x42] TODO
-    //m_operationMap[0x43] TODO
-    //m_operationMap[0x44] TODO
-    //m_operationMap[0x45] TODO
+    m_operationMap[0x40] = &CPU::LDrR;
+    m_operationMap[0x41] = &CPU::LDrR;
+    m_operationMap[0x42] = &CPU::LDrR;
+    m_operationMap[0x43] = &CPU::LDrR;
+    m_operationMap[0x44] = &CPU::LDrR;
+    m_operationMap[0x45] = &CPU::LDrR;
     //m_operationMap[0x46] TODO
-    //m_operationMap[0x47] TODO
-    //m_operationMap[0x48] TODO
-    //m_operationMap[0x49] TODO
-    //m_operationMap[0x4A] TODO
-    //m_operationMap[0x4B] TODO
-    //m_operationMap[0x4C] TODO
-    //m_operationMap[0x4D] TODO
+    m_operationMap[0x47] = &CPU::LDrR;
+    m_operationMap[0x48] = &CPU::LDrR;
+    m_operationMap[0x49] = &CPU::LDrR;
+    m_operationMap[0x4A] = &CPU::LDrR;
+    m_operationMap[0x4B] = &CPU::LDrR;
+    m_operationMap[0x4C] = &CPU::LDrR;
+    m_operationMap[0x4D] = &CPU::LDrR;
     //m_operationMap[0x4E] TODO
-    m_operationMap[0x4F] = &CPU::LDCA;
+    m_operationMap[0x4F] = &CPU::LDrR;
 
     // 50
-    //m_operationMap[0x50] TODO
-    //m_operationMap[0x51] TODO
-    //m_operationMap[0x52] TODO
-    //m_operationMap[0x53] TODO
-    //m_operationMap[0x54] TODO
-    //m_operationMap[0x55] TODO
+    m_operationMap[0x50] = &CPU::LDrR;
+    m_operationMap[0x51] = &CPU::LDrR;
+    m_operationMap[0x52] = &CPU::LDrR;
+    m_operationMap[0x53] = &CPU::LDrR;
+    m_operationMap[0x54] = &CPU::LDrR;
+    m_operationMap[0x55] = &CPU::LDrR;
     //m_operationMap[0x56] TODO
-    //m_operationMap[0x57] TODO
-    //m_operationMap[0x58] TODO
-    //m_operationMap[0x59] TODO
-    //m_operationMap[0x5A] TODO
-    //m_operationMap[0x5B] TODO
-    //m_operationMap[0x5C] TODO
-    //m_operationMap[0x5D] TODO
+    m_operationMap[0x57] = &CPU::LDrR;
+    m_operationMap[0x58] = &CPU::LDrR;
+    m_operationMap[0x59] = &CPU::LDrR;
+    m_operationMap[0x5A] = &CPU::LDrR;
+    m_operationMap[0x5B] = &CPU::LDrR;
+    m_operationMap[0x5C] = &CPU::LDrR;
+    m_operationMap[0x5D] = &CPU::LDrR;
     //m_operationMap[0x5E] TODO
-    //m_operationMap[0x5F] TODO
+    m_operationMap[0x5F] = &CPU::LDrR;
 
     // 60
-    //m_operationMap[0x60] TODO
-    //m_operationMap[0x61] TODO
-    //m_operationMap[0x62] TODO
-    //m_operationMap[0x63] TODO
-    //m_operationMap[0x64] TODO
-    //m_operationMap[0x65] TODO
+    m_operationMap[0x60] = &CPU::LDrR;
+    m_operationMap[0x61] = &CPU::LDrR;
+    m_operationMap[0x62] = &CPU::LDrR;
+    m_operationMap[0x63] = &CPU::LDrR;
+    m_operationMap[0x64] = &CPU::LDrR;
+    m_operationMap[0x65] = &CPU::LDrR;
     //m_operationMap[0x66] TODO
-    //m_operationMap[0x67] TODO
-    //m_operationMap[0x68] TODO
-    //m_operationMap[0x69] TODO
-    //m_operationMap[0x6A] TODO
-    //m_operationMap[0x6B] TODO
-    //m_operationMap[0x6C] TODO
-    //m_operationMap[0x6D] TODO
+    m_operationMap[0x67] = &CPU::LDrR;
+    m_operationMap[0x68] = &CPU::LDrR;
+    m_operationMap[0x69] = &CPU::LDrR;
+    m_operationMap[0x6A] = &CPU::LDrR;
+    m_operationMap[0x6B] = &CPU::LDrR;
+    m_operationMap[0x6C] = &CPU::LDrR;
+    m_operationMap[0x6D] = &CPU::LDrR;
     //m_operationMap[0x6E] TODO
-    //m_operationMap[0x6F] TODO
+    m_operationMap[0x6F] = &CPU::LDrR;
 
     // 70
     //m_operationMap[0x70] TODO
@@ -165,14 +165,14 @@ CPU::CPU() :
     //m_operationMap[0x75] TODO
     //m_operationMap[0x76] TODO
     m_operationMap[0x77] = &CPU::LD_HL_A;
-    //m_operationMap[0x78] TODO
-    //m_operationMap[0x79] TODO
-    //m_operationMap[0x7A] TODO
-    //m_operationMap[0x7B] TODO
-    //m_operationMap[0x7C] TODO
-    //m_operationMap[0x7D] TODO
+    m_operationMap[0x78] = &CPU::LDrR;
+    m_operationMap[0x79] = &CPU::LDrR;
+    m_operationMap[0x7A] = &CPU::LDrR;
+    m_operationMap[0x7B] = &CPU::LDrR;
+    m_operationMap[0x7C] = &CPU::LDrR;
+    m_operationMap[0x7D] = &CPU::LDrR;
     //m_operationMap[0x7E] TODO
-    //m_operationMap[0x7F] TODO
+    m_operationMap[0x7F] = &CPU::LDrR;
 
     // 80
     //m_operationMap[0x80] TODO
@@ -954,6 +954,26 @@ void CPU::LDrn(const byte& opCode)
 }
 
 /*
+    LD r, R
+    01rrrRRR
+
+    The contents of any register R are loaded into another other register r, where
+    R and r identify a register A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    No flags affected
+*/
+void CPU::LDrR(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode >> 3);
+    byte* R = GetByteRegister(opCode);
+    (*r) = *R;
+
+    m_cycles += 4;
+}
+
+/*
     INC r
     00rrr100
 
@@ -1128,13 +1148,6 @@ void CPU::LDD_HL_A(const byte& opCode)
     m_cycles += 8;
 
     // No flags affected
-}
-
-// 0x4F (LD C, A)
-void CPU::LDCA(const byte& opCode)
-{
-    SetLowByte(&m_BC, GetHighByte(m_AF));
-    m_cycles += 4;
 }
 
 // 0x77 (LD (HL), A)
