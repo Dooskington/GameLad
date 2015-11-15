@@ -193,14 +193,14 @@ CPU::CPU() :
     //m_operationMap[0x8F] TODO
 
     // 90
-    //m_operationMap[0x90] TODO
-    //m_operationMap[0x91] TODO
-    //m_operationMap[0x92] TODO
-    //m_operationMap[0x93] TODO
-    //m_operationMap[0x94] TODO
-    //m_operationMap[0x95] TODO
+    m_operationMap[0x90] = &CPU::SUBr;
+    m_operationMap[0x91] = &CPU::SUBr;
+    m_operationMap[0x92] = &CPU::SUBr;
+    m_operationMap[0x93] = &CPU::SUBr;
+    m_operationMap[0x94] = &CPU::SUBr;
+    m_operationMap[0x95] = &CPU::SUBr;
     //m_operationMap[0x96] TODO
-    //m_operationMap[0x97] TODO
+    m_operationMap[0x97] = &CPU::SUBr;
     //m_operationMap[0x98] TODO
     //m_operationMap[0x99] TODO
     //m_operationMap[0x9A] TODO
@@ -1180,6 +1180,32 @@ void CPU::DECr(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    m_cycles += 4;
+}
+
+/*
+    SUB r
+    10010rrr
+
+    The 8-bit register r is subtracted from the contents of the Accumulator, and the
+    result is stored in the accumulator.
+
+    4 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::SUBr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    byte A = GetHighByte(m_AF);
+    byte result = A - (*r);
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(AddFlag);
+    ((A & 0x0F) < ((*r) & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < ((*r) & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 4;
 }
