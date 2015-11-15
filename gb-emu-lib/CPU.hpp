@@ -95,6 +95,7 @@ private:
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void LD_nn_A(const byte& opCode);         // 0xEA
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
+    void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void CPn(const byte& opCode);             // 0xFE
 
     // Z80 Instruction Set - CB

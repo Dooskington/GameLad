@@ -2509,6 +2509,33 @@ public:
         spCPU.reset();
     }
 
+    // 0xF2
+    TEST_METHOD(LDA_0xFF00C__Test)
+    {
+        byte m_Mem[] = { 0xF2 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_BC = 0x0012;
+
+        spCPU->m_MMU->WriteByte((0xFF00 + 0x12), 0x34);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+        Assert::AreEqual(0x34, (int)spCPU->m_MMU->ReadByte(0xFF00 + 0x12));
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+        Assert::AreEqual(0x3400, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
     // 0xF5
     TEST_METHOD(PUSHAF_Test)
     {

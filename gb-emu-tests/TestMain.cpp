@@ -57,6 +57,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LD_0xFF00n_A_Test);
     TEST_CALL(CPUTests, LD_0xFF00C_A_Test);
     TEST_CALL(CPUTests, LDA_0xFF00n__Test);
+    TEST_CALL(CPUTests, LDA_0xFF00C__Test);
     TEST_CALL(CPUTests, INCA_Test);
     TEST_CALL(CPUTests, INCB_Test);
     TEST_CALL(CPUTests, INCC_Test);

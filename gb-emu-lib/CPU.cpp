@@ -303,7 +303,7 @@ CPU::CPU() :
     // F0
     m_operationMap[0xF0] = &CPU::LDA_0xFF00n_;
     m_operationMap[0xF1] = &CPU::POPrr;
-    //m_operationMap[0xF2] TODO
+    m_operationMap[0xF2] = &CPU::LDA_0xFF00C_;
     //m_operationMap[0xF3] TODO
     //m_operationMap[0xF4] TODO
     m_operationMap[0xF5] = &CPU::PUSHrr;
@@ -1455,6 +1455,23 @@ void CPU::LDA_0xFF00n_(const byte& opCode)
     SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + n));
 
     m_cycles += 12;
+}
+
+/*
+    LD A, (0xFF00 + C)
+    0xF2
+
+    Read from io-port C
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDA_0xFF00C_(const byte& opCode)
+{
+    SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + GetLowByte(m_BC)));
+
+    m_cycles += 8;
 }
 
 /*
