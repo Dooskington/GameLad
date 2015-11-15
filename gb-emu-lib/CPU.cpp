@@ -1737,6 +1737,7 @@ void CPU::SRAr(const byte& opCode)
 
     m_cycles += 8;
 }
+
 void CPU::SRA_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
