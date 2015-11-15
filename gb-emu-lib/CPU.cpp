@@ -14,11 +14,11 @@ CPU::CPU() :
     m_SP(0x0000),
     m_PC(0x0000)
 {
-    for (unsigned int index = 0;index < ARRAYSIZE(m_operationMap);index++)
+	for (unsigned int index = 0; index < ARRAYSIZE(m_operationMap); index++)
     {
         m_operationMap[index] = nullptr;
     }
-    for (unsigned int index = 0;index < ARRAYSIZE(m_operationMapCB);index++)
+	for (unsigned int index = 0; index < ARRAYSIZE(m_operationMapCB); index++)
     {
         m_operationMapCB[index] = nullptr;
     }
@@ -69,7 +69,7 @@ CPU::CPU() :
     // 20
     m_operationMap[0x20] = &CPU::JRNZe;
     m_operationMap[0x21] = &CPU::LDrrnn;
-    //m_operationMap[0x22] TODO
+	m_operationMap[0x22] = &CPU::LDI_HL_A;
     //m_operationMap[0x23] TODO
     m_operationMap[0x24] = &CPU::INCr;
     m_operationMap[0x25] = &CPU::DECr;
@@ -1083,7 +1083,7 @@ void CPU::XORr(const byte& opCode)
     11qq0101
 
     The contents of the register pair rr are pushed to the external memory stack.
-    The stack pointer holds the 16-bit address of the current top of the stack.
+    The stack pointer holds the 16-bit address of the current top of the stack. 
     This instruction first decrements SP and loads the high order byte of register
     pair rr to the memory address specified by the SP. The SP is decremented again,
     and then the low order byte is then loaded to the new memory address. The operand
@@ -1125,43 +1125,43 @@ void CPU::POPrr(const byte& opCode)
 }
 
 /*
-    DEC r
-    00rrr101
+	DEC r
+	00rrr101
 
-    Register r is decremented, where r identifies register A, B, C, D, E, H, or L.
+	Register r is decremented, where r identifies register A, B, C, D, E, H, or L.
 
-    4 Cycles
+	4 Cycles
 
-    Flags affected(znhc): z1h-
+	Flags affected(znhc): z1h-
 */
 void CPU::DECr(const byte& opCode)
 {
-    byte* r = GetByteRegister(opCode >> 3);
-    bool isBit4Before = ISBITSET(*r, 4);
-    *r -= 1;
-    bool isBit4After = ISBITSET(*r, 4);
+	byte* r = GetByteRegister(opCode >> 3);
+	bool isBit4Before = ISBITSET(*r, 4);
+	*r -= 1;
+	bool isBit4After = ISBITSET(*r, 4);
 
-    if (*r == 0x00)
-    {
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        ClearFlag(ZeroFlag);
-    }
+	if (*r == 0x00)
+	{
+		SetFlag(ZeroFlag);
+	}
+	else
+	{
+		ClearFlag(ZeroFlag);
+	}
 
-    ClearFlag(AddFlag);
+	ClearFlag(AddFlag);
 
-    if (!isBit4Before && isBit4After)
-    {
-        SetFlag(HalfCarryFlag);
-    }
-    else
-    {
-        ClearFlag(HalfCarryFlag);
-    }
+	if (!isBit4Before && isBit4After)
+	{
+		SetFlag(HalfCarryFlag);
+	}
+	else
+	{
+		ClearFlag(HalfCarryFlag);
+	}
 
-    m_cycles += 4;
+	m_cycles += 4;
 }
 
 // 0x17 (RL A)
@@ -1220,7 +1220,30 @@ void CPU::JRNZe(const byte& opCode)
     // No flags affected
 }
 
-// 0x52 (LDD (HL), A)
+/*
+    LDI (HL), A
+    0x22
+
+    Loads A into the address pointed at by HL, then increment HL.
+
+    8 Cycles
+
+	Flags affected(znhc): ----
+*/
+void CPU::LDI_HL_A(const byte& opCode)
+{
+	if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
+	{
+		HALT();
+		return;
+	}
+
+	m_HL++;
+
+	m_cycles += 8;
+}
+
+// 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
 {
     if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
@@ -1236,7 +1259,7 @@ void CPU::LDD_HL_A(const byte& opCode)
 }
 
 // 0x77 (LD (HL), A)
-// Identical to 0x52, except does not decrement
+// Identical to 0x32, except does not decrement
 void CPU::LD_HL_A(const byte& opCode)
 {
     if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.

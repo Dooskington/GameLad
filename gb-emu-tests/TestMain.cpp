@@ -40,6 +40,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDHn_Test);
     TEST_CALL(CPUTests, LDLn_Test);
     TEST_CALL(CPUTests, LDD_HL_A_Test);
+    TEST_CALL(CPUTests, LDI_HL_A_Test);
     TEST_CALL(CPUTests, LDAn_Test);
     TEST_CALL(CPUTests, LD_HL_A_Test);
     TEST_CALL(CPUTests, POPBC_Test);

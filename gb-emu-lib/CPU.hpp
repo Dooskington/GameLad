@@ -82,6 +82,7 @@ private:
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
     void JRNZe(const byte& opCode);           // 0x20
+	void LDI_HL_A(const byte& opCode);        // 0x22
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
     void CALLnn(const byte& opCode);          // 0xCD
