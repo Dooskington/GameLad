@@ -316,6 +316,50 @@ public:
         }
     }
 
+    TEST_METHOD(BITb_HL_Test)
+    {
+        for (byte bit = 0x00; bit <= 0x07; bit++)
+        {
+            byte opCode = (byte)(0x40 | (bit << 3) | 0x06);
+            byte m_Mem[] = { 0xCB, opCode, 0xCB, opCode, 0x00, 0xFF };
+
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            // No bits set
+            spCPU->m_HL = 0x0004;
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(12, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+            Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+            Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+            Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+
+            // All bits set
+            spCPU->m_HL = 0x0005;
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(24, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0004, (int)spCPU->m_PC);
+            Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+            Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+            Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+
+            spCPU.reset();
+        }
+    }
+
     // CB RES
     TEST_METHOD(RESbr_Test)
     {
@@ -392,6 +436,37 @@ public:
         }
     }
 
+    TEST_METHOD(RESb_HL_Test)
+    {
+        for (byte bit = 0x00; bit <= 0x07; bit++)
+        {
+            byte opCode = (byte)(0x80 | (bit << 3) | 0x06);
+            byte m_Mem[] = { 0xCB, opCode, 0xFF };
+
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            ushort value = 0xFF & ~(1 << bit);
+
+            spCPU->m_HL = 0x0002;
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(16, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+
+            Assert::AreEqual((int)value, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+
+            spCPU.reset();
+        }
+    }
+
     // CB SET
     TEST_METHOD(SETbr_Test)
     {
@@ -465,6 +540,36 @@ public:
 
                 spCPU.reset();
             }
+        }
+    }
+
+    TEST_METHOD(SETb_HL_Test)
+    {
+        for (byte bit = 0x00; bit <= 0x07; bit++)
+        {
+            byte opCode = (byte)(0xC0 | (bit << 3) | 0x06);
+            byte m_Mem[] = { 0xCB, opCode, 0x00 };
+
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            spCPU->m_HL = 0x0002;
+
+            ushort value = (1 << bit);
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(16, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+            Assert::AreEqual((int)value, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+
+            spCPU.reset();
         }
     }
 
