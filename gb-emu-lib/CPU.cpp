@@ -401,7 +401,7 @@ CPU::CPU() :
     m_operationMapCB[0x43] = &CPU::BITbr;
     m_operationMapCB[0x44] = &CPU::BITbr;
     m_operationMapCB[0x45] = &CPU::BITbr;
-    //m_operationMapCB[0x46] TODO
+    m_operationMapCB[0x46] = &CPU::BITb_HL_;
     m_operationMapCB[0x47] = &CPU::BITbr;
     m_operationMapCB[0x48] = &CPU::BITbr;
     m_operationMapCB[0x49] = &CPU::BITbr;
@@ -409,7 +409,7 @@ CPU::CPU() :
     m_operationMapCB[0x4B] = &CPU::BITbr;
     m_operationMapCB[0x4C] = &CPU::BITbr;
     m_operationMapCB[0x4D] = &CPU::BITbr;
-    //m_operationMapCB[0x4E] TODO
+    m_operationMapCB[0x4E] = &CPU::BITb_HL_;
     m_operationMapCB[0x4F] = &CPU::BITbr;
 
     // 50
@@ -419,7 +419,7 @@ CPU::CPU() :
     m_operationMapCB[0x53] = &CPU::BITbr;
     m_operationMapCB[0x54] = &CPU::BITbr;
     m_operationMapCB[0x55] = &CPU::BITbr;
-    //m_operationMapCB[0x56] TODO
+    m_operationMapCB[0x56] = &CPU::BITb_HL_;
     m_operationMapCB[0x57] = &CPU::BITbr;
     m_operationMapCB[0x58] = &CPU::BITbr;
     m_operationMapCB[0x59] = &CPU::BITbr;
@@ -427,7 +427,7 @@ CPU::CPU() :
     m_operationMapCB[0x5B] = &CPU::BITbr;
     m_operationMapCB[0x5C] = &CPU::BITbr;
     m_operationMapCB[0x5D] = &CPU::BITbr;
-    //m_operationMapCB[0x5E] TODO
+    m_operationMapCB[0x5E] = &CPU::BITb_HL_;
     m_operationMapCB[0x5F] = &CPU::BITbr;
 
     // 60
@@ -437,7 +437,7 @@ CPU::CPU() :
     m_operationMapCB[0x63] = &CPU::BITbr;
     m_operationMapCB[0x64] = &CPU::BITbr;
     m_operationMapCB[0x65] = &CPU::BITbr;
-    //m_operationMapCB[0x66] TODO
+    m_operationMapCB[0x66] = &CPU::BITb_HL_;
     m_operationMapCB[0x67] = &CPU::BITbr;
     m_operationMapCB[0x68] = &CPU::BITbr;
     m_operationMapCB[0x69] = &CPU::BITbr;
@@ -445,7 +445,7 @@ CPU::CPU() :
     m_operationMapCB[0x6B] = &CPU::BITbr;
     m_operationMapCB[0x6C] = &CPU::BITbr;
     m_operationMapCB[0x6D] = &CPU::BITbr;
-    //m_operationMapCB[0x6E] TODO
+    m_operationMapCB[0x6E] = &CPU::BITb_HL_;
     m_operationMapCB[0x6F] = &CPU::BITbr;
 
     // 70
@@ -455,7 +455,7 @@ CPU::CPU() :
     m_operationMapCB[0x73] = &CPU::BITbr;
     m_operationMapCB[0x74] = &CPU::BITbr;
     m_operationMapCB[0x75] = &CPU::BITbr;
-    //m_operationMapCB[0x76] TODO
+    m_operationMapCB[0x76] = &CPU::BITb_HL_;
     m_operationMapCB[0x77] = &CPU::BITbr;
     m_operationMapCB[0x78] = &CPU::BITbr;
     m_operationMapCB[0x79] = &CPU::BITbr;
@@ -463,7 +463,7 @@ CPU::CPU() :
     m_operationMapCB[0x7B] = &CPU::BITbr;
     m_operationMapCB[0x7C] = &CPU::BITbr;
     m_operationMapCB[0x7D] = &CPU::BITbr;
-    //m_operationMapCB[0x7E] TODO
+    m_operationMapCB[0x7E] = &CPU::BITb_HL_;
     m_operationMapCB[0x7F] = &CPU::BITbr;
 
     // 80
@@ -1313,6 +1313,29 @@ void CPU::BITbr(const byte& opCode)
 
     // Test bit b in r
     if (!ISBITSET(*r, bit))
+    {
+        // Z is set if specified bit is 0
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        // Reset otherwise
+        ClearFlag(ZeroFlag);
+    }
+
+    SetFlag(HalfCarryFlag); // H is set
+    ClearFlag(AddFlag); // N is reset
+}
+
+void CPU::BITb_HL_(const byte& opCode)
+{
+    m_cycles += 12;
+
+    byte bit = (opCode >> 3) & 0x07;
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Test bit b in r
+    if (!ISBITSET(r, bit))
     {
         // Z is set if specified bit is 0
         SetFlag(ZeroFlag);

@@ -90,6 +90,7 @@ private:
 
     // Z80 Instruction Set - CB
     void BITbr(const byte& opCode);
+    void BITb_HL_(const byte& opCode);
     void RESbr(const byte& opCode);
     void SETbr(const byte& opCode);
 
