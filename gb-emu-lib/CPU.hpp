@@ -86,6 +86,7 @@ private:
     void LDI_HL_A(const byte& opCode);        // 0x22
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
+    void RET(const byte& opCode);             // 0xC9
     void CALLnn(const byte& opCode);          // 0xCD
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2

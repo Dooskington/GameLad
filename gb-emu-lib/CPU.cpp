@@ -256,7 +256,7 @@ CPU::CPU() :
     //m_operationMap[0xC6] TODO
     //m_operationMap[0xC7] TODO
     //m_operationMap[0xC8] TODO
-    //m_operationMap[0xC9] TODO
+    m_operationMap[0xC9] = &CPU::RET;
     //m_operationMap[0xCA] TODO
     //m_operationMap[0xCB] TODO
     //m_operationMap[0xCC] TODO
@@ -1289,6 +1289,23 @@ void CPU::LD_HL_A(const byte& opCode)
     m_cycles += 8;
 
     // No flags affected
+}
+
+/*
+    RET
+    0xC9
+
+    DESC
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::RET(const byte& opCode)
+{
+    m_PC = PopUShort();
+
+    m_cycles += 16;
 }
 
 // 0xCD (CALL nn)
