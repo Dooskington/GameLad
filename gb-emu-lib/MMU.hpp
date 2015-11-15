@@ -19,7 +19,7 @@ private:
 
 private:
     // Booting
-    bool m_isBooting;
+    byte m_isBooting;
 
     // Memory
     IMemoryUnit* m_memoryUnits[0xFFFF + 1];

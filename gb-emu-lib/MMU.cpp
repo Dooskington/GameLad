@@ -4,11 +4,11 @@
 /*
 General Memory Map
 ==================
-When m_isBooting = true, override with:
+When m_isBooting = 0x00, override with:
 -MMU:
 0x0000-0x00FF   Boot ROM (256 bytes) [DONE]
 
-When m_isBooting = false:
+When m_isBooting != 0x00:
 -Cartridge:
 0x0000-0x3FFF   16KB ROM Bank 00     (in cartridge, fixed at bank 00)
 0x4000-0x7FFF   16KB ROM Bank 01..NN (in cartridge, switchable bank number)
@@ -61,7 +61,7 @@ const byte BIOS[] =
 };
 
 MMU::MMU() :
-    m_isBooting(true)
+    m_isBooting(0x00)
 {
     RegisterMemoryUnit(0x0000, 0xFFFF, nullptr);
 }
@@ -85,7 +85,7 @@ void MMU::RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, I
 byte MMU::ReadByte(const ushort& address)
 {
     // If we are booting and reading below 0x00FF, read from the boot rom.
-    if (m_isBooting && (address <= 0x00FF))
+    if ((m_isBooting == 0x00) && (address <= 0x00FF))
     {
         return BIOS[address];
     }
@@ -111,7 +111,7 @@ ushort MMU::ReadUShort(const ushort& address)
 
 bool MMU::WriteByte(const ushort& address, const byte val)
 {
-    if (m_isBooting && (address <= 0x00FF))
+    if ((m_isBooting == 0x00) && (address <= 0x00FF))
     {
         Logger::LogError("Access Violation! You can't write to the boot rom, you silly goose.");
         return false;
@@ -134,7 +134,8 @@ byte MMU::ReadByteInternal(const ushort& address)
     -MMU:
     0xC000-0xCFFF   4KB Work RAM Bank 0 (WRAM)
     0xD000-0xDFFF   4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
-    0xE000-0xFDFF   Same as C000-DDFF (ECHO)    (typically not used)
+    0xE000-0xFDFF   Same as C000-DDFF (ECHO)    (typically not used)\
+    0xFF50          Boot indicator
     0xFF80-0xFFFE   High RAM (HRAM)
     0xFFFF          Interrupt Enable Register
     */
@@ -164,6 +165,10 @@ byte MMU::ReadByteInternal(const ushort& address)
         // TODO: Interrupt bit
         Logger::Log("MMU doesn't support interrupts yet!");
         return 0x00;
+    }
+    else if (address == 0xFF50)
+    {
+        return m_isBooting;
     }
     else
     {
@@ -199,6 +204,10 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
         // TODO: Interrupt bit
         Logger::Log("MMU doesn't support interrupts yet!");
         return false;
+    }
+    else if (address == 0xFF50)
+    {
+        m_isBooting = val;
     }
     else
     {
