@@ -89,6 +89,14 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, SETbr_Test);
     TEST_CALL(CPUTests, SETb_HL_Test);
 
+    TEST_CALL(CPUTests, RLCB_Test);
+    TEST_CALL(CPUTests, RLCC_Test);
+    TEST_CALL(CPUTests, RLCD_Test);
+    TEST_CALL(CPUTests, RLCE_Test);
+    TEST_CALL(CPUTests, RLCH_Test);
+    TEST_CALL(CPUTests, RLCL_Test);
+    TEST_CALL(CPUTests, RLC_HL_Test);
+
     TEST_CALL(CPUTests, RLB_Test);
     TEST_CALL(CPUTests, RLC_Test);
     TEST_CALL(CPUTests, RLD_Test);
