@@ -2220,6 +2220,36 @@ public:
         spCPU.reset();
     }
 
+    // 0xFE
+    TEST_METHOD(CPn_Test)
+    {
+        byte m_Mem[] = { 0xFE, 0x02, 0xFE, 0x02 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x0200;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+
+        spCPU->m_AF = 0x0100;
+
+        spCPU->Step();
+
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+
+        spCPU.reset();
+    }
+
     // 0xCB 0x00
     TEST_METHOD(RLCB_Test)
     {

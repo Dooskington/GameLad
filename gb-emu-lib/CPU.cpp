@@ -315,7 +315,7 @@ CPU::CPU() :
     //m_operationMap[0xFB] TODO
     //m_operationMap[0xFC] TODO
     //m_operationMap[0xFD] TODO
-    //m_operationMap[0xFE] TODO
+    m_operationMap[0xFE] = &CPU::CPn;
     //m_operationMap[0xFF] TODO
 
     /*
@@ -1343,6 +1343,32 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
     m_cycles += 8;
 
     // No flags affected
+}
+
+/*
+    CP n
+    11111110(FE) nnnnnnnn
+
+    The contents of 8-bit operand n are compared with the contents of the accumulator.
+    If there is a true compare, the Z flag is set. The execution of this instruction
+    does not affect the contents of the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::CPn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    byte A = GetHighByte(m_AF);
+    byte result = A - n;
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    SetFlag(AddFlag);
+
+    m_cycles += 8;
 }
 
 /*
