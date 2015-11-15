@@ -57,7 +57,7 @@ CPU::CPU() :
     m_operationMap[0x15] = &CPU::DECr;
     m_operationMap[0x16] = &CPU::LDrn;
     m_operationMap[0x17] = &CPU::RLA;
-    //m_operationMap[0x18] TODO
+    m_operationMap[0x18] = &CPU::JRe;
     //m_operationMap[0x19] TODO
     m_operationMap[0x1A] = &CPU::LDA_DE_;
     //m_operationMap[0x1B] TODO
@@ -1205,6 +1205,24 @@ void CPU::RLA(const byte& opCode)
     m_cycles += 4;
 }
 
+/*
+    JR Z, e
+    0x18
+
+    Jump relative, to the offset e.
+
+    12 cycles.
+
+    Flags affected(znhc): ----
+*/
+void CPU::JRe(const byte& opCode)
+{
+    sbyte e = static_cast<sbyte>(ReadBytePC());
+
+    m_PC += e;
+    m_cycles += 12;
+}
+
 // 0x1A (LD A, (DE))
 void CPU::LDA_DE_(const byte& opCode)
 {
@@ -1424,16 +1442,16 @@ void CPU::CPn(const byte& opCode)
 */
 
 /*
-RLC r
-11001011(CB) 00000rrr
+    RLC r
+    11001011(CB) 00000rrr
 
-The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
-is copied to the carry flag and also to bit 0. Operand r identifies register
-B, C, D, E, H, L, or A.
+    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+    is copied to the carry flag and also to bit 0. Operand r identifies register
+    B, C, D, E, H, L, or A.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
+    Flags affected(znhc): z00c
 */
 void CPU::RLCr(const byte& opCode)
 {
@@ -1480,16 +1498,16 @@ void CPU::RLC_HL_(const byte& opCode)
 }
 
 /*
-RRC r
-11001011(CB) 00001rrr
+    RRC r
+    11001011(CB) 00001rrr
 
-The contents of 8-bit register r are rotated right 1-bit position. The content of bit 0
-is copied to the carry flag and also to bit 7. Operand r identifies register
-B, C, D, E, H, L, or A.
+    The contents of 8-bit register r are rotated right 1-bit position. The content of bit 0
+    is copied to the carry flag and also to bit 7. Operand r identifies register
+    B, C, D, E, H, L, or A.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
+    Flags affected(znhc): z00c
 */
 void CPU::RRCr(const byte& opCode)
 {
@@ -1660,16 +1678,16 @@ void CPU::RR_HL_(const byte& opCode)
 }
 
 /*
-SLA r
-11001011 00100rrrr
+    SLA r
+    11001011 00100rrrr
 
-An arithmetic shift left 1-bit position is performed on the contents of the operand r. The content
-of bit 7 is copied to the carry flag.
+    An arithmetic shift left 1-bit position is performed on the contents of the operand r. The content
+    of bit 7 is copied to the carry flag.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
-Affects Z, clears n, clears h, affects c
+    Flags affected(znhc): z00c
+    Affects Z, clears n, clears h, affects c
 */
 void CPU::SLAr(const byte& opCode)
 {
@@ -1709,16 +1727,16 @@ void CPU::SLA_HL_(const byte& opCode)
 }
 
 /*
-SRA r
-11001011 00101rrrr
+    SRA r
+    11001011 00101rrrr
 
-An arithmetic shift right 1-bit position is performed on the contents of the operand r. The content
-of bit 0 is copied to the carry flag.
+    An arithmetic shift right 1-bit position is performed on the contents of the operand r. The content
+    of bit 0 is copied to the carry flag.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
-Affects Z, clears n, clears h, affects c
+    Flags affected(znhc): z00c
+    Affects Z, clears n, clears h, affects c
 */
 void CPU::SRAr(const byte& opCode)
 {
@@ -1757,15 +1775,15 @@ void CPU::SRA_HL_(const byte& opCode)
 }
 
 /*
-BIT b, r
-11001011 01bbbrrr
+    BIT b, r
+    11001011 01bbbrrr
 
-This instruction tests bit b in register r and sets the Z flag accordingly.
+    This instruction tests bit b in register r and sets the Z flag accordingly.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z01-
-Affects Z, clears n, sets h
+    Flags affected(znhc): z01-
+    Affects Z, clears n, sets h
 */
 void CPU::BITbr(const byte& opCode)
 {
@@ -1796,14 +1814,14 @@ void CPU::BITb_HL_(const byte& opCode)
 }
 
 /*
-RES b, r
-11001011 10bbbrrr
+    RES b, r
+    11001011 10bbbrrr
 
-Bit b in operand r is reset.
+    Bit b in operand r is reset.
 
-8 Cycles
+    8 Cycles
 
-No flags affected.
+    No flags affected.
 */
 void CPU::RESbr(const byte& opCode)
 {
@@ -1824,14 +1842,14 @@ void CPU::RESb_HL_(const byte& opCode)
 }
 
 /*
-SET b, r
-11001011 11bbbrrr
+    SET b, r
+    11001011 11bbbrrr
 
-Bit b in operand r is set.
+    Bit b in operand r is set.
 
-8 Cycles
+    8 Cycles
 
-No flags affected.
+    No flags affected.
 */
 void CPU::SETbr(const byte& opCode)
 {
@@ -1852,14 +1870,14 @@ void CPU::SETb_HL_(const byte& opCode)
 }
 
 /*
-SWAP r
-11001011 00111rrr
-swap r         CB 3x        8 z000 exchange low/hi-nibble
-swap (HL)      CB 36       16 z000 exchange low/hi-nibble
+    SWAP r
+    11001011 00111rrr
+    swap r         CB 3x        8 z000 exchange low/hi-nibble
+    swap (HL)      CB 36       16 z000 exchange low/hi-nibble
 
-Exchange the low and hi nibble (a nibble is 4 bits)
+    Exchange the low and hi nibble (a nibble is 4 bits)
 
-No flags affected.
+    No flags affected.
 */
 void CPU::SWAPr(const byte& opCode)
 {
