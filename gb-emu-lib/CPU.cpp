@@ -75,7 +75,7 @@ CPU::CPU() :
     m_operationMap[0x25] = &CPU::DECr;
     m_operationMap[0x26] = &CPU::LDrn;
     //m_operationMap[0x27] TODO
-    //m_operationMap[0x28] TODO
+    m_operationMap[0x28] = &CPU::JRZe;
     //m_operationMap[0x29] TODO
     //m_operationMap[0x2A] TODO
     //m_operationMap[0x2B] TODO
@@ -1256,6 +1256,31 @@ void CPU::LDI_HL_A(const byte& opCode)
     m_HL++;
 
     m_cycles += 8;
+}
+
+/*
+    JR Z, e
+    0x28
+
+    Jump relative, if not zero, to the offset e.
+
+    8 or 12 cycles.
+
+    Flags affected(znhc): ----
+*/
+void CPU::JRZe(const byte& opCode)
+{
+    sbyte e = static_cast<sbyte>(ReadBytePC());
+
+    if (IsFlagSet(ZeroFlag))
+    {
+        m_PC += e;
+        m_cycles += 12;
+    }
+    else
+    {
+        m_cycles += 8;
+    }
 }
 
 // 0x32 (LDD (HL), A)
