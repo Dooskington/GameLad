@@ -467,148 +467,148 @@ CPU::CPU() :
     m_operationMapCB[0x7F] = &CPU::BITbr;
 
     // 80
-    //m_operationMapCB[0x80] TODO
-    //m_operationMapCB[0x81] TODO
-    //m_operationMapCB[0x82] TODO
-    //m_operationMapCB[0x83] TODO
-    //m_operationMapCB[0x84] TODO
-    //m_operationMapCB[0x85] TODO
+    m_operationMapCB[0x80] = &CPU::RESbr;
+    m_operationMapCB[0x81] = &CPU::RESbr;
+    m_operationMapCB[0x82] = &CPU::RESbr;
+    m_operationMapCB[0x83] = &CPU::RESbr;
+    m_operationMapCB[0x84] = &CPU::RESbr;
+    m_operationMapCB[0x85] = &CPU::RESbr;
     //m_operationMapCB[0x86] TODO
-    //m_operationMapCB[0x87] TODO
-    //m_operationMapCB[0x88] TODO
-    //m_operationMapCB[0x89] TODO
-    //m_operationMapCB[0x8A] TODO
-    //m_operationMapCB[0x8B] TODO
-    //m_operationMapCB[0x8C] TODO
-    //m_operationMapCB[0x8D] TODO
+    m_operationMapCB[0x87] = &CPU::RESbr;
+    m_operationMapCB[0x88] = &CPU::RESbr;
+    m_operationMapCB[0x89] = &CPU::RESbr;
+    m_operationMapCB[0x8A] = &CPU::RESbr;
+    m_operationMapCB[0x8B] = &CPU::RESbr;
+    m_operationMapCB[0x8C] = &CPU::RESbr;
+    m_operationMapCB[0x8D] = &CPU::RESbr;
     //m_operationMapCB[0x8E] TODO
-    //m_operationMapCB[0x8F] TODO
+    m_operationMapCB[0x8F] = &CPU::RESbr;
 
     // 90
-    //m_operationMapCB[0x90] TODO
-    //m_operationMapCB[0x91] TODO
-    //m_operationMapCB[0x92] TODO
-    //m_operationMapCB[0x93] TODO
-    //m_operationMapCB[0x94] TODO
-    //m_operationMapCB[0x95] TODO
+    m_operationMapCB[0x90] = &CPU::RESbr;
+    m_operationMapCB[0x91] = &CPU::RESbr;
+    m_operationMapCB[0x92] = &CPU::RESbr;
+    m_operationMapCB[0x93] = &CPU::RESbr;
+    m_operationMapCB[0x94] = &CPU::RESbr;
+    m_operationMapCB[0x95] = &CPU::RESbr;
     //m_operationMapCB[0x96] TODO
-    //m_operationMapCB[0x97] TODO
-    //m_operationMapCB[0x98] TODO
-    //m_operationMapCB[0x99] TODO
-    //m_operationMapCB[0x9A] TODO
-    //m_operationMapCB[0x9B] TODO
-    //m_operationMapCB[0x9C] TODO
-    //m_operationMapCB[0x9D] TODO
+    m_operationMapCB[0x97] = &CPU::RESbr;
+    m_operationMapCB[0x98] = &CPU::RESbr;
+    m_operationMapCB[0x99] = &CPU::RESbr;
+    m_operationMapCB[0x9A] = &CPU::RESbr;
+    m_operationMapCB[0x9B] = &CPU::RESbr;
+    m_operationMapCB[0x9C] = &CPU::RESbr;
+    m_operationMapCB[0x9D] = &CPU::RESbr;
     //m_operationMapCB[0x9E] TODO
-    //m_operationMapCB[0x9F] TODO
+    m_operationMapCB[0x9F] = &CPU::RESbr;
 
     // A0
-    //m_operationMapCB[0xA0] TODO
-    //m_operationMapCB[0xA1] TODO
-    //m_operationMapCB[0xA2] TODO
-    //m_operationMapCB[0xA3] TODO
-    //m_operationMapCB[0xA4] TODO
-    //m_operationMapCB[0xA5] TODO
+    m_operationMapCB[0xA0] = &CPU::RESbr;
+    m_operationMapCB[0xA1] = &CPU::RESbr;
+    m_operationMapCB[0xA2] = &CPU::RESbr;
+    m_operationMapCB[0xA3] = &CPU::RESbr;
+    m_operationMapCB[0xA4] = &CPU::RESbr;
+    m_operationMapCB[0xA5] = &CPU::RESbr;
     //m_operationMapCB[0xA6] TODO
-    //m_operationMapCB[0xA7] TODO
-    //m_operationMapCB[0xA8] TODO
-    //m_operationMapCB[0xA9] TODO
-    //m_operationMapCB[0xAA] TODO
-    //m_operationMapCB[0xAB] TODO
-    //m_operationMapCB[0xAC] TODO
-    //m_operationMapCB[0xAD] TODO
+    m_operationMapCB[0xA7] = &CPU::RESbr;
+    m_operationMapCB[0xA8] = &CPU::RESbr;
+    m_operationMapCB[0xA9] = &CPU::RESbr;
+    m_operationMapCB[0xAA] = &CPU::RESbr;
+    m_operationMapCB[0xAB] = &CPU::RESbr;
+    m_operationMapCB[0xAC] = &CPU::RESbr;
+    m_operationMapCB[0xAD] = &CPU::RESbr;
     //m_operationMapCB[0xAE] TODO
-    //m_operationMapCB[0xAF] TODO
+    m_operationMapCB[0xAF] = &CPU::RESbr;
 
     // B0
-    //m_operationMapCB[0xB0] TODO
-    //m_operationMapCB[0xB1] TODO
-    //m_operationMapCB[0xB2] TODO
-    //m_operationMapCB[0xB3] TODO
-    //m_operationMapCB[0xB4] TODO
-    //m_operationMapCB[0xB5] TODO
+    m_operationMapCB[0xB0] = &CPU::RESbr;
+    m_operationMapCB[0xB1] = &CPU::RESbr;
+    m_operationMapCB[0xB2] = &CPU::RESbr;
+    m_operationMapCB[0xB3] = &CPU::RESbr;
+    m_operationMapCB[0xB4] = &CPU::RESbr;
+    m_operationMapCB[0xB5] = &CPU::RESbr;
     //m_operationMapCB[0xB6] TODO
-    //m_operationMapCB[0xB7] TODO
-    //m_operationMapCB[0xB8] TODO
-    //m_operationMapCB[0xB9] TODO
-    //m_operationMapCB[0xBA] TODO
-    //m_operationMapCB[0xBB] TODO
-    //m_operationMapCB[0xBC] TODO
-    //m_operationMapCB[0xBD] TODO
+    m_operationMapCB[0xB7] = &CPU::RESbr;
+    m_operationMapCB[0xB8] = &CPU::RESbr;
+    m_operationMapCB[0xB9] = &CPU::RESbr;
+    m_operationMapCB[0xBA] = &CPU::RESbr;
+    m_operationMapCB[0xBB] = &CPU::RESbr;
+    m_operationMapCB[0xBC] = &CPU::RESbr;
+    m_operationMapCB[0xBD] = &CPU::RESbr;
     //m_operationMapCB[0xBE] TODO
-    //m_operationMapCB[0xBF] TODO
+    m_operationMapCB[0xBF] = &CPU::RESbr;
 
     // C0
-    //m_operationMapCB[0xC0] TODO
-    //m_operationMapCB[0xC1] TODO
-    //m_operationMapCB[0xC2] TODO
-    //m_operationMapCB[0xC3] TODO
-    //m_operationMapCB[0xC4] TODO
-    //m_operationMapCB[0xC5] TODO
+    m_operationMapCB[0xC0] = &CPU::SETbr;
+    m_operationMapCB[0xC1] = &CPU::SETbr;
+    m_operationMapCB[0xC2] = &CPU::SETbr;
+    m_operationMapCB[0xC3] = &CPU::SETbr;
+    m_operationMapCB[0xC4] = &CPU::SETbr;
+    m_operationMapCB[0xC5] = &CPU::SETbr;
     //m_operationMapCB[0xC6] TODO
-    //m_operationMapCB[0xC7] TODO
-    //m_operationMapCB[0xC8] TODO
-    //m_operationMapCB[0xC9] TODO
-    //m_operationMapCB[0xCA] TODO
-    //m_operationMapCB[0xCB] TODO
-    //m_operationMapCB[0xCC] TODO
-    //m_operationMapCB[0xCD] TODO
+    m_operationMapCB[0xC7] = &CPU::SETbr;
+    m_operationMapCB[0xC8] = &CPU::SETbr;
+    m_operationMapCB[0xC9] = &CPU::SETbr;
+    m_operationMapCB[0xCA] = &CPU::SETbr;
+    m_operationMapCB[0xCB] = &CPU::SETbr;
+    m_operationMapCB[0xCC] = &CPU::SETbr;
+    m_operationMapCB[0xCD] = &CPU::SETbr;
     //m_operationMapCB[0xCE] TODO
-    //m_operationMapCB[0xCF] TODO
+    m_operationMapCB[0xCF] = &CPU::SETbr;
 
     // D0
-    //m_operationMapCB[0xD0] TODO
-    //m_operationMapCB[0xD1] TODO
-    //m_operationMapCB[0xD2] TODO
-    //m_operationMapCB[0xD3] TODO
-    //m_operationMapCB[0xD4] TODO
-    //m_operationMapCB[0xD5] TODO
+    m_operationMapCB[0xD0] = &CPU::SETbr;
+    m_operationMapCB[0xD1] = &CPU::SETbr;
+    m_operationMapCB[0xD2] = &CPU::SETbr;
+    m_operationMapCB[0xD3] = &CPU::SETbr;
+    m_operationMapCB[0xD4] = &CPU::SETbr;
+    m_operationMapCB[0xD5] = &CPU::SETbr;
     //m_operationMapCB[0xD6] TODO
-    //m_operationMapCB[0xD7] TODO
-    //m_operationMapCB[0xD8] TODO
-    //m_operationMapCB[0xD9] TODO
-    //m_operationMapCB[0xDA] TODO
-    //m_operationMapCB[0xDB] TODO
-    //m_operationMapCB[0xDC] TODO
-    //m_operationMapCB[0xDD] TODO
+    m_operationMapCB[0xD7] = &CPU::SETbr;
+    m_operationMapCB[0xD8] = &CPU::SETbr;
+    m_operationMapCB[0xD9] = &CPU::SETbr;
+    m_operationMapCB[0xDA] = &CPU::SETbr;
+    m_operationMapCB[0xDB] = &CPU::SETbr;
+    m_operationMapCB[0xDC] = &CPU::SETbr;
+    m_operationMapCB[0xDD] = &CPU::SETbr;
     //m_operationMapCB[0xDE] TODO
-    //m_operationMapCB[0xDF] TODO
+    m_operationMapCB[0xDF] = &CPU::SETbr;
 
     // E0
-    //m_operationMapCB[0xE0] TODO
-    //m_operationMapCB[0xE1] TODO
-    //m_operationMapCB[0xE2] TODO
-    //m_operationMapCB[0xE3] TODO
-    //m_operationMapCB[0xE4] TODO
-    //m_operationMapCB[0xE5] TODO
+    m_operationMapCB[0xE0] = &CPU::SETbr;
+    m_operationMapCB[0xE1] = &CPU::SETbr;
+    m_operationMapCB[0xE2] = &CPU::SETbr;
+    m_operationMapCB[0xE3] = &CPU::SETbr;
+    m_operationMapCB[0xE4] = &CPU::SETbr;
+    m_operationMapCB[0xE5] = &CPU::SETbr;
     //m_operationMapCB[0xE6] TODO
-    //m_operationMapCB[0xE7] TODO
-    //m_operationMapCB[0xE8] TODO
-    //m_operationMapCB[0xE9] TODO
-    //m_operationMapCB[0xEA] TODO
-    //m_operationMapCB[0xEB] TODO
-    //m_operationMapCB[0xEC] TODO
-    //m_operationMapCB[0xED] TODO
+    m_operationMapCB[0xE7] = &CPU::SETbr;
+    m_operationMapCB[0xE8] = &CPU::SETbr;
+    m_operationMapCB[0xE9] = &CPU::SETbr;
+    m_operationMapCB[0xEA] = &CPU::SETbr;
+    m_operationMapCB[0xEB] = &CPU::SETbr;
+    m_operationMapCB[0xEC] = &CPU::SETbr;
+    m_operationMapCB[0xED] = &CPU::SETbr;
     //m_operationMapCB[0xEE] TODO
-    //m_operationMapCB[0xEF] TODO
+    m_operationMapCB[0xEF] = &CPU::SETbr;
 
     // F0
-    //m_operationMapCB[0xF0] TODO
-    //m_operationMapCB[0xF1] TODO
-    //m_operationMapCB[0xF2] TODO
-    //m_operationMapCB[0xF3] TODO
-    //m_operationMapCB[0xF4] TODO
-    //m_operationMapCB[0xF5] TODO
+    m_operationMapCB[0xF0] = &CPU::SETbr;
+    m_operationMapCB[0xF1] = &CPU::SETbr;
+    m_operationMapCB[0xF2] = &CPU::SETbr;
+    m_operationMapCB[0xF3] = &CPU::SETbr;
+    m_operationMapCB[0xF4] = &CPU::SETbr;
+    m_operationMapCB[0xF5] = &CPU::SETbr;
     //m_operationMapCB[0xF6] TODO
-    //m_operationMapCB[0xF7] TODO
-    //m_operationMapCB[0xF8] TODO
-    //m_operationMapCB[0xF9] TODO
-    //m_operationMapCB[0xFA] TODO
-    //m_operationMapCB[0xFB] TODO
-    //m_operationMapCB[0xFC] TODO
-    //m_operationMapCB[0xFD] TODO
+    m_operationMapCB[0xF7] = &CPU::SETbr;
+    m_operationMapCB[0xF8] = &CPU::SETbr;
+    m_operationMapCB[0xF9] = &CPU::SETbr;
+    m_operationMapCB[0xFA] = &CPU::SETbr;
+    m_operationMapCB[0xFB] = &CPU::SETbr;
+    m_operationMapCB[0xFC] = &CPU::SETbr;
+    m_operationMapCB[0xFD] = &CPU::SETbr;
     //m_operationMapCB[0xFE] TODO
-    //m_operationMapCB[0xFF] TODO
+    m_operationMapCB[0xFF] = &CPU::SETbr;
 
     // Initialize the register map
     /*
@@ -1325,6 +1325,44 @@ void CPU::BITbr(const byte& opCode)
 
     SetFlag(HalfCarryFlag); // H is set
     ClearFlag(AddFlag); // N is reset
+}
+
+/*
+RES b, r
+11001011 10bbbrrr
+
+Bit b in operand r is reset.
+
+8 Cycles
+
+No flags affected.
+*/
+void CPU::RESbr(const byte& opCode)
+{
+    m_cycles += 8;
+
+    byte bit = (opCode >> 3) & 0x07;
+    byte* r = GetByteRegister(opCode);
+    *r = CLEARBIT(*r, bit);
+}
+
+/*
+SET b, r
+11001011 11bbbrrr
+
+Bit b in operand r is set.
+
+8 Cycles
+
+No flags affected.
+*/
+void CPU::SETbr(const byte& opCode)
+{
+    m_cycles += 8;
+
+    byte bit = (opCode >> 3) & 0x07;
+    byte* r = GetByteRegister(opCode);
+    *r = SETBIT(*r, bit);
 }
 
 
