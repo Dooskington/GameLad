@@ -62,6 +62,9 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, INCH_Test);
     TEST_CALL(CPUTests, INCL_Test);
     TEST_CALL(CPUTests, INCBC_Test);
+    TEST_CALL(CPUTests, INCDE_Test);
+    TEST_CALL(CPUTests, INCHL_Test);
+    TEST_CALL(CPUTests, INCSP_Test);
     TEST_CALL(CPUTests, DECB_Test);
     TEST_CALL(CPUTests, DECC_Test);
     TEST_CALL(CPUTests, DECD_Test);
