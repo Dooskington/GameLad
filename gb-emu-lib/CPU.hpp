@@ -48,7 +48,7 @@ private:
     static byte GetLowByte(ushort dest);
 
     byte* GetByteRegister(byte val);
-    ushort* GetUShortRegister(byte val);
+    ushort* GetUShortRegister(byte val, bool useAF);
 
     void SetHighByte(ushort* dest, byte val);
     void SetLowByte(ushort* dest, byte val);
@@ -75,15 +75,15 @@ private:
     void LDrrnn(const byte& opCode);
     void INCr(const byte& opCode);
     void XORr(const byte& opCode);
+    void PUSHrr(const byte& opCode);
+    void POPrr(const byte& opCode);
+    void RLr(const byte& opCode);
 
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
     void JRNZe(const byte& opCode);           // 0x20
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
-    void XORA(const byte& opCode);            // 0xAF
-    void POPBC(const byte& opCode);           // 0xC1
-    void PUSHBC(const byte& opCode);          // 0xC5
     void CALLnn(const byte& opCode);          // 0xCD
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2

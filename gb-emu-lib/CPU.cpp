@@ -248,11 +248,11 @@ CPU::CPU() :
 
     // C0
     //m_operationMap[0xC0] TODO
-    m_operationMap[0xC1] = &CPU::POPBC;
+    m_operationMap[0xC1] = &CPU::POPrr;
     //m_operationMap[0xC2] TODO
     //m_operationMap[0xC3] TODO
     //m_operationMap[0xC4] TODO
-    m_operationMap[0xC5] = &CPU::PUSHBC;
+    m_operationMap[0xC5] = &CPU::PUSHrr;
     //m_operationMap[0xC6] TODO
     //m_operationMap[0xC7] TODO
     //m_operationMap[0xC8] TODO
@@ -266,11 +266,11 @@ CPU::CPU() :
 
     // D0
     //m_operationMap[0xD0] TODO
-    //m_operationMap[0xD1] TODO
+    m_operationMap[0xD1] = &CPU::POPrr;
     //m_operationMap[0xD2] TODO
     //m_operationMap[0xD3] TODO
     //m_operationMap[0xD4] TODO
-    //m_operationMap[0xD5] TODO
+    m_operationMap[0xD5] = &CPU::PUSHrr;
     //m_operationMap[0xD6] TODO
     //m_operationMap[0xD7] TODO
     //m_operationMap[0xD8] TODO
@@ -284,11 +284,11 @@ CPU::CPU() :
 
     // E0
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
-    //m_operationMap[0xE1] TODO
+    m_operationMap[0xE1] = &CPU::POPrr;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
     //m_operationMap[0xE3] TODO
     //m_operationMap[0xE4] TODO
-    //m_operationMap[0xE5] TODO
+    m_operationMap[0xE5] = &CPU::PUSHrr;
     //m_operationMap[0xE6] TODO
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
@@ -302,11 +302,11 @@ CPU::CPU() :
 
     // F0
     //m_operationMap[0xF0] TODO
-    //m_operationMap[0xF1] TODO
+    m_operationMap[0xF1] = &CPU::POPrr;
     //m_operationMap[0xF2] TODO
     //m_operationMap[0xF3] TODO
     //m_operationMap[0xF4] TODO
-    //m_operationMap[0xF5] TODO
+    m_operationMap[0xF5] = &CPU::PUSHrr;
     //m_operationMap[0xF6] TODO
     //m_operationMap[0xF7] TODO
     //m_operationMap[0xF8] TODO
@@ -341,14 +341,14 @@ CPU::CPU() :
     //m_operationMapCB[0x0F] TODO
 
     // 10
-    //m_operationMapCB[0x10] TODO
-    m_operationMapCB[0x11] = &CPU::RLC;
-    //m_operationMapCB[0x12] TODO
-    //m_operationMapCB[0x13] TODO
-    //m_operationMapCB[0x14] TODO
-    //m_operationMapCB[0x15] TODO
+    m_operationMapCB[0x10] = &CPU::RLr;
+    m_operationMapCB[0x11] = &CPU::RLr;
+    m_operationMapCB[0x12] = &CPU::RLr;
+    m_operationMapCB[0x13] = &CPU::RLr;
+    m_operationMapCB[0x14] = &CPU::RLr;
+    m_operationMapCB[0x15] = &CPU::RLr;
     //m_operationMapCB[0x16] TODO
-    //m_operationMapCB[0x17] TODO
+    m_operationMapCB[0x17] = &CPU::RLr;
     //m_operationMapCB[0x18] TODO
     //m_operationMapCB[0x19] TODO
     //m_operationMapCB[0x1A] TODO
@@ -812,10 +812,19 @@ byte* CPU::GetByteRegister(byte val)
     return m_ByteRegisterMap[val & 0x07];
 }
 
-ushort* CPU::GetUShortRegister(byte val)
+ushort* CPU::GetUShortRegister(byte val, bool useAF)
 {
-    // Bottom 2 bits only
-    return m_UShortRegisterMap[val & 0x03];
+    // Some instructions (PUSH rr and POP rr) use a dumb alternate mapping,
+    // which replaces 0x03 (normally SP) with AF.
+    if ((val & 0x03) == 0x03)
+    {
+        return useAF ? &m_AF : m_UShortRegisterMap[0x03];
+    }
+    else
+    {
+        // Bottom 2 bits only
+        return m_UShortRegisterMap[val & 0x03];
+    }
 }
 
 void CPU::SetHighByte(ushort* dest, byte val)
@@ -942,7 +951,7 @@ void CPU::NOP(const byte& opCode)
 
     8 Cycles
 
-    No flags affected
+    Flags affected(znhc): ----
 */
 void CPU::LDrn(const byte& opCode)
 {
@@ -962,7 +971,7 @@ void CPU::LDrn(const byte& opCode)
 
     4 Cycles
 
-    No flags affected
+    Flags affected(znhc): ----
 */
 void CPU::LDrR(const byte& opCode)
 {
@@ -982,11 +991,11 @@ void CPU::LDrR(const byte& opCode)
 
     12 Cycles
 
-    No flags affected
+    Flags affected(znhc): ----
 */
 void CPU::LDrrnn(const byte& opCode)
 {
-    ushort* rr = GetUShortRegister(opCode >> 4);
+    ushort* rr = GetUShortRegister(opCode >> 4, false);
     ushort nn = ReadUShortPC(); // Read nn
     (*rr) = nn;
 
@@ -1069,11 +1078,94 @@ void CPU::XORr(const byte& opCode)
     m_cycles += 4;
 }
 
+/*
+    PUSH rr
+    11qq0101
+
+    The contents of the register pair rr are pushed to the external memory stack.
+    The stack pointer holds the 16-bit address of the current top of the stack. 
+    This instruction first decrements SP and loads the high order byte of register
+    pair rr to the memory address specified by the SP. The SP is decremented again,
+    and then the low order byte is then loaded to the new memory address. The operand
+    rr identifies register pair BC, DE, HL, or AF.
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::PUSHrr(const byte& opCode)
+{
+    ushort* rr = GetUShortRegister(opCode >> 4, true);
+    PushUShortToSP(*rr);
+
+    m_cycles += 16;
+}
+
+/*
+    POP rr
+    11qq0001
+
+    The top two bytes of the external memory stack are popped into register pair qq.
+    The stack pointer holds the 16-bit address of the current top of the stack. This
+    instruction first loads to the low order portion of rr. The SP is incremented and
+    the contents of the corresponding adjacent memory ocation are loaded into the high
+    order portion of rr. The SP is then incremented again. The operand rr identifies
+    register pair BC, DE, HL, or AF.
+
+    12 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::POPrr(const byte& opCode)
+{
+    ushort* rr = GetUShortRegister(opCode >> 4, true);
+    (*rr) = PopUShort();
+
+    m_cycles += 12;
+}
+
+/*
+    RL r
+    11001011(CB) 00000rrr
+
+    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+    is copied to the carry flag and also to bit 0. Operand r identifies register
+    B, C, D, E, H, L, or A.
+
+    8 Cycles
+
+    Flags affected(znhc): z00c
+*/
+void CPU::RLr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(*r, 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift r left
+    (*r) = *r << 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    (*r) = carry ? SETBIT((*r), 0) : CLEARBIT((*r), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
 // 0x17 (RL A)
 void CPU::RLA(const byte& opCode)
 {
-    m_cycles += 8;
-
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
 
@@ -1083,16 +1175,18 @@ void CPU::RLA(const byte& opCode)
         SetFlag(CarryFlag);
     }
 
-    // Shift C left
+    // Shift A left
     SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
 
-    // Set bit 0 of C to the old CarryFlag
+    // Set bit 0 of A to the old CarryFlag
     SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
     // Affects Z, clears N, clears H, affects C
     SetFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
+
+    m_cycles += 4;
 }
 
 // 0x1A (LD A, (DE))
@@ -1150,45 +1244,6 @@ void CPU::LD_HL_A(const byte& opCode)
     }
 
     m_cycles += 8;
-
-    // No flags affected
-}
-
-// 0xAF (XOR A)
-void CPU::XORA(const byte& opCode)
-{
-    SetHighByte(&m_AF, GetHighByte(m_AF) ^ GetHighByte(m_AF));
-    m_cycles += 4;
-
-    // Affects Z and clears NHC
-    if (GetHighByte(m_AF) == 0x00)
-    {
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        ClearFlag(ZeroFlag);
-    }
-
-    ClearFlag(AddFlag);
-    ClearFlag(HalfCarryFlag);
-    ClearFlag(CarryFlag);
-}
-
-// 0xC1
-void CPU::POPBC(const byte& opCode)
-{
-    m_BC = PopUShort();
-    m_cycles += 12;
-
-    // No flags affected
-}
-
-// 0xC5
-void CPU::PUSHBC(const byte& opCode)
-{
-    PushUShortToSP(m_BC);
-    m_cycles += 16;
 
     // No flags affected
 }
