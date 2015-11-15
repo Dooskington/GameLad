@@ -181,7 +181,7 @@ CPU::CPU() :
     //m_operationMap[0x83] TODO
     //m_operationMap[0x84] TODO
     //m_operationMap[0x85] TODO
-    //m_operationMap[0x86] TODO
+    m_operationMap[0x86] = &CPU::ADDA_HL_;
     //m_operationMap[0x87] TODO
     //m_operationMap[0x88] TODO
     //m_operationMap[0x89] TODO
@@ -1359,6 +1359,33 @@ void CPU::LD_HL_A(const byte& opCode)
 }
 
 /*
+    ADD A, (HL)
+    0x86
+
+    The byte at the memory address specified by the contents of the HL register pair
+    is added to the contents of the accumulator, and the result is stored in the
+    accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z0hc
+*/
+void CPU::ADDA_HL_(const byte& opCode)
+{
+    byte A = GetHighByte(m_AF);
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte result = A + HL;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
     CP (HL)
     0xBE
 
@@ -1377,9 +1404,9 @@ void CPU::CP_HL_(const byte& opCode)
     byte result = A - HL;
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     SetFlag(AddFlag);
+    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 8;
 }
