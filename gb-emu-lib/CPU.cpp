@@ -349,14 +349,14 @@ CPU::CPU() :
     m_operationMapCB[0x15] = &CPU::RLr;
     m_operationMapCB[0x16] = &CPU::RL_HL_;
     m_operationMapCB[0x17] = &CPU::RLr;
-    //m_operationMapCB[0x18] TODO
-    //m_operationMapCB[0x19] TODO
-    //m_operationMapCB[0x1A] TODO
-    //m_operationMapCB[0x1B] TODO
-    //m_operationMapCB[0x1C] TODO
-    //m_operationMapCB[0x1D] TODO
-    //m_operationMapCB[0x1E] TODO
-    //m_operationMapCB[0x1F] TODO
+    m_operationMapCB[0x18] = &CPU::RRr;
+    m_operationMapCB[0x19] = &CPU::RRr;
+    m_operationMapCB[0x1A] = &CPU::RRr;
+    m_operationMapCB[0x1B] = &CPU::RRr;
+    m_operationMapCB[0x1C] = &CPU::RRr;
+    m_operationMapCB[0x1D] = &CPU::RRr;
+    m_operationMapCB[0x1E] = &CPU::RR_HL_;
+    m_operationMapCB[0x1F] = &CPU::RRr;
 
     // 20
     //m_operationMapCB[0x20] TODO
@@ -1189,10 +1189,7 @@ void CPU::RLA(const byte& opCode)
     bool carry = IsFlagSet(CarryFlag);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(GetHighByte(m_AF), 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(GetHighByte(m_AF), 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift A left
     SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
@@ -1201,7 +1198,7 @@ void CPU::RLA(const byte& opCode)
     SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
     // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
+    (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
 
@@ -1369,10 +1366,7 @@ void CPU::RLCr(const byte& opCode)
     byte* r = GetByteRegister(opCode);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(*r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(*r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     (*r) = *r << 1;
@@ -1393,10 +1387,7 @@ void CPU::RLC_HL_(const byte& opCode)
     byte r = m_MMU->ReadByte(m_HL);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     r <<= 1;
@@ -1431,10 +1422,7 @@ void CPU::RRCr(const byte& opCode)
     byte* r = GetByteRegister(opCode);
 
     // Grab bit 0 and store it in the carryflag
-    if (ISBITSET(*r, 0))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r right
     (*r) = *r >> 1;
@@ -1455,10 +1443,7 @@ void CPU::RRC_HL_(const byte& opCode)
     byte r = m_MMU->ReadByte(m_HL);
 
     // Grab bit 0 and store it in the carryflag
-    if (ISBITSET(r, 0))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r right
     r >>= 1;
@@ -1496,10 +1481,7 @@ void CPU::RLr(const byte& opCode)
     bool carry = IsFlagSet(CarryFlag);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(*r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(*r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     (*r) = *r << 1;
@@ -1523,16 +1505,75 @@ void CPU::RL_HL_(const byte& opCode)
     bool carry = IsFlagSet(CarryFlag);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     r <<= 1;
 
     // Set bit 0 of r to the old CarryFlag
     r = carry ? SETBIT((r), 0) : CLEARBIT((r), 0);
+
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+RR r
+11001011(CB) 00001rrr
+
+The contents of 8-bit register r are rotated right 1-bit position. The content of bit 0
+is copied to the carry flag and the previous content of the carry flag is copied to bit 7.
+Operand r identifies register: B, C, D, E, H, L, or A.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+*/
+void CPU::RRr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    (*r) = *r >> 1;
+
+    // Set bit 7 of r to the old CarryFlag
+    (*r) = carry ? SETBIT((*r), 7) : CLEARBIT((*r), 7);
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::RR_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    r >>= 1;
+
+    // Set bit 7 of r to the old CarryFlag
+    r = carry ? SETBIT((r), 7) : CLEARBIT((r), 7);
 
     m_MMU->WriteByte(m_HL, r);
 
@@ -1563,16 +1604,7 @@ void CPU::BITbr(const byte& opCode)
     byte* r = GetByteRegister(opCode);
 
     // Test bit b in r
-    if (!ISBITSET(*r, bit))
-    {
-        // Z is set if specified bit is 0
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        // Reset otherwise
-        ClearFlag(ZeroFlag);
-    }
+    (!ISBITSET(*r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
     SetFlag(HalfCarryFlag); // H is set
     ClearFlag(AddFlag); // N is reset
@@ -1586,16 +1618,7 @@ void CPU::BITb_HL_(const byte& opCode)
     byte r = m_MMU->ReadByte(m_HL);
 
     // Test bit b in r
-    if (!ISBITSET(r, bit))
-    {
-        // Z is set if specified bit is 0
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        // Reset otherwise
-        ClearFlag(ZeroFlag);
-    }
+    (!ISBITSET(r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
     SetFlag(HalfCarryFlag); // H is set
     ClearFlag(AddFlag); // N is reset
