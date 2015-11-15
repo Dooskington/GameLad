@@ -293,7 +293,7 @@ CPU::CPU() :
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
-    //m_operationMap[0xEA] TODO
+    m_operationMap[0xEA]= &CPU::LD_nn_A;
     //m_operationMap[0xEB] TODO
     //m_operationMap[0xEC] TODO
     //m_operationMap[0xED] TODO
@@ -1346,8 +1346,31 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 }
 
 /*
+    LD (nn), A
+    0xEA
+
+    The contents of the accumulator are loaded into the address specified by the
+    operand nn.
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LD_nn_A(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    if (!m_MMU->WriteByte(nn, GetHighByte(m_AF))) // Load A into (nn)
+    {
+        HALT();
+    }
+
+    m_cycles += 16;
+}
+
+/*
     CP n
-    11111110(FE) nnnnnnnn
+    0xFE
 
     The contents of 8-bit operand n are compared with the contents of the accumulator.
     If there is a true compare, the Z flag is set. The execution of this instruction

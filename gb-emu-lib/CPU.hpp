@@ -90,6 +90,7 @@ private:
     void CALLnn(const byte& opCode);          // 0xCD
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
+    void LD_nn_A(const byte& opCode);         // 0xEA
     void CPn(const byte& opCode);             // 0xFE
 
     // Z80 Instruction Set - CB
