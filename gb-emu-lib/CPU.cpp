@@ -243,7 +243,7 @@ CPU::CPU() :
     //m_operationMap[0xBB] TODO
     //m_operationMap[0xBC] TODO
     //m_operationMap[0xBD] TODO
-    //m_operationMap[0xBE] TODO
+    m_operationMap[0xBE] = &CPU::CP_HL_;
     //m_operationMap[0xBF] TODO
 
     // C0
@@ -1356,6 +1356,32 @@ void CPU::LD_HL_A(const byte& opCode)
     m_cycles += 8;
 
     // No flags affected
+}
+
+/*
+    CP (HL)
+    0xBE
+
+    The contents of 8-bit register HL are compared with the contents of the accumulator.
+    If there is a true compare, the Z flag is set. The execution of this instruction
+    does not affect the contents of the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::CP_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte A = GetHighByte(m_AF);
+    byte result = A - HL;
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    SetFlag(AddFlag);
+
+    m_cycles += 8;
 }
 
 /*

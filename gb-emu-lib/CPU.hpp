@@ -89,6 +89,7 @@ private:
     void JRZe(const byte& opCode);            // 0x28
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
+    void CP_HL_(const byte& opCode);          // 0xBE
     void RET(const byte& opCode);             // 0xC9
     void CALLnn(const byte& opCode);          // 0xCD
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
