@@ -75,7 +75,7 @@ CPU::CPU() :
     m_operationMap[0x25] = &CPU::DECr;
     m_operationMap[0x26] = &CPU::LDrn;
     //m_operationMap[0x27] TODO
-    //m_operationMap[0x28] TODO
+    m_operationMap[0x28] = &CPU::JRZe;
     //m_operationMap[0x29] TODO
     //m_operationMap[0x2A] TODO
     //m_operationMap[0x2B] TODO
@@ -293,7 +293,7 @@ CPU::CPU() :
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
-    //m_operationMap[0xEA] TODO
+    m_operationMap[0xEA]= &CPU::LD_nn_A;
     //m_operationMap[0xEB] TODO
     //m_operationMap[0xEC] TODO
     //m_operationMap[0xED] TODO
@@ -359,22 +359,22 @@ CPU::CPU() :
     m_operationMapCB[0x1F] = &CPU::RRr;
 
     // 20
-    //m_operationMapCB[0x20] TODO
-    //m_operationMapCB[0x21] TODO
-    //m_operationMapCB[0x22] TODO
-    //m_operationMapCB[0x23] TODO
-    //m_operationMapCB[0x24] TODO
-    //m_operationMapCB[0x25] TODO
-    //m_operationMapCB[0x26] TODO
-    //m_operationMapCB[0x27] TODO
-    //m_operationMapCB[0x28] TODO
-    //m_operationMapCB[0x29] TODO
-    //m_operationMapCB[0x2A] TODO
-    //m_operationMapCB[0x2B] TODO
-    //m_operationMapCB[0x2C] TODO
-    //m_operationMapCB[0x2D] TODO
-    //m_operationMapCB[0x2E] TODO
-    //m_operationMapCB[0x2F] TODO
+    m_operationMapCB[0x20] = &CPU::SLAr;
+    m_operationMapCB[0x21] = &CPU::SLAr;
+    m_operationMapCB[0x22] = &CPU::SLAr;
+    m_operationMapCB[0x23] = &CPU::SLAr;
+    m_operationMapCB[0x24] = &CPU::SLAr;
+    m_operationMapCB[0x25] = &CPU::SLAr;
+    m_operationMapCB[0x26] = &CPU::SLA_HL_;
+    m_operationMapCB[0x27] = &CPU::SLAr;
+    m_operationMapCB[0x28] = &CPU::SRAr;
+    m_operationMapCB[0x29] = &CPU::SRAr;
+    m_operationMapCB[0x2A] = &CPU::SRAr;
+    m_operationMapCB[0x2B] = &CPU::SRAr;
+    m_operationMapCB[0x2C] = &CPU::SRAr;
+    m_operationMapCB[0x2D] = &CPU::SRAr;
+    m_operationMapCB[0x2E] = &CPU::SRA_HL_;
+    m_operationMapCB[0x2F] = &CPU::SRAr;
 
     // 30
     //m_operationMapCB[0x30] UNUSED!
@@ -1258,6 +1258,31 @@ void CPU::LDI_HL_A(const byte& opCode)
     m_cycles += 8;
 }
 
+/*
+    JR Z, e
+    0x28
+
+    Jump relative, if not zero, to the offset e.
+
+    8 or 12 cycles.
+
+    Flags affected(znhc): ----
+*/
+void CPU::JRZe(const byte& opCode)
+{
+    sbyte e = static_cast<sbyte>(ReadBytePC());
+
+    if (IsFlagSet(ZeroFlag))
+    {
+        m_PC += e;
+        m_cycles += 12;
+    }
+    else
+    {
+        m_cycles += 8;
+    }
+}
+
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
 {
@@ -1346,8 +1371,31 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 }
 
 /*
+    LD (nn), A
+    0xEA
+
+    The contents of the accumulator are loaded into the address specified by the
+    operand nn.
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LD_nn_A(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    if (!m_MMU->WriteByte(nn, GetHighByte(m_AF))) // Load A into (nn)
+    {
+        HALT();
+    }
+
+    m_cycles += 16;
+}
+
+/*
     CP n
-    11111110(FE) nnnnnnnn
+    0xFE
 
     The contents of 8-bit operand n are compared with the contents of the accumulator.
     If there is a true compare, the Z flag is set. The execution of this instruction
@@ -1601,6 +1649,103 @@ void CPU::RR_HL_(const byte& opCode)
     // Set bit 7 of r to the old CarryFlag
     r = carry ? SETBIT((r), 7) : CLEARBIT((r), 7);
 
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+SLA r
+11001011 00100rrrr
+
+An arithmetic shift left 1-bit position is performed on the contents of the operand r. The content
+of bit 7 is copied to the carry flag.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+Affects Z, clears n, clears h, affects c
+*/
+void CPU::SLAr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 7 and store it in the carryflag
+    ISBITSET(*r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r left
+    (*r) = *r << 1;
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::SLA_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 7 and store it in the carryflag
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r left
+    r = r << 1;
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+SRA r
+11001011 00101rrrr
+
+An arithmetic shift right 1-bit position is performed on the contents of the operand r. The content
+of bit 0 is copied to the carry flag.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+Affects Z, clears n, clears h, affects c
+*/
+void CPU::SRAr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    (*r) = *r >> 1;
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+void CPU::SRA_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    r = r >> 1;
     m_MMU->WriteByte(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
