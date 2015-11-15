@@ -539,76 +539,76 @@ CPU::CPU() :
     m_operationMapCB[0xBF] = &CPU::RESbr;
 
     // C0
-    //m_operationMapCB[0xC0] TODO
-    //m_operationMapCB[0xC1] TODO
-    //m_operationMapCB[0xC2] TODO
-    //m_operationMapCB[0xC3] TODO
-    //m_operationMapCB[0xC4] TODO
-    //m_operationMapCB[0xC5] TODO
+    m_operationMapCB[0xC0] = &CPU::SETbr;
+    m_operationMapCB[0xC1] = &CPU::SETbr;
+    m_operationMapCB[0xC2] = &CPU::SETbr;
+    m_operationMapCB[0xC3] = &CPU::SETbr;
+    m_operationMapCB[0xC4] = &CPU::SETbr;
+    m_operationMapCB[0xC5] = &CPU::SETbr;
     //m_operationMapCB[0xC6] TODO
-    //m_operationMapCB[0xC7] TODO
-    //m_operationMapCB[0xC8] TODO
-    //m_operationMapCB[0xC9] TODO
-    //m_operationMapCB[0xCA] TODO
-    //m_operationMapCB[0xCB] TODO
-    //m_operationMapCB[0xCC] TODO
-    //m_operationMapCB[0xCD] TODO
+    m_operationMapCB[0xC7] = &CPU::SETbr;
+    m_operationMapCB[0xC8] = &CPU::SETbr;
+    m_operationMapCB[0xC9] = &CPU::SETbr;
+    m_operationMapCB[0xCA] = &CPU::SETbr;
+    m_operationMapCB[0xCB] = &CPU::SETbr;
+    m_operationMapCB[0xCC] = &CPU::SETbr;
+    m_operationMapCB[0xCD] = &CPU::SETbr;
     //m_operationMapCB[0xCE] TODO
-    //m_operationMapCB[0xCF] TODO
+    m_operationMapCB[0xCF] = &CPU::SETbr;
 
     // D0
-    //m_operationMapCB[0xD0] TODO
-    //m_operationMapCB[0xD1] TODO
-    //m_operationMapCB[0xD2] TODO
-    //m_operationMapCB[0xD3] TODO
-    //m_operationMapCB[0xD4] TODO
-    //m_operationMapCB[0xD5] TODO
+    m_operationMapCB[0xD0] = &CPU::SETbr;
+    m_operationMapCB[0xD1] = &CPU::SETbr;
+    m_operationMapCB[0xD2] = &CPU::SETbr;
+    m_operationMapCB[0xD3] = &CPU::SETbr;
+    m_operationMapCB[0xD4] = &CPU::SETbr;
+    m_operationMapCB[0xD5] = &CPU::SETbr;
     //m_operationMapCB[0xD6] TODO
-    //m_operationMapCB[0xD7] TODO
-    //m_operationMapCB[0xD8] TODO
-    //m_operationMapCB[0xD9] TODO
-    //m_operationMapCB[0xDA] TODO
-    //m_operationMapCB[0xDB] TODO
-    //m_operationMapCB[0xDC] TODO
-    //m_operationMapCB[0xDD] TODO
+    m_operationMapCB[0xD7] = &CPU::SETbr;
+    m_operationMapCB[0xD8] = &CPU::SETbr;
+    m_operationMapCB[0xD9] = &CPU::SETbr;
+    m_operationMapCB[0xDA] = &CPU::SETbr;
+    m_operationMapCB[0xDB] = &CPU::SETbr;
+    m_operationMapCB[0xDC] = &CPU::SETbr;
+    m_operationMapCB[0xDD] = &CPU::SETbr;
     //m_operationMapCB[0xDE] TODO
-    //m_operationMapCB[0xDF] TODO
+    m_operationMapCB[0xDF] = &CPU::SETbr;
 
     // E0
-    //m_operationMapCB[0xE0] TODO
-    //m_operationMapCB[0xE1] TODO
-    //m_operationMapCB[0xE2] TODO
-    //m_operationMapCB[0xE3] TODO
-    //m_operationMapCB[0xE4] TODO
-    //m_operationMapCB[0xE5] TODO
+    m_operationMapCB[0xE0] = &CPU::SETbr;
+    m_operationMapCB[0xE1] = &CPU::SETbr;
+    m_operationMapCB[0xE2] = &CPU::SETbr;
+    m_operationMapCB[0xE3] = &CPU::SETbr;
+    m_operationMapCB[0xE4] = &CPU::SETbr;
+    m_operationMapCB[0xE5] = &CPU::SETbr;
     //m_operationMapCB[0xE6] TODO
-    //m_operationMapCB[0xE7] TODO
-    //m_operationMapCB[0xE8] TODO
-    //m_operationMapCB[0xE9] TODO
-    //m_operationMapCB[0xEA] TODO
-    //m_operationMapCB[0xEB] TODO
-    //m_operationMapCB[0xEC] TODO
-    //m_operationMapCB[0xED] TODO
+    m_operationMapCB[0xE7] = &CPU::SETbr;
+    m_operationMapCB[0xE8] = &CPU::SETbr;
+    m_operationMapCB[0xE9] = &CPU::SETbr;
+    m_operationMapCB[0xEA] = &CPU::SETbr;
+    m_operationMapCB[0xEB] = &CPU::SETbr;
+    m_operationMapCB[0xEC] = &CPU::SETbr;
+    m_operationMapCB[0xED] = &CPU::SETbr;
     //m_operationMapCB[0xEE] TODO
-    //m_operationMapCB[0xEF] TODO
+    m_operationMapCB[0xEF] = &CPU::SETbr;
 
     // F0
-    //m_operationMapCB[0xF0] TODO
-    //m_operationMapCB[0xF1] TODO
-    //m_operationMapCB[0xF2] TODO
-    //m_operationMapCB[0xF3] TODO
-    //m_operationMapCB[0xF4] TODO
-    //m_operationMapCB[0xF5] TODO
+    m_operationMapCB[0xF0] = &CPU::SETbr;
+    m_operationMapCB[0xF1] = &CPU::SETbr;
+    m_operationMapCB[0xF2] = &CPU::SETbr;
+    m_operationMapCB[0xF3] = &CPU::SETbr;
+    m_operationMapCB[0xF4] = &CPU::SETbr;
+    m_operationMapCB[0xF5] = &CPU::SETbr;
     //m_operationMapCB[0xF6] TODO
-    //m_operationMapCB[0xF7] TODO
-    //m_operationMapCB[0xF8] TODO
-    //m_operationMapCB[0xF9] TODO
-    //m_operationMapCB[0xFA] TODO
-    //m_operationMapCB[0xFB] TODO
-    //m_operationMapCB[0xFC] TODO
-    //m_operationMapCB[0xFD] TODO
+    m_operationMapCB[0xF7] = &CPU::SETbr;
+    m_operationMapCB[0xF8] = &CPU::SETbr;
+    m_operationMapCB[0xF9] = &CPU::SETbr;
+    m_operationMapCB[0xFA] = &CPU::SETbr;
+    m_operationMapCB[0xFB] = &CPU::SETbr;
+    m_operationMapCB[0xFC] = &CPU::SETbr;
+    m_operationMapCB[0xFD] = &CPU::SETbr;
     //m_operationMapCB[0xFE] TODO
-    //m_operationMapCB[0xFF] TODO
+    m_operationMapCB[0xFF] = &CPU::SETbr;
 
     // Initialize the register map
     /*
@@ -1289,6 +1289,25 @@ void CPU::RESbr(const byte& opCode)
     byte bit = (opCode >> 3) & 0x07;
     byte* r = GetByteRegister(opCode);
     *r = CLEARBIT(*r, bit);
+}
+
+/*
+SET b, r
+11001011 11bbbrrr
+
+Bit b in operand r is set.
+
+8 Cycles
+
+No flags affected.
+*/
+void CPU::SETbr(const byte& opCode)
+{
+    m_cycles += 8;
+
+    byte bit = (opCode >> 3) & 0x07;
+    byte* r = GetByteRegister(opCode);
+    *r = SETBIT(*r, bit);
 }
 
 
