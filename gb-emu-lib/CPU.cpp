@@ -385,14 +385,14 @@ CPU::CPU() :
     //m_operationMapCB[0x35] UNUSED!
     //m_operationMapCB[0x36] UNUSED!
     //m_operationMapCB[0x37] UNUSED!
-    //m_operationMapCB[0x38] TODO
-    //m_operationMapCB[0x39] TODO
-    //m_operationMapCB[0x3A] TODO
-    //m_operationMapCB[0x3B] TODO
-    //m_operationMapCB[0x3C] TODO
-    //m_operationMapCB[0x3D] TODO
-    //m_operationMapCB[0x3E] TODO
-    //m_operationMapCB[0x3F] TODO
+    m_operationMapCB[0x38] = &CPU::SWAPr;
+    m_operationMapCB[0x39] = &CPU::SWAPr;
+    m_operationMapCB[0x3A] = &CPU::SWAPr;
+    m_operationMapCB[0x3B] = &CPU::SWAPr;
+    m_operationMapCB[0x3C] = &CPU::SWAPr;
+    m_operationMapCB[0x3D] = &CPU::SWAPr;
+    m_operationMapCB[0x3E] = &CPU::SWAP_HL_;
+    m_operationMapCB[0x3F] = &CPU::SWAPr;
 
     // 40
     m_operationMapCB[0x40] = &CPU::BITbr;
@@ -1496,4 +1496,36 @@ void CPU::SETb_HL_(const byte& opCode)
     byte bit = (opCode >> 3) & 0x07;
     byte r = m_MMU->ReadByte(m_HL);
     m_MMU->WriteByte(m_HL, SETBIT(r, bit));
+}
+
+/*
+SWAP r
+11001011 00111rrr
+swap r         CB 3x        8 z000 exchange low/hi-nibble
+swap (HL)      CB 36       16 z000 exchange low/hi-nibble
+
+Exchange the low and hi nibble (a nibble is 4 bits)
+
+No flags affected.
+*/
+void CPU::SWAPr(const byte& opCode)
+{
+    m_cycles += 8;
+
+    byte* r = GetByteRegister(opCode);
+    byte lowNibble = (*r & 0x0F);
+    byte highNibble = (*r & 0xF0);
+
+    *r = (lowNibble << 4) | (highNibble >> 4);
+}
+
+void CPU::SWAP_HL_(const byte& opCode)
+{
+    m_cycles += 16;
+
+    byte r = m_MMU->ReadByte(m_HL);
+    byte lowNibble = (r & 0x0F);
+    byte highNibble = (r & 0xF0);
+
+    m_MMU->WriteByte(m_HL, (lowNibble << 4) | (highNibble >> 4));
 }

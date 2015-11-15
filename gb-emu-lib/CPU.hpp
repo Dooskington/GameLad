@@ -98,6 +98,8 @@ private:
     void RESb_HL_(const byte& opCode);
     void SETbr(const byte& opCode);
     void SETb_HL_(const byte& opCode);
+    void SWAPr(const byte& opCode);
+    void SWAP_HL_(const byte& opCode);
 
 private:
     // MMU (Memory Map Unit)
