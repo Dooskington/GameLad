@@ -359,22 +359,22 @@ CPU::CPU() :
     m_operationMapCB[0x1F] = &CPU::RRr;
 
     // 20
-    //m_operationMapCB[0x20] TODO
-    //m_operationMapCB[0x21] TODO
-    //m_operationMapCB[0x22] TODO
-    //m_operationMapCB[0x23] TODO
-    //m_operationMapCB[0x24] TODO
-    //m_operationMapCB[0x25] TODO
-    //m_operationMapCB[0x26] TODO
-    //m_operationMapCB[0x27] TODO
-    //m_operationMapCB[0x28] TODO
-    //m_operationMapCB[0x29] TODO
-    //m_operationMapCB[0x2A] TODO
-    //m_operationMapCB[0x2B] TODO
-    //m_operationMapCB[0x2C] TODO
-    //m_operationMapCB[0x2D] TODO
-    //m_operationMapCB[0x2E] TODO
-    //m_operationMapCB[0x2F] TODO
+    m_operationMapCB[0x20] = &CPU::SLAr;
+    m_operationMapCB[0x21] = &CPU::SLAr;
+    m_operationMapCB[0x22] = &CPU::SLAr;
+    m_operationMapCB[0x23] = &CPU::SLAr;
+    m_operationMapCB[0x24] = &CPU::SLAr;
+    m_operationMapCB[0x25] = &CPU::SLAr;
+    m_operationMapCB[0x26] = &CPU::SLA_HL_;
+    m_operationMapCB[0x27] = &CPU::SLAr;
+    m_operationMapCB[0x28] = &CPU::SRAr;
+    m_operationMapCB[0x29] = &CPU::SRAr;
+    m_operationMapCB[0x2A] = &CPU::SRAr;
+    m_operationMapCB[0x2B] = &CPU::SRAr;
+    m_operationMapCB[0x2C] = &CPU::SRAr;
+    m_operationMapCB[0x2D] = &CPU::SRAr;
+    m_operationMapCB[0x2E] = &CPU::SRA_HL_;
+    m_operationMapCB[0x2F] = &CPU::SRAr;
 
     // 30
     //m_operationMapCB[0x30] UNUSED!
@@ -1649,6 +1649,103 @@ void CPU::RR_HL_(const byte& opCode)
     // Set bit 7 of r to the old CarryFlag
     r = carry ? SETBIT((r), 7) : CLEARBIT((r), 7);
 
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+SLA r
+11001011 00100rrrr
+
+An arithmetic shift left 1-bit position is performed on the contents of the operand r. The content
+of bit 7 is copied to the carry flag.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+Affects Z, clears n, clears h, affects c
+*/
+void CPU::SLAr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 7 and store it in the carryflag
+    ISBITSET(*r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r left
+    (*r) = *r << 1;
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::SLA_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 7 and store it in the carryflag
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r left
+    r = r << 1;
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+SRA r
+11001011 00101rrrr
+
+An arithmetic shift right 1-bit position is performed on the contents of the operand r. The content
+of bit 0 is copied to the carry flag.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+Affects Z, clears n, clears h, affects c
+*/
+void CPU::SRAr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    (*r) = *r >> 1;
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+void CPU::SRA_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    r = r >> 1;
     m_MMU->WriteByte(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
