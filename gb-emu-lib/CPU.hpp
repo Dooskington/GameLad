@@ -89,12 +89,15 @@ private:
     void JRZe(const byte& opCode);            // 0x28
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
+    void ADDA_HL_(const byte& opCode);        // 0x86
+    void CP_HL_(const byte& opCode);          // 0xBE
     void RET(const byte& opCode);             // 0xC9
     void CALLnn(const byte& opCode);          // 0xCD
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void LD_nn_A(const byte& opCode);         // 0xEA
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
+    void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void CPn(const byte& opCode);             // 0xFE
 
     // Z80 Instruction Set - CB

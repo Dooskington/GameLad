@@ -181,7 +181,7 @@ CPU::CPU() :
     //m_operationMap[0x83] TODO
     //m_operationMap[0x84] TODO
     //m_operationMap[0x85] TODO
-    //m_operationMap[0x86] TODO
+    m_operationMap[0x86] = &CPU::ADDA_HL_;
     //m_operationMap[0x87] TODO
     //m_operationMap[0x88] TODO
     //m_operationMap[0x89] TODO
@@ -243,7 +243,7 @@ CPU::CPU() :
     //m_operationMap[0xBB] TODO
     //m_operationMap[0xBC] TODO
     //m_operationMap[0xBD] TODO
-    //m_operationMap[0xBE] TODO
+    m_operationMap[0xBE] = &CPU::CP_HL_;
     //m_operationMap[0xBF] TODO
 
     // C0
@@ -303,7 +303,7 @@ CPU::CPU() :
     // F0
     m_operationMap[0xF0] = &CPU::LDA_0xFF00n_;
     m_operationMap[0xF1] = &CPU::POPrr;
-    //m_operationMap[0xF2] TODO
+    m_operationMap[0xF2] = &CPU::LDA_0xFF00C_;
     //m_operationMap[0xF3] TODO
     //m_operationMap[0xF4] TODO
     m_operationMap[0xF5] = &CPU::PUSHrr;
@@ -1359,6 +1359,59 @@ void CPU::LD_HL_A(const byte& opCode)
 }
 
 /*
+    ADD A, (HL)
+    0x86
+
+    The byte at the memory address specified by the contents of the HL register pair
+    is added to the contents of the accumulator, and the result is stored in the
+    accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z0hc
+*/
+void CPU::ADDA_HL_(const byte& opCode)
+{
+    byte A = GetHighByte(m_AF);
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte result = A + HL;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    CP (HL)
+    0xBE
+
+    The contents of 8-bit register HL are compared with the contents of the accumulator.
+    If there is a true compare, the Z flag is set. The execution of this instruction
+    does not affect the contents of the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::CP_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte A = GetHighByte(m_AF);
+    byte result = A - HL;
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(AddFlag);
+    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
     RET
     0xC9
 
@@ -1455,6 +1508,23 @@ void CPU::LDA_0xFF00n_(const byte& opCode)
     SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + n));
 
     m_cycles += 12;
+}
+
+/*
+    LD A, (0xFF00 + C)
+    0xF2
+
+    Read from io-port C
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDA_0xFF00C_(const byte& opCode)
+{
+    SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + GetLowByte(m_BC)));
+
+    m_cycles += 8;
 }
 
 /*

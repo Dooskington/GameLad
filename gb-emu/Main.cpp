@@ -92,8 +92,8 @@ int main(int argc, char** argv)
             "Gameboy",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
-            160,
-            144,
+            320, // Original = 160
+            288, // Original = 144
             SDL_WINDOW_SHOWN));
     if (spWindow == nullptr)
     {
