@@ -88,7 +88,8 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, RLD_Test);
     TEST_CALL(CPUTests, RLE_Test);
     TEST_CALL(CPUTests, RLH_Test);
-    TEST_CALL(CPUTests, RLL_Test);
+    TEST_CALL(CPUTests, );
+    TEST_CALL(CPUTests, RL_HL_Test);
 
     TEST_CLEANUP();
 

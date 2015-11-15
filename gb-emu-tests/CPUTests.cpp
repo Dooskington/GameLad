@@ -2277,6 +2277,40 @@ public:
         spCPU.reset();
     }
 
+    // 0xCB 0x16
+    TEST_METHOD(RL_HL_Test)
+    {
+        // Load RLC
+        byte m_Mem[] = { 0xCB, 0x16, 0xCB, 0x16, 0xCE };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_HL = 0x0004;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x009C, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(32, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0004, (int)spCPU->m_PC);
+        Assert::AreEqual(0x0039, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+
+        spCPU.reset();
+    }
+
     // 0x17
     TEST_METHOD(RLA_Test)
     {

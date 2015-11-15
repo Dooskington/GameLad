@@ -347,7 +347,7 @@ CPU::CPU() :
     m_operationMapCB[0x13] = &CPU::RLr;
     m_operationMapCB[0x14] = &CPU::RLr;
     m_operationMapCB[0x15] = &CPU::RLr;
-    //m_operationMapCB[0x16] TODO
+    m_operationMapCB[0x16] = &CPU::RL_HL_;
     m_operationMapCB[0x17] = &CPU::RLr;
     //m_operationMapCB[0x18] TODO
     //m_operationMapCB[0x19] TODO
@@ -1331,6 +1331,35 @@ void CPU::RLr(const byte& opCode)
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
+}
+
+void CPU::RL_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(r, 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift r left
+    r <<= 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    r = carry ? SETBIT((r), 0) : CLEARBIT((r), 0);
+
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
 }
 
 /*
