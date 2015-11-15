@@ -323,14 +323,14 @@ CPU::CPU() :
     */
 
     // 00
-    //m_operationMapCB[0x00] TODO
-    //m_operationMapCB[0x01] TODO
-    //m_operationMapCB[0x02] TODO
-    //m_operationMapCB[0x03] TODO
-    //m_operationMapCB[0x04] TODO
-    //m_operationMapCB[0x05] TODO
-    //m_operationMapCB[0x06] TODO
-    //m_operationMapCB[0x07] TODO
+    m_operationMapCB[0x00] = &CPU::RLCr;
+    m_operationMapCB[0x01] = &CPU::RLCr;
+    m_operationMapCB[0x02] = &CPU::RLCr;
+    m_operationMapCB[0x03] = &CPU::RLCr;
+    m_operationMapCB[0x04] = &CPU::RLCr;
+    m_operationMapCB[0x05] = &CPU::RLCr;
+    m_operationMapCB[0x06] = &CPU::RLC_HL_;
+    m_operationMapCB[0x07] = &CPU::RLCr;
     //m_operationMapCB[0x08] TODO
     //m_operationMapCB[0x09] TODO
     //m_operationMapCB[0x0A] TODO
@@ -1052,7 +1052,6 @@ void CPU::INCr(const byte& opCode)
     8 Cycles
 
     Flags affected(znhc): ----
-    Affects Z, Clears N, affects H
 */
 void CPU::INCrr(const byte& opCode)
 {
@@ -1295,7 +1294,7 @@ void CPU::LD_HL_A(const byte& opCode)
     RET
     0xC9
 
-    DESC
+    return, PC=(SP), SP=SP+2
 
     16 Cycles
 
@@ -1354,12 +1353,74 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 */
 
 /*
-RL r
+RLC r
 11001011(CB) 00000rrr
 
 The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
 is copied to the carry flag and also to bit 0. Operand r identifies register
 B, C, D, E, H, L, or A.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+*/
+void CPU::RLCr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(*r, 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift r left
+    (*r) = *r << 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    (*r) = IsFlagSet(CarryFlag) ? SETBIT((*r), 0) : CLEARBIT((*r), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::RLC_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(r, 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift r left
+    r <<= 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    r = IsFlagSet(CarryFlag) ? SETBIT((r), 0) : CLEARBIT((r), 0);
+
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+RL r
+11001011(CB) 00010rrr
+
+The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+is copied to the carry flag and the previous content of the carry flag is copied to bit 0.
+Operand r identifies register: B, C, D, E, H, L, or A.
 
 8 Cycles
 

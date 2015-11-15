@@ -92,6 +92,8 @@ private:
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
 
     // Z80 Instruction Set - CB
+    void RLCr(const byte& opCode);
+    void RLC_HL_(const byte& opCode);
     void RLr(const byte& opCode);
     void RL_HL_(const byte& opCode);
     void BITbr(const byte& opCode);
