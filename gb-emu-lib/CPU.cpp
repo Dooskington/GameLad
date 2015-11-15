@@ -250,7 +250,7 @@ CPU::CPU() :
     //m_operationMap[0xC0] TODO
     m_operationMap[0xC1] = &CPU::POPrr;
     //m_operationMap[0xC2] TODO
-    //m_operationMap[0xC3] TODO
+    m_operationMap[0xC3] = &CPU::JPnn;
     //m_operationMap[0xC4] TODO
     m_operationMap[0xC5] = &CPU::PUSHrr;
     //m_operationMap[0xC6] TODO
@@ -1409,6 +1409,24 @@ void CPU::CP_HL_(const byte& opCode)
     ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 8;
+}
+
+/*
+    JP nn
+    0xC3
+
+    Jump to nn
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::JPnn(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+    m_PC = nn;
+
+    m_cycles += 16;
 }
 
 /*

@@ -91,6 +91,7 @@ private:
     void LD_HL_A(const byte& opCode);         // 0x77
     void ADDA_HL_(const byte& opCode);        // 0x86
     void CP_HL_(const byte& opCode);          // 0xBE
+    void JPnn(const byte& opCode);            // 0xC3
     void RET(const byte& opCode);             // 0xC9
     void CALLnn(const byte& opCode);          // 0xCD
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
