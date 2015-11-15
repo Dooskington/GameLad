@@ -694,7 +694,9 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
         m_MMU->RegisterMemoryUnit(0xFF04, 0xFF07, m_timer.get());
         m_MMU->RegisterMemoryUnit(0xFF10, 0xFF3F, m_APU.get());
         m_MMU->RegisterMemoryUnit(0xFF40, 0xFF4C, m_GPU.get());
-        m_MMU->RegisterMemoryUnit(0xFF4E, 0xFF55, m_GPU.get());
+        m_MMU->RegisterMemoryUnit(0xFF4E, 0xFF4F, m_GPU.get());
+        // 0xFF50 - MMU
+        m_MMU->RegisterMemoryUnit(0xFF51, 0xFF55, m_GPU.get());
         m_MMU->RegisterMemoryUnit(0xFF57, 0xFF6B, m_GPU.get());
         m_MMU->RegisterMemoryUnit(0xFF6D, 0xFF6F, m_GPU.get());
     }
