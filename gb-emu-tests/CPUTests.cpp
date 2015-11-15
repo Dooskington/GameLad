@@ -2496,7 +2496,7 @@ public:
         {
             if (reg == 0x06) continue;
 
-            byte m_Mem[] = { 0xCB, (0x38 | reg) };
+            byte m_Mem[] = { 0xCB, (byte)(0x38 | reg) };
             std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
             spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
