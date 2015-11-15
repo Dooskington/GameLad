@@ -315,7 +315,7 @@ CPU::CPU() :
     //m_operationMap[0xFB] TODO
     //m_operationMap[0xFC] TODO
     //m_operationMap[0xFD] TODO
-    //m_operationMap[0xFE] TODO
+    m_operationMap[0xFE] = &CPU::CPn;
     //m_operationMap[0xFF] TODO
 
     /*
@@ -1349,20 +1349,46 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 }
 
 /*
+    CP n
+    11111110(FE) nnnnnnnn
+
+    The contents of 8-bit operand n are compared with the contents of the accumulator.
+    If there is a true compare, the Z flag is set. The execution of this instruction
+    does not affect the contents of the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::CPn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    byte A = GetHighByte(m_AF);
+    byte result = A - n;
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    SetFlag(AddFlag);
+
+    m_cycles += 8;
+}
+
+/*
     CPU 0xCB INSTRUCTION MAP
 */
 
 /*
-RLC r
-11001011(CB) 00000rrr
+    RLC r
+    11001011(CB) 00000rrr
 
-The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
-is copied to the carry flag and also to bit 0. Operand r identifies register
-B, C, D, E, H, L, or A.
+    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+    is copied to the carry flag and also to bit 0. Operand r identifies register
+    B, C, D, E, H, L, or A.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
+    Flags affected(znhc): z00c
 */
 void CPU::RLCr(const byte& opCode)
 {
@@ -1415,16 +1441,16 @@ void CPU::RLC_HL_(const byte& opCode)
 }
 
 /*
-RL r
-11001011(CB) 00010rrr
+    RL r
+    11001011(CB) 00010rrr
 
-The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
-is copied to the carry flag and the previous content of the carry flag is copied to bit 0.
-Operand r identifies register: B, C, D, E, H, L, or A.
+    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+    is copied to the carry flag and the previous content of the carry flag is copied to bit 0.
+    Operand r identifies register: B, C, D, E, H, L, or A.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
+    Flags affected(znhc): z00c
 */
 void CPU::RLr(const byte& opCode)
 {
@@ -1483,15 +1509,15 @@ void CPU::RL_HL_(const byte& opCode)
 }
 
 /*
-BIT b, r
-11001011 01bbbrrr
+    BIT b, r
+    11001011 01bbbrrr
 
-This instruction tests bit b in register r and sets the Z flag accordingly.
+    This instruction tests bit b in register r and sets the Z flag accordingly.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z01-
-Affects Z, clears n, sets h
+    Flags affected(znhc): z01-
+    Affects Z, clears n, sets h
 */
 void CPU::BITbr(const byte& opCode)
 {
@@ -1540,14 +1566,14 @@ void CPU::BITb_HL_(const byte& opCode)
 }
 
 /*
-RES b, r
-11001011 10bbbrrr
+    RES b, r
+    11001011 10bbbrrr
 
-Bit b in operand r is reset.
+    Bit b in operand r is reset.
 
-8 Cycles
+    8 Cycles
 
-No flags affected.
+    No flags affected.
 */
 void CPU::RESbr(const byte& opCode)
 {
@@ -1568,14 +1594,14 @@ void CPU::RESb_HL_(const byte& opCode)
 }
 
 /*
-SET b, r
-11001011 11bbbrrr
+    SET b, r
+    11001011 11bbbrrr
 
-Bit b in operand r is set.
+    Bit b in operand r is set.
 
-8 Cycles
+    8 Cycles
 
-No flags affected.
+    No flags affected.
 */
 void CPU::SETbr(const byte& opCode)
 {
@@ -1596,14 +1622,14 @@ void CPU::SETb_HL_(const byte& opCode)
 }
 
 /*
-SWAP r
-11001011 00111rrr
-swap r         CB 3x        8 z000 exchange low/hi-nibble
-swap (HL)      CB 36       16 z000 exchange low/hi-nibble
+    SWAP r
+    11001011 00111rrr
+    swap r         CB 3x        8 z000 exchange low/hi-nibble
+    swap (HL)      CB 36       16 z000 exchange low/hi-nibble
 
-Exchange the low and hi nibble (a nibble is 4 bits)
+    Exchange the low and hi nibble (a nibble is 4 bits)
 
-No flags affected.
+    No flags affected.
 */
 void CPU::SWAPr(const byte& opCode)
 {
