@@ -99,6 +99,15 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, RLC_HL_Test);
     TEST_CALL(CPUTests, RLCA_Test);
 
+    TEST_CALL(CPUTests, RRCB_Test);
+    TEST_CALL(CPUTests, RRCC_Test);
+    TEST_CALL(CPUTests, RRCD_Test);
+    TEST_CALL(CPUTests, RRCE_Test);
+    TEST_CALL(CPUTests, RRCH_Test);
+    TEST_CALL(CPUTests, RRCL_Test);
+    TEST_CALL(CPUTests, RRC_HL_Test);
+    TEST_CALL(CPUTests, RRCA_Test);
+
     TEST_CALL(CPUTests, RLB_Test);
     TEST_CALL(CPUTests, RLC_Test);
     TEST_CALL(CPUTests, RLD_Test);
@@ -106,6 +115,16 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, RLH_Test);
     TEST_CALL(CPUTests, RLL_Test);
     TEST_CALL(CPUTests, RL_HL_Test);
+    TEST_CALL(CPUTests, RLA2_Test);
+
+    TEST_CALL(CPUTests, RRB_Test);
+    TEST_CALL(CPUTests, RRC_Test);
+    TEST_CALL(CPUTests, RRD_Test);
+    TEST_CALL(CPUTests, RRE_Test);
+    TEST_CALL(CPUTests, RRH_Test);
+    TEST_CALL(CPUTests, RRL_Test);
+    TEST_CALL(CPUTests, RR_HL_Test);
+    TEST_CALL(CPUTests, RRA_Test);
 
     TEST_CALL(CPUTests, SWAP_HL_Test);
     TEST_CALL(CPUTests, SWAPr_Test);
