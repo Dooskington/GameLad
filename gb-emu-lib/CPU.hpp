@@ -77,13 +77,12 @@ private:
     void XORr(const byte& opCode);
     void PUSHrr(const byte& opCode);
     void POPrr(const byte& opCode);
-    void RLr(const byte& opCode);
-	void DECr(const byte& opCode);
+    void DECr(const byte& opCode);
 
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
     void JRNZe(const byte& opCode);           // 0x20
-	void LDI_HL_A(const byte& opCode);        // 0x22
+    void LDI_HL_A(const byte& opCode);        // 0x22
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
     void CALLnn(const byte& opCode);          // 0xCD
@@ -91,6 +90,8 @@ private:
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
 
     // Z80 Instruction Set - CB
+    void RLr(const byte& opCode);
+    void RL_HL_(const byte& opCode);
     void BITbr(const byte& opCode);
     void BITb_HL_(const byte& opCode);
     void RESbr(const byte& opCode);
