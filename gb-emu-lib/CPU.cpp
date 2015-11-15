@@ -301,7 +301,7 @@ CPU::CPU() :
     //m_operationMap[0xEF] TODO
 
     // F0
-    //m_operationMap[0xF0] TODO
+    m_operationMap[0xF0] = &CPU::LDA_0xFF00n_;
     m_operationMap[0xF1] = &CPU::POPrr;
     //m_operationMap[0xF2] TODO
     //m_operationMap[0xF3] TODO
@@ -1412,6 +1412,24 @@ void CPU::LD_nn_A(const byte& opCode)
 }
 
 /*
+    LD A, (0xFF00 + n)
+    0xF0
+
+    Read from io-port n
+
+    12 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDA_0xFF00n_(const byte& opCode)
+{
+    byte n = ReadBytePC(); // Read n
+    SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + n));
+
+    m_cycles += 12;
+}
+
+/*
     CP n
     0xFE
 
@@ -1554,16 +1572,16 @@ void CPU::RRC_HL_(const byte& opCode)
 }
 
 /*
-RL r
-11001011(CB) 00010rrr
+    RL r
+    11001011(CB) 00010rrr
 
-The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
-is copied to the carry flag and the previous content of the carry flag is copied to bit 0.
-Operand r identifies register: B, C, D, E, H, L, or A.
+    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+    is copied to the carry flag and the previous content of the carry flag is copied to bit 0.
+    Operand r identifies register: B, C, D, E, H, L, or A.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
+    Flags affected(znhc): z00c
 */
 void CPU::RLr(const byte& opCode)
 {
@@ -1616,16 +1634,16 @@ void CPU::RL_HL_(const byte& opCode)
 }
 
 /*
-RR r
-11001011(CB) 00001rrr
+    RR r
+    11001011(CB) 00001rrr
 
-The contents of 8-bit register r are rotated right 1-bit position. The content of bit 0
-is copied to the carry flag and the previous content of the carry flag is copied to bit 7.
-Operand r identifies register: B, C, D, E, H, L, or A.
+    The contents of 8-bit register r are rotated right 1-bit position. The content of bit 0
+    is copied to the carry flag and the previous content of the carry flag is copied to bit 7.
+    Operand r identifies register: B, C, D, E, H, L, or A.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
+    Flags affected(znhc): z00c
 */
 void CPU::RRr(const byte& opCode)
 {
