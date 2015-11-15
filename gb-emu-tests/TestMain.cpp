@@ -33,6 +33,12 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDHLnn_Test);
     TEST_CALL(CPUTests, LDSPnn_Test);
     TEST_CALL(CPUTests, LDDn_Test);
+    TEST_CALL(CPUTests, RLB_Test);
+    TEST_CALL(CPUTests, RLC_Test);
+    TEST_CALL(CPUTests, RLD_Test);
+    TEST_CALL(CPUTests, RLE_Test);
+    TEST_CALL(CPUTests, RLH_Test);
+    TEST_CALL(CPUTests, RLL_Test);
     TEST_CALL(CPUTests, RLA_Test);
     TEST_CALL(CPUTests, LDA_DE__Test);
     TEST_CALL(CPUTests, LDEn_Test);

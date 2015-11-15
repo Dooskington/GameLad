@@ -341,14 +341,14 @@ CPU::CPU() :
     //m_operationMapCB[0x0F] TODO
 
     // 10
-    //m_operationMapCB[0x10] TODO
-    m_operationMapCB[0x11] = &CPU::RLC;
-    //m_operationMapCB[0x12] TODO
-    //m_operationMapCB[0x13] TODO
-    //m_operationMapCB[0x14] TODO
-    //m_operationMapCB[0x15] TODO
+    m_operationMapCB[0x10] = &CPU::RLr;
+    m_operationMapCB[0x11] = &CPU::RLr;
+    m_operationMapCB[0x12] = &CPU::RLr;
+    m_operationMapCB[0x13] = &CPU::RLr;
+    m_operationMapCB[0x14] = &CPU::RLr;
+    m_operationMapCB[0x15] = &CPU::RLr;
     //m_operationMapCB[0x16] TODO
-    //m_operationMapCB[0x17] TODO
+    m_operationMapCB[0x17] = &CPU::RLr;
     //m_operationMapCB[0x18] TODO
     //m_operationMapCB[0x19] TODO
     //m_operationMapCB[0x1A] TODO
@@ -1124,11 +1124,48 @@ void CPU::POPrr(const byte& opCode)
     m_cycles += 12;
 }
 
+/*
+    RL r
+    11001011(CB) 00000rrr
+
+    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+    is copied to the carry flag and also to bit 0. Operand r identifies register
+    B, C, D, E, H, L, or A.
+
+    8 Cycles
+
+    Flags affected(znhc): z00c
+*/
+void CPU::RLr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(*r, 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift r left
+    (*r) = *r << 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    (*r) = carry ? SETBIT((*r), 0) : CLEARBIT((*r), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
 // 0x17 (RL A)
 void CPU::RLA(const byte& opCode)
 {
-    m_cycles += 8;
-
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
 
@@ -1138,16 +1175,18 @@ void CPU::RLA(const byte& opCode)
         SetFlag(CarryFlag);
     }
 
-    // Shift C left
+    // Shift A left
     SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
 
-    // Set bit 0 of C to the old CarryFlag
+    // Set bit 0 of A to the old CarryFlag
     SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
     // Affects Z, clears N, clears H, affects C
     SetFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
+
+    m_cycles += 4;
 }
 
 // 0x1A (LD A, (DE))

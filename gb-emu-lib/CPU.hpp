@@ -77,6 +77,7 @@ private:
     void XORr(const byte& opCode);
     void PUSHrr(const byte& opCode);
     void POPrr(const byte& opCode);
+    void RLr(const byte& opCode);
 
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
