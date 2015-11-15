@@ -96,6 +96,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, RLCH_Test);
     TEST_CALL(CPUTests, RLCL_Test);
     TEST_CALL(CPUTests, RLC_HL_Test);
+    TEST_CALL(CPUTests, RLCA_Test);
 
     TEST_CALL(CPUTests, RLB_Test);
     TEST_CALL(CPUTests, RLC_Test);
