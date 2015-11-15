@@ -98,6 +98,15 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, RLC_HL_Test);
     TEST_CALL(CPUTests, RLCA_Test);
 
+    TEST_CALL(CPUTests, RRCB_Test);
+    TEST_CALL(CPUTests, RRCC_Test);
+    TEST_CALL(CPUTests, RRCD_Test);
+    TEST_CALL(CPUTests, RRCE_Test);
+    TEST_CALL(CPUTests, RRCH_Test);
+    TEST_CALL(CPUTests, RRCL_Test);
+    TEST_CALL(CPUTests, RRC_HL_Test);
+    TEST_CALL(CPUTests, RRCA_Test);
+
     TEST_CALL(CPUTests, RLB_Test);
     TEST_CALL(CPUTests, RLC_Test);
     TEST_CALL(CPUTests, RLD_Test);
