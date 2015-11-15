@@ -97,6 +97,9 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, RLL_Test);
     TEST_CALL(CPUTests, RL_HL_Test);
 
+    TEST_CALL(CPUTests, SWAP_HL_Test);
+    TEST_CALL(CPUTests, SWAPr_Test);
+
     TEST_CLEANUP();
 
     TEST_SETUP(GPUTests);

@@ -2489,4 +2489,103 @@ public:
 
         spCPU.reset();
     }
+
+    TEST_METHOD(SWAPr_Test)
+    {
+        for (byte reg = 0x00;reg < 0x07;reg++)
+        {
+            if (reg == 0x06) continue;
+
+            byte m_Mem[] = { 0xCB, (byte)(0x38 | reg) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            switch (reg)
+            {
+            case 0x00:
+                spCPU->m_BC = 0xAB00;
+                break;
+            case 0x01:
+                spCPU->m_BC = 0x00AB;
+                break;
+            case 0x02:
+                spCPU->m_DE = 0xAB00;
+                break;
+            case 0x03:
+                spCPU->m_DE = 0x00AB;
+                break;
+            case 0x04:
+                spCPU->m_HL = 0xAB00;
+                break;
+            case 0x05:
+                spCPU->m_HL = 0x00AB;
+                break;
+            case 0x07:
+                spCPU->m_AF = 0xAB00;
+                break;
+            }
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(8, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+            
+            switch (reg)
+            {
+            case 0x00:
+                Assert::AreEqual(0xBA00, (int)spCPU->m_BC);
+                break;
+            case 0x01:
+                Assert::AreEqual(0x00BA, (int)spCPU->m_BC);
+                break;
+            case 0x02:
+                Assert::AreEqual(0xBA00, (int)spCPU->m_DE);
+                break;
+            case 0x03:
+                Assert::AreEqual(0x00BA, (int)spCPU->m_DE);
+                break;
+            case 0x04:
+                Assert::AreEqual(0xBA00, (int)spCPU->m_HL);
+                break;
+            case 0x05:
+                Assert::AreEqual(0x00BA, (int)spCPU->m_HL);
+                break;
+            case 0x07:
+                Assert::AreEqual(0xBA00, (int)spCPU->m_AF);
+                break;
+            }
+
+            spCPU.reset();
+        }
+    }
+
+    TEST_METHOD(SWAP_HL_Test)
+    {
+        byte m_Mem[] = { 0xCB, 0x3E, 0xAB };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_HL = 0x0002;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+
+        Assert::AreEqual(0xBA, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+
+        spCPU.reset();
+    }
 };
