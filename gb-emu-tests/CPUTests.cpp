@@ -1540,7 +1540,6 @@ public:
 
         spCPU.reset();
     }
-<<<<<<< HEAD
 
     // 0xCB 0x12
     TEST_METHOD(RLD_Test)
@@ -1748,6 +1747,4 @@ public:
 
         spCPU.reset();
     }
-=======
->>>>>>> 68ea51fe5868a765a847c11694667c9527834508
 };
