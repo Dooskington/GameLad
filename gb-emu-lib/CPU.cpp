@@ -473,7 +473,7 @@ CPU::CPU() :
     m_operationMapCB[0x83] = &CPU::RESbr;
     m_operationMapCB[0x84] = &CPU::RESbr;
     m_operationMapCB[0x85] = &CPU::RESbr;
-    //m_operationMapCB[0x86] TODO
+    m_operationMapCB[0x86] = &CPU::RESb_HL_;
     m_operationMapCB[0x87] = &CPU::RESbr;
     m_operationMapCB[0x88] = &CPU::RESbr;
     m_operationMapCB[0x89] = &CPU::RESbr;
@@ -481,7 +481,7 @@ CPU::CPU() :
     m_operationMapCB[0x8B] = &CPU::RESbr;
     m_operationMapCB[0x8C] = &CPU::RESbr;
     m_operationMapCB[0x8D] = &CPU::RESbr;
-    //m_operationMapCB[0x8E] TODO
+    m_operationMapCB[0x8E] = &CPU::RESb_HL_;
     m_operationMapCB[0x8F] = &CPU::RESbr;
 
     // 90
@@ -491,7 +491,7 @@ CPU::CPU() :
     m_operationMapCB[0x93] = &CPU::RESbr;
     m_operationMapCB[0x94] = &CPU::RESbr;
     m_operationMapCB[0x95] = &CPU::RESbr;
-    //m_operationMapCB[0x96] TODO
+    m_operationMapCB[0x96] = &CPU::RESb_HL_;
     m_operationMapCB[0x97] = &CPU::RESbr;
     m_operationMapCB[0x98] = &CPU::RESbr;
     m_operationMapCB[0x99] = &CPU::RESbr;
@@ -499,7 +499,7 @@ CPU::CPU() :
     m_operationMapCB[0x9B] = &CPU::RESbr;
     m_operationMapCB[0x9C] = &CPU::RESbr;
     m_operationMapCB[0x9D] = &CPU::RESbr;
-    //m_operationMapCB[0x9E] TODO
+    m_operationMapCB[0x9E] = &CPU::RESb_HL_;
     m_operationMapCB[0x9F] = &CPU::RESbr;
 
     // A0
@@ -509,7 +509,7 @@ CPU::CPU() :
     m_operationMapCB[0xA3] = &CPU::RESbr;
     m_operationMapCB[0xA4] = &CPU::RESbr;
     m_operationMapCB[0xA5] = &CPU::RESbr;
-    //m_operationMapCB[0xA6] TODO
+    m_operationMapCB[0xA6] = &CPU::RESb_HL_;
     m_operationMapCB[0xA7] = &CPU::RESbr;
     m_operationMapCB[0xA8] = &CPU::RESbr;
     m_operationMapCB[0xA9] = &CPU::RESbr;
@@ -517,7 +517,7 @@ CPU::CPU() :
     m_operationMapCB[0xAB] = &CPU::RESbr;
     m_operationMapCB[0xAC] = &CPU::RESbr;
     m_operationMapCB[0xAD] = &CPU::RESbr;
-    //m_operationMapCB[0xAE] TODO
+    m_operationMapCB[0xAE] = &CPU::RESb_HL_;
     m_operationMapCB[0xAF] = &CPU::RESbr;
 
     // B0
@@ -527,7 +527,7 @@ CPU::CPU() :
     m_operationMapCB[0xB3] = &CPU::RESbr;
     m_operationMapCB[0xB4] = &CPU::RESbr;
     m_operationMapCB[0xB5] = &CPU::RESbr;
-    //m_operationMapCB[0xB6] TODO
+    m_operationMapCB[0xB6] = &CPU::RESb_HL_;
     m_operationMapCB[0xB7] = &CPU::RESbr;
     m_operationMapCB[0xB8] = &CPU::RESbr;
     m_operationMapCB[0xB9] = &CPU::RESbr;
@@ -535,7 +535,7 @@ CPU::CPU() :
     m_operationMapCB[0xBB] = &CPU::RESbr;
     m_operationMapCB[0xBC] = &CPU::RESbr;
     m_operationMapCB[0xBD] = &CPU::RESbr;
-    //m_operationMapCB[0xBE] TODO
+    m_operationMapCB[0xBE] = &CPU::RESb_HL_;
     m_operationMapCB[0xBF] = &CPU::RESbr;
 
     // C0
@@ -545,7 +545,7 @@ CPU::CPU() :
     m_operationMapCB[0xC3] = &CPU::SETbr;
     m_operationMapCB[0xC4] = &CPU::SETbr;
     m_operationMapCB[0xC5] = &CPU::SETbr;
-    //m_operationMapCB[0xC6] TODO
+    m_operationMapCB[0xC6] = &CPU::SETb_HL_;
     m_operationMapCB[0xC7] = &CPU::SETbr;
     m_operationMapCB[0xC8] = &CPU::SETbr;
     m_operationMapCB[0xC9] = &CPU::SETbr;
@@ -553,7 +553,7 @@ CPU::CPU() :
     m_operationMapCB[0xCB] = &CPU::SETbr;
     m_operationMapCB[0xCC] = &CPU::SETbr;
     m_operationMapCB[0xCD] = &CPU::SETbr;
-    //m_operationMapCB[0xCE] TODO
+    m_operationMapCB[0xCE] = &CPU::SETb_HL_;
     m_operationMapCB[0xCF] = &CPU::SETbr;
 
     // D0
@@ -563,7 +563,7 @@ CPU::CPU() :
     m_operationMapCB[0xD3] = &CPU::SETbr;
     m_operationMapCB[0xD4] = &CPU::SETbr;
     m_operationMapCB[0xD5] = &CPU::SETbr;
-    //m_operationMapCB[0xD6] TODO
+    m_operationMapCB[0xD6] = &CPU::SETb_HL_;
     m_operationMapCB[0xD7] = &CPU::SETbr;
     m_operationMapCB[0xD8] = &CPU::SETbr;
     m_operationMapCB[0xD9] = &CPU::SETbr;
@@ -571,7 +571,7 @@ CPU::CPU() :
     m_operationMapCB[0xDB] = &CPU::SETbr;
     m_operationMapCB[0xDC] = &CPU::SETbr;
     m_operationMapCB[0xDD] = &CPU::SETbr;
-    //m_operationMapCB[0xDE] TODO
+    m_operationMapCB[0xDE] = &CPU::SETb_HL_;
     m_operationMapCB[0xDF] = &CPU::SETbr;
 
     // E0
@@ -581,7 +581,7 @@ CPU::CPU() :
     m_operationMapCB[0xE3] = &CPU::SETbr;
     m_operationMapCB[0xE4] = &CPU::SETbr;
     m_operationMapCB[0xE5] = &CPU::SETbr;
-    //m_operationMapCB[0xE6] TODO
+    m_operationMapCB[0xE6] = &CPU::SETb_HL_;
     m_operationMapCB[0xE7] = &CPU::SETbr;
     m_operationMapCB[0xE8] = &CPU::SETbr;
     m_operationMapCB[0xE9] = &CPU::SETbr;
@@ -589,7 +589,7 @@ CPU::CPU() :
     m_operationMapCB[0xEB] = &CPU::SETbr;
     m_operationMapCB[0xEC] = &CPU::SETbr;
     m_operationMapCB[0xED] = &CPU::SETbr;
-    //m_operationMapCB[0xEE] TODO
+    m_operationMapCB[0xEE] = &CPU::SETb_HL_;
     m_operationMapCB[0xEF] = &CPU::SETbr;
 
     // F0
@@ -599,7 +599,7 @@ CPU::CPU() :
     m_operationMapCB[0xF3] = &CPU::SETbr;
     m_operationMapCB[0xF4] = &CPU::SETbr;
     m_operationMapCB[0xF5] = &CPU::SETbr;
-    //m_operationMapCB[0xF6] TODO
+    m_operationMapCB[0xF6] = &CPU::SETb_HL_;
     m_operationMapCB[0xF7] = &CPU::SETbr;
     m_operationMapCB[0xF8] = &CPU::SETbr;
     m_operationMapCB[0xF9] = &CPU::SETbr;
@@ -607,7 +607,7 @@ CPU::CPU() :
     m_operationMapCB[0xFB] = &CPU::SETbr;
     m_operationMapCB[0xFC] = &CPU::SETbr;
     m_operationMapCB[0xFD] = &CPU::SETbr;
-    //m_operationMapCB[0xFE] TODO
+    m_operationMapCB[0xFE] = &CPU::SETb_HL_;
     m_operationMapCB[0xFF] = &CPU::SETbr;
 
     // Initialize the register map
@@ -1369,6 +1369,15 @@ void CPU::RESbr(const byte& opCode)
     *r = CLEARBIT(*r, bit);
 }
 
+void CPU::RESb_HL_(const byte& opCode)
+{
+    m_cycles += 16;
+
+    byte bit = (opCode >> 3) & 0x07;
+    byte r = m_MMU->ReadByte(m_HL);
+    m_MMU->WriteByte(m_HL, CLEARBIT(r, bit));
+}
+
 /*
 SET b, r
 11001011 11bbbrrr
@@ -1386,6 +1395,15 @@ void CPU::SETbr(const byte& opCode)
     byte bit = (opCode >> 3) & 0x07;
     byte* r = GetByteRegister(opCode);
     *r = SETBIT(*r, bit);
+}
+
+void CPU::SETb_HL_(const byte& opCode)
+{
+    m_cycles += 16;
+
+    byte bit = (opCode >> 3) & 0x07;
+    byte r = m_MMU->ReadByte(m_HL);
+    m_MMU->WriteByte(m_HL, SETBIT(r, bit));
 }
 
 

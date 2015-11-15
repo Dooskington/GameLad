@@ -92,7 +92,9 @@ private:
     void BITbr(const byte& opCode);
     void BITb_HL_(const byte& opCode);
     void RESbr(const byte& opCode);
+    void RESb_HL_(const byte& opCode);
     void SETbr(const byte& opCode);
+    void SETb_HL_(const byte& opCode);
 
     void RLC(const byte& opCode);             // 0x11
 
