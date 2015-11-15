@@ -38,6 +38,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDA_DE__Test);
     TEST_CALL(CPUTests, LDEn_Test);
     TEST_CALL(CPUTests, JRNZe_Test);
+    TEST_CALL(CPUTests, JRZe_Test);
     TEST_CALL(CPUTests, LDHn_Test);
     TEST_CALL(CPUTests, LDLn_Test);
     TEST_CALL(CPUTests, LDD_HL_A_Test);
@@ -81,6 +82,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, XORL_Test);
     TEST_CALL(CPUTests, RET_Test);
     TEST_CALL(CPUTests, CPn_Test);
+    TEST_CALL(CPUTests, LD_nn_A_Test);
 
     // Z80 Instruction Set - CB Tests
     TEST_CALL(CPUTests, BITbr_Test);

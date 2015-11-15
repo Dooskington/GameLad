@@ -1346,6 +1346,38 @@ public:
         spCPU.reset();
     }
 
+    // 0x28
+    TEST_METHOD(JRZe_Test)
+    {
+        byte m_Mem[] = { 0x28, 0x04, 0x00, 0x00, 0x00, 0x00, 0x28, 0x02 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->SetFlag(ZeroFlag);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0006, (int)spCPU->m_PC);
+
+        spCPU->ClearFlag(ZeroFlag);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(20, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0008, (int)spCPU->m_PC);
+
+        spCPU.reset();
+    }
+
     // 0x2C
     TEST_METHOD(INCL_Test)
     {
@@ -2216,6 +2248,28 @@ public:
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
         Assert::AreEqual(0x1234, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
+
+        spCPU.reset();
+    }
+
+    // 0xEA
+    TEST_METHOD(LD_nn_A_Test)
+    {
+        byte m_Mem[] = { 0xEA, 0x34, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x5500;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x55, (int)(spCPU->m_MMU->ReadByte(0x1234)));
 
         spCPU.reset();
     }

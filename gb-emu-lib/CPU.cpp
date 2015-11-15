@@ -75,7 +75,7 @@ CPU::CPU() :
     m_operationMap[0x25] = &CPU::DECr;
     m_operationMap[0x26] = &CPU::LDrn;
     //m_operationMap[0x27] TODO
-    //m_operationMap[0x28] TODO
+    m_operationMap[0x28] = &CPU::JRZe;
     //m_operationMap[0x29] TODO
     //m_operationMap[0x2A] TODO
     //m_operationMap[0x2B] TODO
@@ -293,7 +293,7 @@ CPU::CPU() :
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
-    //m_operationMap[0xEA] TODO
+    m_operationMap[0xEA]= &CPU::LD_nn_A;
     //m_operationMap[0xEB] TODO
     //m_operationMap[0xEC] TODO
     //m_operationMap[0xED] TODO
@@ -1258,6 +1258,31 @@ void CPU::LDI_HL_A(const byte& opCode)
     m_cycles += 8;
 }
 
+/*
+    JR Z, e
+    0x28
+
+    Jump relative, if not zero, to the offset e.
+
+    8 or 12 cycles.
+
+    Flags affected(znhc): ----
+*/
+void CPU::JRZe(const byte& opCode)
+{
+    sbyte e = static_cast<sbyte>(ReadBytePC());
+
+    if (IsFlagSet(ZeroFlag))
+    {
+        m_PC += e;
+        m_cycles += 12;
+    }
+    else
+    {
+        m_cycles += 8;
+    }
+}
+
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
 {
@@ -1346,8 +1371,31 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 }
 
 /*
+    LD (nn), A
+    0xEA
+
+    The contents of the accumulator are loaded into the address specified by the
+    operand nn.
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LD_nn_A(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    if (!m_MMU->WriteByte(nn, GetHighByte(m_AF))) // Load A into (nn)
+    {
+        HALT();
+    }
+
+    m_cycles += 16;
+}
+
+/*
     CP n
-    11111110(FE) nnnnnnnn
+    0xFE
 
     The contents of 8-bit operand n are compared with the contents of the accumulator.
     If there is a true compare, the Z flag is set. The execution of this instruction
