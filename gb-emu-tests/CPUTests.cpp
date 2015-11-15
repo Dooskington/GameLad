@@ -1059,6 +1059,26 @@ public:
         spCPU.reset();
     }
 
+    // 0x18
+    TEST_METHOD(JRe_Test)
+    {
+        // Load JRe and other data to test
+        byte m_Mem[] = { 0x18, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0006, (int)spCPU->m_PC);
+    }
+
     // 0x1A
     TEST_METHOD(LDA_DE__Test)
     {
