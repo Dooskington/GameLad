@@ -95,8 +95,12 @@ private:
     // Z80 Instruction Set - CB
     void RLCr(const byte& opCode);
     void RLC_HL_(const byte& opCode);
+    void RRCr(const byte& opCode);
+    void RRC_HL_(const byte& opCode);
     void RLr(const byte& opCode);
     void RL_HL_(const byte& opCode);
+    void RRr(const byte& opCode);
+    void RR_HL_(const byte& opCode);
     void BITbr(const byte& opCode);
     void BITb_HL_(const byte& opCode);
     void RESbr(const byte& opCode);

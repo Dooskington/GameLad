@@ -331,14 +331,14 @@ CPU::CPU() :
     m_operationMapCB[0x05] = &CPU::RLCr;
     m_operationMapCB[0x06] = &CPU::RLC_HL_;
     m_operationMapCB[0x07] = &CPU::RLCr;
-    //m_operationMapCB[0x08] TODO
-    //m_operationMapCB[0x09] TODO
-    //m_operationMapCB[0x0A] TODO
-    //m_operationMapCB[0x0B] TODO
-    //m_operationMapCB[0x0C] TODO
-    //m_operationMapCB[0x0D] TODO
-    //m_operationMapCB[0x0E] TODO
-    //m_operationMapCB[0x0F] TODO
+    m_operationMapCB[0x08] = &CPU::RRCr;
+    m_operationMapCB[0x09] = &CPU::RRCr;
+    m_operationMapCB[0x0A] = &CPU::RRCr;
+    m_operationMapCB[0x0B] = &CPU::RRCr;
+    m_operationMapCB[0x0C] = &CPU::RRCr;
+    m_operationMapCB[0x0D] = &CPU::RRCr;
+    m_operationMapCB[0x0E] = &CPU::RRC_HL_;
+    m_operationMapCB[0x0F] = &CPU::RRCr;
 
     // 10
     m_operationMapCB[0x10] = &CPU::RLr;
@@ -349,14 +349,14 @@ CPU::CPU() :
     m_operationMapCB[0x15] = &CPU::RLr;
     m_operationMapCB[0x16] = &CPU::RL_HL_;
     m_operationMapCB[0x17] = &CPU::RLr;
-    //m_operationMapCB[0x18] TODO
-    //m_operationMapCB[0x19] TODO
-    //m_operationMapCB[0x1A] TODO
-    //m_operationMapCB[0x1B] TODO
-    //m_operationMapCB[0x1C] TODO
-    //m_operationMapCB[0x1D] TODO
-    //m_operationMapCB[0x1E] TODO
-    //m_operationMapCB[0x1F] TODO
+    m_operationMapCB[0x18] = &CPU::RRr;
+    m_operationMapCB[0x19] = &CPU::RRr;
+    m_operationMapCB[0x1A] = &CPU::RRr;
+    m_operationMapCB[0x1B] = &CPU::RRr;
+    m_operationMapCB[0x1C] = &CPU::RRr;
+    m_operationMapCB[0x1D] = &CPU::RRr;
+    m_operationMapCB[0x1E] = &CPU::RR_HL_;
+    m_operationMapCB[0x1F] = &CPU::RRr;
 
     // 20
     //m_operationMapCB[0x20] TODO
@@ -1189,10 +1189,7 @@ void CPU::RLA(const byte& opCode)
     bool carry = IsFlagSet(CarryFlag);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(GetHighByte(m_AF), 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(GetHighByte(m_AF), 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift A left
     SetHighByte(&m_AF, GetHighByte(m_AF) << 1);
@@ -1201,7 +1198,7 @@ void CPU::RLA(const byte& opCode)
     SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
     // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
+    (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
 
@@ -1379,26 +1376,23 @@ void CPU::CPn(const byte& opCode)
 */
 
 /*
-    RLC r
-    11001011(CB) 00000rrr
+RLC r
+11001011(CB) 00000rrr
 
-    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
-    is copied to the carry flag and also to bit 0. Operand r identifies register
-    B, C, D, E, H, L, or A.
+The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+is copied to the carry flag and also to bit 0. Operand r identifies register
+B, C, D, E, H, L, or A.
 
-    8 Cycles
+8 Cycles
 
-    Flags affected(znhc): z00c
+Flags affected(znhc): z00c
 */
 void CPU::RLCr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(*r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(*r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     (*r) = *r << 1;
@@ -1419,10 +1413,7 @@ void CPU::RLC_HL_(const byte& opCode)
     byte r = m_MMU->ReadByte(m_HL);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     r <<= 1;
@@ -1441,16 +1432,72 @@ void CPU::RLC_HL_(const byte& opCode)
 }
 
 /*
-    RL r
-    11001011(CB) 00010rrr
+RRC r
+11001011(CB) 00001rrr
 
-    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
-    is copied to the carry flag and the previous content of the carry flag is copied to bit 0.
-    Operand r identifies register: B, C, D, E, H, L, or A.
+The contents of 8-bit register r are rotated right 1-bit position. The content of bit 0
+is copied to the carry flag and also to bit 7. Operand r identifies register
+B, C, D, E, H, L, or A.
 
-    8 Cycles
+8 Cycles
 
-    Flags affected(znhc): z00c
+Flags affected(znhc): z00c
+*/
+void CPU::RRCr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    (*r) = *r >> 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    (*r) = IsFlagSet(CarryFlag) ? SETBIT((*r), 7) : CLEARBIT((*r), 7);
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::RRC_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    r >>= 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    r = IsFlagSet(CarryFlag) ? SETBIT((r), 7) : CLEARBIT((r), 7);
+
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+RL r
+11001011(CB) 00010rrr
+
+The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+is copied to the carry flag and the previous content of the carry flag is copied to bit 0.
+Operand r identifies register: B, C, D, E, H, L, or A.
+
+8 Cycles
+
+Flags affected(znhc): z00c
 */
 void CPU::RLr(const byte& opCode)
 {
@@ -1460,10 +1507,7 @@ void CPU::RLr(const byte& opCode)
     bool carry = IsFlagSet(CarryFlag);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(*r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(*r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     (*r) = *r << 1;
@@ -1472,7 +1516,7 @@ void CPU::RLr(const byte& opCode)
     (*r) = carry ? SETBIT((*r), 0) : CLEARBIT((*r), 0);
 
     // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
 
@@ -1487,10 +1531,7 @@ void CPU::RL_HL_(const byte& opCode)
     bool carry = IsFlagSet(CarryFlag);
 
     // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     r <<= 1;
@@ -1501,7 +1542,7 @@ void CPU::RL_HL_(const byte& opCode)
     m_MMU->WriteByte(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
 
@@ -1509,15 +1550,77 @@ void CPU::RL_HL_(const byte& opCode)
 }
 
 /*
-    BIT b, r
-    11001011 01bbbrrr
+RR r
+11001011(CB) 00001rrr
 
-    This instruction tests bit b in register r and sets the Z flag accordingly.
+The contents of 8-bit register r are rotated right 1-bit position. The content of bit 0
+is copied to the carry flag and the previous content of the carry flag is copied to bit 7.
+Operand r identifies register: B, C, D, E, H, L, or A.
 
-    8 Cycles
+8 Cycles
 
-    Flags affected(znhc): z01-
-    Affects Z, clears n, sets h
+Flags affected(znhc): z00c
+*/
+void CPU::RRr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    (*r) = *r >> 1;
+
+    // Set bit 7 of r to the old CarryFlag
+    (*r) = carry ? SETBIT((*r), 7) : CLEARBIT((*r), 7);
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::RR_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    r >>= 1;
+
+    // Set bit 7 of r to the old CarryFlag
+    r = carry ? SETBIT((r), 7) : CLEARBIT((r), 7);
+
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+BIT b, r
+11001011 01bbbrrr
+
+This instruction tests bit b in register r and sets the Z flag accordingly.
+
+8 Cycles
+
+Flags affected(znhc): z01-
+Affects Z, clears n, sets h
 */
 void CPU::BITbr(const byte& opCode)
 {
@@ -1527,16 +1630,7 @@ void CPU::BITbr(const byte& opCode)
     byte* r = GetByteRegister(opCode);
 
     // Test bit b in r
-    if (!ISBITSET(*r, bit))
-    {
-        // Z is set if specified bit is 0
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        // Reset otherwise
-        ClearFlag(ZeroFlag);
-    }
+    (!ISBITSET(*r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
     SetFlag(HalfCarryFlag); // H is set
     ClearFlag(AddFlag); // N is reset
@@ -1550,30 +1644,21 @@ void CPU::BITb_HL_(const byte& opCode)
     byte r = m_MMU->ReadByte(m_HL);
 
     // Test bit b in r
-    if (!ISBITSET(r, bit))
-    {
-        // Z is set if specified bit is 0
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        // Reset otherwise
-        ClearFlag(ZeroFlag);
-    }
+    (!ISBITSET(r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
     SetFlag(HalfCarryFlag); // H is set
     ClearFlag(AddFlag); // N is reset
 }
 
 /*
-    RES b, r
-    11001011 10bbbrrr
+RES b, r
+11001011 10bbbrrr
 
-    Bit b in operand r is reset.
+Bit b in operand r is reset.
 
-    8 Cycles
+8 Cycles
 
-    No flags affected.
+No flags affected.
 */
 void CPU::RESbr(const byte& opCode)
 {
@@ -1594,14 +1679,14 @@ void CPU::RESb_HL_(const byte& opCode)
 }
 
 /*
-    SET b, r
-    11001011 11bbbrrr
+SET b, r
+11001011 11bbbrrr
 
-    Bit b in operand r is set.
+Bit b in operand r is set.
 
-    8 Cycles
+8 Cycles
 
-    No flags affected.
+No flags affected.
 */
 void CPU::SETbr(const byte& opCode)
 {
@@ -1622,14 +1707,14 @@ void CPU::SETb_HL_(const byte& opCode)
 }
 
 /*
-    SWAP r
-    11001011 00111rrr
-    swap r         CB 3x        8 z000 exchange low/hi-nibble
-    swap (HL)      CB 36       16 z000 exchange low/hi-nibble
+SWAP r
+11001011 00111rrr
+swap r         CB 3x        8 z000 exchange low/hi-nibble
+swap (HL)      CB 36       16 z000 exchange low/hi-nibble
 
-    Exchange the low and hi nibble (a nibble is 4 bits)
+Exchange the low and hi nibble (a nibble is 4 bits)
 
-    No flags affected.
+No flags affected.
 */
 void CPU::SWAPr(const byte& opCode)
 {
