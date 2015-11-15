@@ -77,7 +77,6 @@ private:
     void XORr(const byte& opCode);
     void PUSHrr(const byte& opCode);
     void POPrr(const byte& opCode);
-    void RLr(const byte& opCode);
 	void DECr(const byte& opCode);
 
     void RLA(const byte& opCode);             // 0x17
@@ -90,14 +89,13 @@ private:
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
 
     // Z80 Instruction Set - CB
+    void RLr(const byte& opCode);
     void BITbr(const byte& opCode);
     void BITb_HL_(const byte& opCode);
     void RESbr(const byte& opCode);
     void RESb_HL_(const byte& opCode);
     void SETbr(const byte& opCode);
     void SETb_HL_(const byte& opCode);
-
-    void RLC(const byte& opCode);             // 0x11
 
 private:
     // MMU (Memory Map Unit)

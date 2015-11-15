@@ -1083,7 +1083,7 @@ void CPU::XORr(const byte& opCode)
     11qq0101
 
     The contents of the register pair rr are pushed to the external memory stack.
-    The stack pointer holds the 16-bit address of the current top of the stack. 
+    The stack pointer holds the 16-bit address of the current top of the stack.
     This instruction first decrements SP and loads the high order byte of register
     pair rr to the memory address specified by the SP. The SP is decremented again,
     and then the low order byte is then loaded to the new memory address. The operand
@@ -1125,82 +1125,43 @@ void CPU::POPrr(const byte& opCode)
 }
 
 /*
-    RL r
-    11001011(CB) 00000rrr
+    DEC r
+    00rrr101
 
-    The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
-    is copied to the carry flag and also to bit 0. Operand r identifies register
-    B, C, D, E, H, L, or A.
+    Register r is decremented, where r identifies register A, B, C, D, E, H, or L.
 
-    8 Cycles
+    4 Cycles
 
-    Flags affected(znhc): z00c
-*/
-void CPU::RLr(const byte& opCode)
-{
-    byte* r = GetByteRegister(opCode);
-
-    // Grab the current CarryFlag val
-    bool carry = IsFlagSet(CarryFlag);
-
-    // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(*r, 7))
-    {
-        SetFlag(CarryFlag);
-    }
-
-    // Shift r left
-    (*r) = *r << 1;
-
-    // Set bit 0 of r to the old CarryFlag
-    (*r) = carry ? SETBIT((*r), 0) : CLEARBIT((*r), 0);
-
-    // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
-    ClearFlag(AddFlag);
-    ClearFlag(HalfCarryFlag);
-
-    m_cycles += 8;
-}
-
-/*
-	DEC r
-	00rrr101
-
-	Register r is decremented, where r identifies register A, B, C, D, E, H, or L.
-
-	4 Cycles
-
-	Flags affected(znhc): z1h-
+    Flags affected(znhc): z1h-
 */
 void CPU::DECr(const byte& opCode)
 {
-	byte* r = GetByteRegister(opCode >> 3);
-	bool isBit4Before = ISBITSET(*r, 4);
-	*r -= 1;
-	bool isBit4After = ISBITSET(*r, 4);
+    byte* r = GetByteRegister(opCode >> 3);
+    bool isBit4Before = ISBITSET(*r, 4);
+    *r -= 1;
+    bool isBit4After = ISBITSET(*r, 4);
 
-	if (*r == 0x00)
-	{
-		SetFlag(ZeroFlag);
-	}
-	else
-	{
-		ClearFlag(ZeroFlag);
-	}
+    if (*r == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
 
-	ClearFlag(AddFlag);
+    ClearFlag(AddFlag);
 
-	if (!isBit4Before && isBit4After)
-	{
-		SetFlag(HalfCarryFlag);
-	}
-	else
-	{
-		ClearFlag(HalfCarryFlag);
-	}
+    if (!isBit4Before && isBit4After)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
 
-	m_cycles += 4;
+    m_cycles += 4;
 }
 
 // 0x17 (RL A)
@@ -1334,6 +1295,45 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 */
 
 /*
+RL r
+11001011(CB) 00000rrr
+
+The contents of 8-bit register r are rotated left 1-bit position. The content of bit 7
+is copied to the carry flag and also to bit 0. Operand r identifies register
+B, C, D, E, H, L, or A.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+*/
+void CPU::RLr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 7 and store it in the carryflag
+    if (ISBITSET(*r, 7))
+    {
+        SetFlag(CarryFlag);
+    }
+
+    // Shift r left
+    (*r) = *r << 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    (*r) = carry ? SETBIT((*r), 0) : CLEARBIT((*r), 0);
+
+    // Affects Z, clears N, clears H, affects C
+    SetFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
 BIT b, r
 11001011 01bbbrrr
 
@@ -1444,31 +1444,4 @@ void CPU::SETb_HL_(const byte& opCode)
     byte bit = (opCode >> 3) & 0x07;
     byte r = m_MMU->ReadByte(m_HL);
     m_MMU->WriteByte(m_HL, SETBIT(r, bit));
-}
-
-
-// 0x11 (RL C)
-void CPU::RLC(const byte& opCode)
-{
-    m_cycles += 8;
-
-    // Grab the current CarryFlag val
-    bool carry = IsFlagSet(CarryFlag);
-
-    // Grab bit 7 and store it in the carryflag
-    if (ISBITSET(GetLowByte(m_BC), 7))
-    {
-        SetFlag(CarryFlag);
-    }
-
-    // Shift C left
-    SetLowByte(&m_BC, GetLowByte(m_BC) << 1);
-
-    // Set bit 0 of C to the old CarryFlag
-    SetLowByte(&m_BC, carry ? SETBIT(GetLowByte(m_BC), 0) : CLEARBIT(GetLowByte(m_BC), 0));
-
-    // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
-    ClearFlag(AddFlag);
-    ClearFlag(HalfCarryFlag);
 }
