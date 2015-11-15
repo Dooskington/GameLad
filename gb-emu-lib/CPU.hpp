@@ -101,6 +101,10 @@ private:
     void RL_HL_(const byte& opCode);
     void RRr(const byte& opCode);
     void RR_HL_(const byte& opCode);
+    void SLAr(const byte& opCode);
+    void SLA_HL_(const byte& opCode);
+    void SRAr(const byte& opCode);
+    void SRA_HL_(const byte& opCode);
     void BITbr(const byte& opCode);
     void BITb_HL_(const byte& opCode);
     void RESbr(const byte& opCode);
