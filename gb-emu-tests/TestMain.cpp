@@ -140,7 +140,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, SRAD_Test);
     TEST_CALL(CPUTests, SRAE_Test);
     TEST_CALL(CPUTests, SRAH_Test);
-    TEST_CALL(CPUTests, SRaL_Test);
+    TEST_CALL(CPUTests, SRAL_Test);
     TEST_CALL(CPUTests, SRA_HL_Test);
     TEST_CALL(CPUTests, SRAA_Test);
 
