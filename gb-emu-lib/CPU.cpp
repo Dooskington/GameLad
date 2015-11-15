@@ -1052,7 +1052,6 @@ void CPU::INCr(const byte& opCode)
     8 Cycles
 
     Flags affected(znhc): ----
-    Affects Z, Clears N, affects H
 */
 void CPU::INCrr(const byte& opCode)
 {
@@ -1295,7 +1294,7 @@ void CPU::LD_HL_A(const byte& opCode)
     RET
     0xC9
 
-    DESC
+    return, PC=(SP), SP=SP+2
 
     16 Cycles
 
