@@ -1034,6 +1034,32 @@ public:
         spCPU.reset();
     }
 
+    // 0x12
+    TEST_METHOD(LD_DE_A_Test)
+    {
+        // Load LD (de), a
+        byte m_Mem[] = { 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x1200;
+        spCPU->m_DE = 0x1234;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0x1234));
+
+        spCPU.reset();
+    }
+
     // 0x1B
     TEST_METHOD(DECDE_Test)
     {
@@ -2070,6 +2096,38 @@ public:
         spCPU.reset();
     }
 
+    // 0x38
+    TEST_METHOD(JRCe_Test)
+    {
+        byte m_Mem[] = { 0x38, 0x04, 0x00, 0x00, 0x00, 0x00, 0x38, 0xFA };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->SetFlag(CarryFlag);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0006, (int)spCPU->m_PC);
+
+        spCPU->ClearFlag(CarryFlag);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(20, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0008, (int)spCPU->m_PC);
+
+        spCPU.reset();
+    }
+
     // 0x3C
     TEST_METHOD(INCA_Test)
     {
@@ -2317,8 +2375,6 @@ public:
             }
 
             spCPU->Step();
-
-            byte result = spCPU->GetHighByte(spCPU->m_AF);
 
             // Verify expectations after
             Assert::AreEqual(4, (int)spCPU->m_cycles);

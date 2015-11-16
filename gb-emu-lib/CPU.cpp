@@ -52,7 +52,7 @@ CPU::CPU() :
     // 10
     m_operationMap[0x10] = &CPU::STOP;
     m_operationMap[0x11] = &CPU::LDrrnn;
-    //m_operationMap[0x12] TODO
+    m_operationMap[0x12] = &CPU::LD_DE_A;
     m_operationMap[0x13] = &CPU::INCrr;
     m_operationMap[0x14] = &CPU::INCr;
     m_operationMap[0x15] = &CPU::DECr;
@@ -68,7 +68,7 @@ CPU::CPU() :
     m_operationMap[0x1F] = &CPU::RRA;
 
     // 20
-    m_operationMap[0x20] = &CPU::JRNZe;
+    m_operationMap[0x20] = &CPU::JRcce;
     m_operationMap[0x21] = &CPU::LDrrnn;
     m_operationMap[0x22] = &CPU::LDI_HL_A;
     m_operationMap[0x23] = &CPU::INCrr;
@@ -76,7 +76,7 @@ CPU::CPU() :
     m_operationMap[0x25] = &CPU::DECr;
     m_operationMap[0x26] = &CPU::LDrn;
     //m_operationMap[0x27] TODO
-    m_operationMap[0x28] = &CPU::JRZe;
+    m_operationMap[0x28] = &CPU::JRcce;
     m_operationMap[0x29] = &CPU::ADDHLss;
     m_operationMap[0x2A] = &CPU::LDIA_HL_;
     m_operationMap[0x2B] = &CPU::DECrr;
@@ -86,7 +86,7 @@ CPU::CPU() :
     //m_operationMap[0x2F] TODO
 
     // 30
-    m_operationMap[0x30] = &CPU::JRNCe;
+    m_operationMap[0x30] = &CPU::JRcce;
     m_operationMap[0x31] = &CPU::LDrrnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0x33] = &CPU::INCrr;
@@ -94,7 +94,7 @@ CPU::CPU() :
     m_operationMap[0x35] = &CPU::DEC_HL_;
     //m_operationMap[0x36] TODO
     m_operationMap[0x37] = &CPU::SCF;
-    //m_operationMap[0x38] TODO
+    m_operationMap[0x38] = &CPU::JRcce;
     m_operationMap[0x39] = &CPU::ADDHLss;
     //m_operationMap[0x3A] TODO
     m_operationMap[0x3B] = &CPU::DECrr;
@@ -1421,6 +1421,52 @@ void CPU::ADCAr(const byte& opCode)
 }
 
 /*
+JR cc, nn
+001cc000
+
+00 NZ
+01 Z
+10 NC
+11 C
+
+12 Cycles if taken
+8 Cycles if not taken
+
+Flags affected(znhc): ----
+*/
+void CPU::JRcce(const byte& opCode)
+{
+    sbyte arg = static_cast<sbyte>(ReadBytePC());
+
+    bool check = false;
+    switch ((opCode >> 3) & 0x03)
+    {
+    case 0x00:  // NZ
+        check = !IsFlagSet(ZeroFlag);
+        break;
+    case 0x01:  // Z
+        check = IsFlagSet(ZeroFlag);
+        break;
+    case 0x02:  // NC
+        check = !IsFlagSet(CarryFlag);
+        break;
+    case 0x03:  // C
+        check = IsFlagSet(CarryFlag);
+        break;
+    }
+
+    if (check)
+    {
+        m_PC += arg;
+        m_cycles += 12;
+    }
+    else
+    {
+        m_cycles += 8;
+    }
+}
+
+/*
     INC rr
     00rr0011
 
@@ -1813,6 +1859,23 @@ void CPU::STOP(const byte& opCode)
     HALT(opCode);
 }
 
+/*
+LD (de), a
+00010010
+
+The contents of the accumulator are loaded to the memory location specified by
+the contents of the register pair DE.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LD_DE_A(const byte& opCode)
+{
+    m_MMU->WriteByte(m_DE, GetHighByte(m_AF));
+    m_cycles += 8;
+}
+
 // 0x17 (RL A)
 void CPU::RLA(const byte& opCode)
 {
@@ -1889,24 +1952,6 @@ void CPU::RRA(const byte& opCode)
     m_cycles += 4;
 }
 
-// 0x20 0xFB (JR NZ, e)
-void CPU::JRNZe(const byte& opCode)
-{
-    sbyte arg = static_cast<sbyte>(ReadBytePC());
-
-    if (IsFlagSet(ZeroFlag))
-    {
-        m_cycles += 8;
-    }
-    else
-    {
-        m_PC += arg;
-        m_cycles += 12;
-    }
-
-    // No flags affected
-}
-
 /*
     LDI (HL), A
     0x22
@@ -1923,33 +1968,8 @@ void CPU::LDI_HL_A(const byte& opCode)
 
     m_HL++;
 
-    m_cycles += 8;
-}
-
-/*
-    JR Z, e
-    0x28
-
-    Jump relative, if not zero, to the offset e.
-
-    8 or 12 cycles.
-
-    Flags affected(znhc): ----
-*/
-void CPU::JRZe(const byte& opCode)
-{
-    sbyte e = static_cast<sbyte>(ReadBytePC());
-
-    if (IsFlagSet(ZeroFlag))
-    {
-        m_PC += e;
-        m_cycles += 12;
-    }
-    else
-    {
         m_cycles += 8;
     }
-}
 
 /*
     LDI A, (HL)
@@ -1967,31 +1987,6 @@ void CPU::LDIA_HL_(const byte& opCode)
     m_HL++;
 
     m_cycles += 8;
-}
-
-/*
-    JR NC, e
-    0x30
-
-    Jump relative, if not carry, to the offset e.
-
-    8 or 12 cycles.
-
-    Flags affected(znhc): ----
-*/
-void CPU::JRNCe(const byte& opCode)
-{
-    sbyte e = static_cast<sbyte>(ReadBytePC());
-
-    if (!IsFlagSet(CarryFlag))
-    {
-        m_PC += e;
-        m_cycles += 12;
-    }
-    else
-    {
-        m_cycles += 8;
-    }
 }
 
 // 0x32 (LDD (HL), A)
