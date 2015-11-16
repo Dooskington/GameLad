@@ -34,7 +34,7 @@ CPU::CPU() :
     // 00
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x01] = &CPU::LDrrnn;
-    //m_operationMap[0x02] TODO
+    m_operationMap[0x02] = &CPU::LD_BC_A;
     m_operationMap[0x03] = &CPU::INCrr;
     m_operationMap[0x04] = &CPU::INCr;
     m_operationMap[0x05] = &CPU::DECr;
@@ -1006,6 +1006,23 @@ void CPU::NOP(const byte& opCode)
     m_cycles += 4;
 
     // No flags affected
+}
+
+/*
+LD (bc), a 
+00000010
+
+The contents of the accumulator are loaded to the memory location specified by
+the contents of the register pair BC.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LD_BC_A(const byte& opCode)
+{
+    m_MMU->WriteByte(m_BC, GetHighByte(m_AF));
+    m_cycles += 8;
 }
 
 /*
