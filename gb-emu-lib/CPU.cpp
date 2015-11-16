@@ -52,7 +52,7 @@ CPU::CPU() :
     // 10
     m_operationMap[0x10] = &CPU::STOP;
     m_operationMap[0x11] = &CPU::LDrrnn;
-    //m_operationMap[0x12] TODO
+    m_operationMap[0x12] = &CPU::LD_DE_A;
     m_operationMap[0x13] = &CPU::INCrr;
     m_operationMap[0x14] = &CPU::INCr;
     m_operationMap[0x15] = &CPU::DECr;
@@ -1802,6 +1802,23 @@ void CPU::STOP(const byte& opCode)
 {
     // For the emulator, these are effectively the same thing
     HALT(opCode);
+}
+
+/*
+LD (de), a
+00010010
+
+The contents of the accumulator are loaded to the memory location specified by
+the contents of the register pair DE.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LD_DE_A(const byte& opCode)
+{
+    m_MMU->WriteByte(m_DE, GetHighByte(m_AF));
+    m_cycles += 8;
 }
 
 // 0x17 (RL A)

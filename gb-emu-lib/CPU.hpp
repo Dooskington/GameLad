@@ -94,6 +94,7 @@ private:
     void LD_BC_A(const byte& opCode);         // 0x02
     void RLCA(const byte& opCode);            // 0x07
     void STOP(const byte& opCode);            // 0x10
+    void LD_DE_A(const byte& opCode);         // 0x12
     void RLA(const byte& opCode);             // 0x17
     void JRe(const byte& opCode);             // 0x18
     void LDA_DE_(const byte& opCode);         // 0x1A

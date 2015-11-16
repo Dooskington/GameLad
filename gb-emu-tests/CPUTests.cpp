@@ -1034,6 +1034,32 @@ public:
         spCPU.reset();
     }
 
+    // 0x12
+    TEST_METHOD(LD_DE_A_Test)
+    {
+        // Load LD (de), a
+        byte m_Mem[] = { 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x1200;
+        spCPU->m_DE = 0x1234;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0x1234));
+
+        spCPU.reset();
+    }
+
     // 0x1B
     TEST_METHOD(DECDE_Test)
     {
