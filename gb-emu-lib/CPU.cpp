@@ -2373,14 +2373,15 @@ void CPU::LDHLSPe(const byte& opCode)
 {
     sbyte e = static_cast<sbyte>(ReadBytePC());
 
-    m_HL = m_SP + e;
+    ushort result = m_SP + e;
 
     ClearFlag(ZeroFlag);
     ClearFlag(AddFlag);
 
-    // TODO: Not sure how this one works!
-    ClearFlag(HalfCarryFlag);
-    ClearFlag(CarryFlag);
+    ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_HL = result;
 
     m_cycles += 12;
 }
