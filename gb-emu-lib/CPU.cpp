@@ -758,6 +758,9 @@ void CPU::Step()
 {
     unsigned long preCycles = m_cycles;
 
+    // Let's handle interrupts before we do anything
+    HandleInterrupts();
+
     if (m_isHalted)
     {
         NOP(0x00);
@@ -782,7 +785,6 @@ void CPU::Step()
         if (instruction != nullptr)
         {
             (this->*instruction)(opCode);
-            HandleInterrupts();
         }
         else
         {
@@ -942,65 +944,54 @@ ushort CPU::ReadUShortPC()
 
 void CPU::HandleInterrupts()
 {
-
     // If the IME is enabled, some interrupts are enabled in IE, and
     // an interrupt flag is set, handle the interrupt.
-    if (m_IME)
+    if (m_IME == 0x01)
     {
         byte IE = m_MMU->ReadByte(0xFFFF);
         byte IF = m_MMU->ReadByte(0xFF0F);
-        m_IME = 0x00; // Disable further interrupts
 
-        // Jump to the correct handler
-        if ((ISBITSET(IE, 0)) && (ISBITSET(IF, 0)))
+        // This will only match valid interrupts
+        byte activeInterrupts = ((IE & IF) & 0x0F);
+        if (activeInterrupts > 0x00)
         {
-            IF = CLEARBIT(IF, 0);
-            m_MMU->WriteByte(0xFF0F, IF);
+            m_IME = 0x00; // Disable further interrupts
 
             PushUShortToSP(m_PC); // Push current PC onto stack
 
-            // VBlank
-            m_PC = INT40;
-        }
-        else if ((ISBITSET(IE, 1)) && (ISBITSET(IF, 1)))
-        {
-            IF = CLEARBIT(IF, 1);
+            // Jump to the correct handler
+            if (ISBITSET(activeInterrupts, 0))
+            {
+                // VBlank
+                m_PC = INT40;
+                IF = CLEARBIT(IF, 0);
+            }
+            else if (ISBITSET(activeInterrupts, 1))
+            {
+                // LCD status
+                m_PC = INT48;
+                IF = CLEARBIT(IF, 1);
+            }
+            else if (ISBITSET(activeInterrupts, 2))
+            {
+                // Timer
+                m_PC = INT50;
+                IF = CLEARBIT(IF, 2);
+            }
+            else if (ISBITSET(activeInterrupts, 3))
+            {
+                // Serial
+                m_PC = INT58;
+                IF = CLEARBIT(IF, 3);
+            }
+            else if (ISBITSET(activeInterrupts, 4))
+            {
+                // Joypad
+                m_PC = INT60;
+                IF = CLEARBIT(IF, 4);
+            }
+
             m_MMU->WriteByte(0xFF0F, IF);
-
-            PushUShortToSP(m_PC); // Push current PC onto stack
-
-            // LCD status
-            m_PC = INT48;
-        }
-        else if ((ISBITSET(IE, 2)) && (ISBITSET(IF, 2)))
-        {
-            IF = CLEARBIT(IF, 2);
-            m_MMU->WriteByte(0xFF0F, IF);
-
-            PushUShortToSP(m_PC); // Push current PC onto stack
-
-            // Timer
-            m_PC = INT50;
-        }
-        else if ((ISBITSET(IE, 3)) && (ISBITSET(IF, 3)))
-        {
-            IF = CLEARBIT(IF, 3);
-            m_MMU->WriteByte(0xFF0F, IF);
-
-            PushUShortToSP(m_PC); // Push current PC onto stack
-
-            // Serial
-            m_PC = INT58;
-        }
-        else if ((ISBITSET(IE, 4)) && (ISBITSET(IF, 4)))
-        {
-            IF = CLEARBIT(IF, 4);
-            m_MMU->WriteByte(0xFF0F, IF);
-
-            PushUShortToSP(m_PC); // Push current PC onto stack
-
-            // Joypad
-            m_PC = INT60;
         }
     }
 }
