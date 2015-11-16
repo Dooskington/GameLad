@@ -90,8 +90,9 @@ private:
     void RLCA(const byte& opCode);            // 0x07
     void STOP(const byte& opCode);            // 0x10
     void RLA(const byte& opCode);             // 0x17
-    void LDA_DE_(const byte& opCode);         // 0x1A
     void JRe(const byte& opCode);             // 0x18
+    void LDA_DE_(const byte& opCode);         // 0x1A
+    void RRA(const byte& opCode);             // 0x1F
     void JRNZe(const byte& opCode);           // 0x20
     void LDI_HL_A(const byte& opCode);        // 0x22
     void JRZe(const byte& opCode);            // 0x28
