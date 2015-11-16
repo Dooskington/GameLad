@@ -113,6 +113,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, SUBH_Test);
     TEST_CALL(CPUTests, SUBL_Test);
     TEST_CALL(CPUTests, SUBA_Test);
+    TEST_CALL(CPUTests, SUBn_Test);
     TEST_CALL(CPUTests, LD_nn_A_Test);
     TEST_CALL(CPUTests, ADDA_HL__Test);
     TEST_CALL(CPUTests, ADDAn_Test);

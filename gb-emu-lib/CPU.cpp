@@ -272,7 +272,7 @@ CPU::CPU() :
     //m_operationMap[0xD3] UNUSED
     m_operationMap[0xD4] = &CPU::CALLccnn;
     m_operationMap[0xD5] = &CPU::PUSHrr;
-    //m_operationMap[0xD6] TODO
+    m_operationMap[0xD6] = &CPU::SUBn;
     //m_operationMap[0xD7] TODO
     //m_operationMap[0xD8] TODO
     //m_operationMap[0xD9] TODO
@@ -1759,6 +1759,31 @@ void CPU::CALLnn(const byte& opCode)
     m_cycles += 24;
 
     // No flags affected
+}
+
+/*
+SUB n (0xD6)
+
+The 8-bit value n is subtracted from the contents of the Accumulator, and the
+result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z1hc
+*/
+void CPU::SUBn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    byte A = GetHighByte(m_AF);
+    byte result = A - n;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(AddFlag);
+    ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 4;
 }
 
 // 0xE0 (LD(0xFF00 + n), A)
