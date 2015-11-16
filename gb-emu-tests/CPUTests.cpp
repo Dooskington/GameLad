@@ -401,7 +401,8 @@ public:
     {
         for (byte ss = 0x00; ss <= 0x03;ss++)
         {
-            byte m_Mem[] = { (0x09 | (byte)(ss << 4)) };
+            byte opCode = (byte)(0x09 | (ss << 4));
+            byte m_Mem[] = { opCode };
             std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
             spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
