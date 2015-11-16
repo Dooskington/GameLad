@@ -158,14 +158,14 @@ CPU::CPU() :
     m_operationMap[0x6F] = &CPU::LDrR;
 
     // 70
-    //m_operationMap[0x70] TODO
-    //m_operationMap[0x71] TODO
-    //m_operationMap[0x72] TODO
-    //m_operationMap[0x73] TODO
-    //m_operationMap[0x74] TODO
-    //m_operationMap[0x75] TODO
+    m_operationMap[0x70] = &CPU::LD_HL_r;
+    m_operationMap[0x71] = &CPU::LD_HL_r;
+    m_operationMap[0x72] = &CPU::LD_HL_r;
+    m_operationMap[0x73] = &CPU::LD_HL_r;
+    m_operationMap[0x74] = &CPU::LD_HL_r;
+    m_operationMap[0x75] = &CPU::LD_HL_r;
     m_operationMap[0x76] = &CPU::HALT;
-    m_operationMap[0x77] = &CPU::LD_HL_A;
+    m_operationMap[0x77] = &CPU::LD_HL_r;
     m_operationMap[0x78] = &CPU::LDrR;
     m_operationMap[0x79] = &CPU::LDrR;
     m_operationMap[0x7A] = &CPU::LDrR;
@@ -1100,15 +1100,15 @@ void CPU::LDrR(const byte& opCode)
 }
 
 /*
-LD r, (hl)
-01rrr110
+    LD r, (hl)
+    01rrr110
 
-The contents of the memory location (HL) are loaded into register r, where
-r identifies a register A, B, C, D, E, H, or L.
+    The contents of the memory location (HL) are loaded into register r, where
+    r identifies a register A, B, C, D, E, H, or L.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 void CPU::LDr_HL_(const byte& opCode)
 {
@@ -1118,6 +1118,27 @@ void CPU::LDr_HL_(const byte& opCode)
 
     m_cycles += 8;
 }
+
+/*
+    LD (HL), r
+    01110rrr
+
+    The contents of register r are loaded into the memory locoation specifed by the
+    contents of the HL register pair. The operand r identifies register A, B, C, D, E,
+    H, or L.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LD_HL_r(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    m_MMU->WriteByte(m_HL, (*r)); // Load r into the address pointed at by HL.
+
+    m_cycles += 8;
+}
+
 
 /*
     LD rr, nn
@@ -1694,17 +1715,6 @@ void CPU::HALT(const byte& opCode)
     {
         Logger::Log("!!!! STOPPED !!!!");
     }
-}
-
-// 0x77 (LD (HL), A)
-// Identical to 0x32, except does not decrement
-void CPU::LD_HL_A(const byte& opCode)
-{
-    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
-
-    m_cycles += 8;
-
-    // No flags affected
 }
 
 /*

@@ -281,6 +281,87 @@ public:
         }
     }
 
+    // LD (HL), r
+    TEST_METHOD(LD_HL_r_Test)
+    {
+        // Test LD (HL), r for each register (Except F, of course)
+        for (byte reg = 0x00; reg <= 0x07; reg++)
+        {
+            if (reg == 0x06) continue;
+
+            byte m_Mem[] = { (byte)(0x70 | reg) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0, (int)spCPU->m_PC);
+
+            spCPU->m_HL = 0x1234;
+            spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+
+            switch (reg)
+            {
+            case 0x00:  // B
+                spCPU->m_BC = 0x1200;
+                break;
+            case 0x01:  // C
+                spCPU->m_BC = 0x0012;
+                break;
+            case 0x02:  // D
+                spCPU->m_DE = 0x1200;
+                break;
+            case 0x03:  // E
+                spCPU->m_DE = 0x0012;
+                break;
+            case 0x04:  // H
+                spCPU->m_HL = 0x1200;
+                break;
+            case 0x05:  // L
+                spCPU->m_HL = 0x0012;
+                break;
+            case 0x07:  // A
+                spCPU->m_AF = 0x1200;
+                break;
+            }
+
+            spCPU->Step();
+
+            byte result = spCPU->m_MMU->ReadByte(spCPU->m_HL);
+
+            switch (reg)
+            {
+            case 0x00:  // B
+                Assert::AreEqual(0x12, (int)result);
+                break;
+            case 0x01:  // C
+                Assert::AreEqual(0x12, (int)result);
+                break;
+            case 0x02:  // D
+                Assert::AreEqual(0x12, (int)result);
+                break;
+            case 0x03:  // E
+                Assert::AreEqual(0x12, (int)result);
+                break;
+            case 0x04:  // H
+                Assert::AreEqual(0x12, (int)result);
+                break;
+            case 0x05:  // L
+                Assert::AreEqual(0x12, (int)result);
+                break;
+            case 0x07:  // A
+                Assert::AreEqual(0x12, (int)result);
+                break;
+            }
+
+            // Verify expectations after
+            Assert::AreEqual(8, (int)spCPU->m_cycles);
+            Assert::AreEqual(1, (int)spCPU->m_PC);
+
+            spCPU.reset();
+        }
+    }
+
     // 0x07
     TEST_METHOD(RLCA2_Test)
     {

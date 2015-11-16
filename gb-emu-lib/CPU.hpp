@@ -85,6 +85,7 @@ private:
     void SUBr(const byte& opCode);
     void CALLccnn(const byte& opCode);
     void LDr_HL_(const byte& opCode);
+    void LD_HL_r(const byte& opCode);
 
     void LD_BC_A(const byte& opCode);         // 0x02
     void RLCA(const byte& opCode);            // 0x07
@@ -99,7 +100,6 @@ private:
     void LDIA_HL_(const byte& opCode);        // 0x2A
     void LDD_HL_A(const byte& opCode);        // 0x32
     void HALT(const byte& opCode);            // 0x76
-    void LD_HL_A(const byte& opCode);         // 0x77
     void ADDA_HL_(const byte& opCode);        // 0x86
     void XOR_HL_(const byte& opCode);
     void CP_HL_(const byte& opCode);          // 0xBE
