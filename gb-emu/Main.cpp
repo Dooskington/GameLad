@@ -105,7 +105,8 @@ void VSyncCallback()
     renderTimeInSec += renderElapsedInSec;
     if (renderTimeInSec > 5)
     {
-        Logger::Log("RFPS: %f", renderFrames / renderTimeInSec);
+        // Uncomment to display render FPS
+        // Logger::Log("RFPS: %f", renderFrames / renderTimeInSec);
         renderFrames = 0;
         renderTimeInSec = 0;
     }

@@ -236,7 +236,7 @@ CPU::CPU() :
     m_operationMap[0xB3] = &CPU::ORr;
     m_operationMap[0xB4] = &CPU::ORr;
     m_operationMap[0xB5] = &CPU::ORr;
-    //m_operationMap[0xB6] TODO
+    m_operationMap[0xB6] = &CPU::OR_HL_;
     m_operationMap[0xB7] = &CPU::ORr;
     //m_operationMap[0xB8] TODO
     //m_operationMap[0xB9] TODO
@@ -248,7 +248,7 @@ CPU::CPU() :
     //m_operationMap[0xBF] TODO
 
     // C0
-    //m_operationMap[0xC0] TODO
+    m_operationMap[0xC0] = &CPU::RETcc;
     m_operationMap[0xC1] = &CPU::POPrr;
     //m_operationMap[0xC2] TODO
     m_operationMap[0xC3] = &CPU::JPnn;
@@ -256,7 +256,7 @@ CPU::CPU() :
     m_operationMap[0xC5] = &CPU::PUSHrr;
     m_operationMap[0xC6] = &CPU::ADDAn;
     //m_operationMap[0xC7] TODO
-    //m_operationMap[0xC8] TODO
+    m_operationMap[0xC8] = &CPU::RETcc;
     m_operationMap[0xC9] = &CPU::RET;
     //m_operationMap[0xCA] TODO
     //m_operationMap[0xCB] MAPPED TO 0xCB MAP
@@ -266,7 +266,7 @@ CPU::CPU() :
     //m_operationMap[0xCF] TODO
 
     // D0
-    //m_operationMap[0xD0] TODO
+    m_operationMap[0xD0] = &CPU::RETcc;
     m_operationMap[0xD1] = &CPU::POPrr;
     //m_operationMap[0xD2] TODO
     //m_operationMap[0xD3] UNUSED
@@ -274,7 +274,7 @@ CPU::CPU() :
     m_operationMap[0xD5] = &CPU::PUSHrr;
     m_operationMap[0xD6] = &CPU::SUBn;
     //m_operationMap[0xD7] TODO
-    //m_operationMap[0xD8] TODO
+    m_operationMap[0xD8] = &CPU::RETcc;
     //m_operationMap[0xD9] TODO
     //m_operationMap[0xDA] TODO
     //m_operationMap[0xDB] UNUSED
@@ -1249,6 +1249,50 @@ void CPU::CALLccnn(const byte& opCode)
 }
 
 /*
+RET cc
+11ccc000
+
+000 NZ
+001 Z
+010 NC
+011 C
+
+20 Cycles if taken
+8 Cycles if not taken
+
+Flags affected(znhc): ----
+*/
+void CPU::RETcc(const byte& opCode)
+{
+    bool check = false;
+    switch ((opCode >> 3) & 0x03)
+    {
+    case 0x00:  // NZ
+        check = !IsFlagSet(ZeroFlag);
+        break;
+    case 0x01:  // Z
+        check = IsFlagSet(ZeroFlag);
+        break;
+    case 0x02:  // NC
+        check = !IsFlagSet(CarryFlag);
+        break;
+    case 0x03:  // C
+        check = IsFlagSet(CarryFlag);
+        break;
+    }
+
+    if (check)
+    {
+        m_cycles += 20;
+        m_PC = PopUShort();
+    }
+    else
+    {
+        m_cycles += 8;
+    }
+}
+
+/*
     INC rr
     00rr0011
 
@@ -1385,6 +1429,39 @@ void CPU::ORr(const byte& opCode)
     ClearFlag(CarryFlag);
 
     m_cycles += 4;
+}
+
+/*
+OR (HL) - 0xB6
+
+The logical OR operation is performed between the value at memory location (HL)
+and the byte contained in the accumulator. The result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z000
+Affects Z, clears n, clears h, clears c
+*/
+void CPU::OR_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+    SetHighByte(&m_AF, r | GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*
