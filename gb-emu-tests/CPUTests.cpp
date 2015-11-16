@@ -227,6 +227,60 @@ public:
         }
     }
 
+    // LD r, (HL)
+    TEST_METHOD(LDr_HL_Test)
+    {
+        // Test LD r, (HL) for each register (Except F, of course)
+        for (byte reg = 0x00; reg <= 0x07; reg++)
+        {
+            if (reg == 0x06) continue;
+
+            byte m_Mem[] = { (byte)(0x40 | (reg << 3) | 0x06) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0, (int)spCPU->m_PC);
+
+            spCPU->m_HL = 0x1234;
+            spCPU->m_MMU->WriteByte(0x1234, 0x12);
+
+            spCPU->Step();
+
+            switch (reg)
+            {
+            case 0x00:  // B
+                Assert::AreEqual(0x1200, (int)spCPU->m_BC & 0xFF00);
+                break;
+            case 0x01:  // C
+                Assert::AreEqual(0x0012, (int)spCPU->m_BC & 0x00FF);
+                break;
+            case 0x02:  // D
+                Assert::AreEqual(0x1200, (int)spCPU->m_DE & 0xFF00);
+                break;
+            case 0x03:  // E
+                Assert::AreEqual(0x0012, (int)spCPU->m_DE & 0x00FF);
+                break;
+            case 0x04:  // H
+                Assert::AreEqual(0x1200, (int)spCPU->m_HL & 0xFF00);
+                break;
+            case 0x05:  // L
+                Assert::AreEqual(0x0012, (int)spCPU->m_HL & 0x00FF);
+                break;
+            case 0x07:  // A
+                Assert::AreEqual(0x1200, (int)spCPU->m_AF & 0xFF00);
+                break;
+            }
+
+            // Verify expectations after
+            Assert::AreEqual(8, (int)spCPU->m_cycles);
+            Assert::AreEqual(1, (int)spCPU->m_PC);
+
+            spCPU.reset();
+        }
+    }
+
     // 0x07
     TEST_METHOD(RLCA2_Test)
     {
