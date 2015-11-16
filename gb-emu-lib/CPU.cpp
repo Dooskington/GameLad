@@ -41,7 +41,7 @@ CPU::CPU() :
     m_operationMap[0x06] = &CPU::LDrn;
     m_operationMap[0x07] = &CPU::RLCA;
     //m_operationMap[0x08] TODO
-    //m_operationMap[0x09] TODO
+    m_operationMap[0x09] = &CPU::ADDHLss;
     //m_operationMap[0x0A] TODO
     m_operationMap[0x0B] = &CPU::DECrr;
     m_operationMap[0x0C] = &CPU::INCr;
@@ -59,7 +59,7 @@ CPU::CPU() :
     m_operationMap[0x16] = &CPU::LDrn;
     m_operationMap[0x17] = &CPU::RLA;
     m_operationMap[0x18] = &CPU::JRe;
-    //m_operationMap[0x19] TODO
+    m_operationMap[0x19] = &CPU::ADDHLss;
     m_operationMap[0x1A] = &CPU::LDA_DE_;
     m_operationMap[0x1B] = &CPU::DECrr;
     m_operationMap[0x1C] = &CPU::INCr;
@@ -77,7 +77,7 @@ CPU::CPU() :
     m_operationMap[0x26] = &CPU::LDrn;
     //m_operationMap[0x27] TODO
     m_operationMap[0x28] = &CPU::JRZe;
-    //m_operationMap[0x29] TODO
+    m_operationMap[0x29] = &CPU::ADDHLss;
     m_operationMap[0x2A] = &CPU::LDIA_HL_;
     m_operationMap[0x2B] = &CPU::DECrr;
     m_operationMap[0x2C] = &CPU::INCr;
@@ -91,11 +91,11 @@ CPU::CPU() :
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0x33] = &CPU::INCrr;
     //m_operationMap[0x34] TODO
-    //m_operationMap[0x35] TODO
+    m_operationMap[0x35] = &CPU::DEC_HL_;
     //m_operationMap[0x36] TODO
     //m_operationMap[0x37] TODO
     //m_operationMap[0x38] TODO
-    //m_operationMap[0x39] TODO
+    m_operationMap[0x39] = &CPU::ADDHLss;
     //m_operationMap[0x3A] TODO
     m_operationMap[0x3B] = &CPU::DECrr;
     m_operationMap[0x3C] = &CPU::INCr;
@@ -1293,6 +1293,33 @@ void CPU::RETcc(const byte& opCode)
 }
 
 /*
+ADD HL, ss
+00ss1001
+
+The contents of the register pair ss (BC, DE, HL, SP) are added to the contents
+of the register pair HL and the result is stored in HL.
+
+8 Cycles
+
+Flags affected(znhc): -0hc
+Clears N, affects H, affects C
+*/
+void CPU::ADDHLss(const byte& opCode)
+{
+    ushort* ss = GetUShortRegister(opCode >> 4, false);
+
+    ushort result = (m_HL + *ss);
+
+    ClearFlag(AddFlag);
+    ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_HL = result;
+
+    m_cycles += 8;
+}
+
+/*
     INC rr
     00rr0011
 
@@ -1575,6 +1602,47 @@ void CPU::DECr(const byte& opCode)
     }
 
     m_cycles += 4;
+}
+
+/*
+DEC (hl) - 0x35
+
+The byte at the address (HL) is decremented.
+
+12 Cycles
+
+Flags affected(znhc): z1h-
+*/
+void CPU::DEC_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+    bool isBit4Before = ISBITSET(r, 4);
+    r -= 1;
+    bool isBit4After = ISBITSET(r, 4);
+
+    m_MMU->WriteByte(m_HL, r);
+
+    if (r == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+
+    if (!isBit4Before && isBit4After)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
+
+    m_cycles += 12;
 }
 
 /*

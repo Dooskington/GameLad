@@ -87,6 +87,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, DECH_Test);
     TEST_CALL(CPUTests, DECL_Test);
     TEST_CALL(CPUTests, DECA_Test);
+    TEST_CALL(CPUTests, DEC_HL_Test);
     TEST_CALL(CPUTests, XORA_Test);
     TEST_CALL(CPUTests, XORB_Test);
     TEST_CALL(CPUTests, XORC_Test);
@@ -96,6 +97,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, XORL_Test);
     TEST_CALL(CPUTests, XORn_Test);
     TEST_CALL(CPUTests, XOR_HL_Test);
+    TEST_CALL(CPUTests, ADDHLss_Test);
 
     TEST_CALL(CPUTests, ORA_Test);
     TEST_CALL(CPUTests, ORB_Test);
