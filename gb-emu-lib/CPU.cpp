@@ -259,7 +259,7 @@ CPU::CPU() :
     //m_operationMap[0xC8] TODO
     m_operationMap[0xC9] = &CPU::RET;
     //m_operationMap[0xCA] TODO
-    //m_operationMap[0xCB] TODO
+    //m_operationMap[0xCB] MAPPED TO 0xCB MAP
     //m_operationMap[0xCC] TODO
     m_operationMap[0xCD] = &CPU::CALLnn;
     //m_operationMap[0xCE] TODO
@@ -269,7 +269,7 @@ CPU::CPU() :
     //m_operationMap[0xD0] TODO
     m_operationMap[0xD1] = &CPU::POPrr;
     //m_operationMap[0xD2] TODO
-    //m_operationMap[0xD3] TODO
+    //m_operationMap[0xD3] UNUSED
     //m_operationMap[0xD4] TODO
     m_operationMap[0xD5] = &CPU::PUSHrr;
     //m_operationMap[0xD6] TODO
@@ -277,9 +277,9 @@ CPU::CPU() :
     //m_operationMap[0xD8] TODO
     //m_operationMap[0xD9] TODO
     //m_operationMap[0xDA] TODO
-    //m_operationMap[0xDB] TODO
+    //m_operationMap[0xDB] UNUSED
     //m_operationMap[0xDC] TODO
-    //m_operationMap[0xDD] TODO
+    //m_operationMap[0xDD] UNUSED
     //m_operationMap[0xDE] TODO
     //m_operationMap[0xDF] TODO
 
@@ -287,17 +287,17 @@ CPU::CPU() :
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
     m_operationMap[0xE1] = &CPU::POPrr;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
-    //m_operationMap[0xE3] TODO
-    //m_operationMap[0xE4] TODO
+    //m_operationMap[0xE3] UNUSED
+    //m_operationMap[0xE4] UNUSED
     m_operationMap[0xE5] = &CPU::PUSHrr;
     //m_operationMap[0xE6] TODO
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
     m_operationMap[0xEA]= &CPU::LD_nn_A;
-    //m_operationMap[0xEB] TODO
-    //m_operationMap[0xEC] TODO
-    //m_operationMap[0xED] TODO
+    //m_operationMap[0xEB] UNUSED
+    //m_operationMap[0xEC] UNUSED
+    //m_operationMap[0xED] UNUSED
     //m_operationMap[0xEE] TODO
     //m_operationMap[0xEF] TODO
 
@@ -306,7 +306,7 @@ CPU::CPU() :
     m_operationMap[0xF1] = &CPU::POPrr;
     m_operationMap[0xF2] = &CPU::LDA_0xFF00C_;
     m_operationMap[0xF3] = &CPU::DI;
-    //m_operationMap[0xF4] TODO
+    //m_operationMap[0xF4] UNUSED
     m_operationMap[0xF5] = &CPU::PUSHrr;
     //m_operationMap[0xF6] TODO
     //m_operationMap[0xF7] TODO
@@ -314,8 +314,8 @@ CPU::CPU() :
     //m_operationMap[0xF9] TODO
     //m_operationMap[0xFA] TODO
     m_operationMap[0xFB] = &CPU::EI;
-    //m_operationMap[0xFC] TODO
-    //m_operationMap[0xFD] TODO
+    //m_operationMap[0xFC] UNUSED
+    //m_operationMap[0xFD] UNUSED
     m_operationMap[0xFE] = &CPU::CPn;
     //m_operationMap[0xFF] TODO
 
