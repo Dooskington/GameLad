@@ -293,7 +293,7 @@ CPU::CPU() :
     m_operationMap[0xE6] = &CPU::ANDn;
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
-    //m_operationMap[0xE9] TODO
+    m_operationMap[0xE9] = &CPU::JP_HL_;
     m_operationMap[0xEA] = &CPU::LD_nn_A;
     //m_operationMap[0xEB] UNUSED
     //m_operationMap[0xEC] UNUSED
@@ -1539,6 +1539,21 @@ void CPU::ANDn(const byte& opCode)
     ClearFlag(CarryFlag);
 
     m_cycles += 8;
+}
+
+/*
+JP HL - 0xE9
+
+The PC is loaded with the value of HL.
+
+4 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::JP_HL_(const byte& opCode)
+{
+    m_PC = m_HL;
+    m_cycles += 4;
 }
 
 /*

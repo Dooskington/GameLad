@@ -200,6 +200,7 @@ int main(int arg, char** argv)
 
     TEST_CALL(CPUTests, SWAP_HL_Test);
     TEST_CALL(CPUTests, SWAPr_Test);
+    TEST_CALL(CPUTests, JP_HL_Test);
 
     TEST_CLEANUP();
 
