@@ -50,7 +50,7 @@ CPU::CPU() :
     //m_operationMap[0x0F] TODO
 
     // 10
-    //m_operationMap[0x10] TODO
+    m_operationMap[0x10] = &CPU::STOP;
     m_operationMap[0x11] = &CPU::LDrrnn;
     //m_operationMap[0x12] TODO
     m_operationMap[0x13] = &CPU::INCrr;
@@ -164,7 +164,7 @@ CPU::CPU() :
     //m_operationMap[0x73] TODO
     //m_operationMap[0x74] TODO
     //m_operationMap[0x75] TODO
-    //m_operationMap[0x76] TODO
+    m_operationMap[0x76] = &CPU::HALT;
     m_operationMap[0x77] = &CPU::LD_HL_A;
     m_operationMap[0x78] = &CPU::LDrR;
     m_operationMap[0x79] = &CPU::LDrR;
@@ -789,7 +789,7 @@ void CPU::Step()
         else
         {
             Logger::LogError("OpCode 0x%02X at address 0x%04X could not be interpreted.", opCode, addr);
-            HALT();
+            HALT(0x76);
         }
     }
 
@@ -994,12 +994,6 @@ void CPU::HandleInterrupts()
             m_MMU->WriteByte(0xFF0F, IF);
         }
     }
-}
-
-void CPU::HALT()
-{
-    m_isHalted = true;
-    Logger::Log("!!!! HALTED !!!!");
 }
 
 /*
@@ -1407,6 +1401,13 @@ void CPU::SUBr(const byte& opCode)
     m_cycles += 4;
 }
 
+// 0x10 (STOP)
+void CPU::STOP(const byte& opCode)
+{
+    // For the emulator, these are effectively the same thing
+    HALT(opCode);
+}
+
 // 0x17 (RL A)
 void CPU::RLA(const byte& opCode)
 {
@@ -1490,11 +1491,7 @@ void CPU::JRNZe(const byte& opCode)
 */
 void CPU::LDI_HL_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
-    {
-        HALT();
-        return;
-    }
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL++;
 
@@ -1548,11 +1545,7 @@ void CPU::LDIA_HL_(const byte& opCode)
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
-    {
-        HALT();
-        return;
-    }
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL--;
     m_cycles += 8;
@@ -1560,14 +1553,27 @@ void CPU::LDD_HL_A(const byte& opCode)
     // No flags affected
 }
 
+// 0x76 (HALT)
+void CPU::HALT(const byte& opCode)
+{
+    m_isHalted = true;
+    m_cycles += 4;
+
+    if (opCode == 0x76)
+    {
+        Logger::Log("!!!! HALTED !!!!");
+    }
+    else
+    {
+        Logger::Log("!!!! STOPPED !!!!");
+    }
+}
+
 // 0x77 (LD (HL), A)
 // Identical to 0x32, except does not decrement
 void CPU::LD_HL_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_cycles += 8;
 
@@ -1680,10 +1686,7 @@ void CPU::LD_0xFF00n_A(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
 
-    if (!m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF))) // Load A into 0xFF00 + n
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
 
     m_cycles += 8;
 
@@ -1693,10 +1696,7 @@ void CPU::LD_0xFF00n_A(const byte& opCode)
 // 0xE2 (LD(0xFF00 + C), A)
 void CPU::LD_0xFF00C_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF))) // Load A into 0xFF00 + C
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
 
     m_cycles += 8;
 
@@ -1718,10 +1718,7 @@ void CPU::LD_nn_A(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
-    if (!m_MMU->WriteByte(nn, GetHighByte(m_AF))) // Load A into (nn)
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(nn, GetHighByte(m_AF)); // Load A into (nn)
 
     m_cycles += 16;
 }

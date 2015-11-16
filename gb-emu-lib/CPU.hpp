@@ -68,8 +68,6 @@ private:
 
     void HandleInterrupts();
 
-    void HALT();
-
     // TODO: Organize the following...
     // Z80 Instruction Set
     void NOP(const byte& opCode);             // 0x00
@@ -87,6 +85,7 @@ private:
     void SUBr(const byte& opCode);
     void CALLccnn(const byte& opCode);
 
+    void STOP(const byte& opCode);            // 0x10
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
     void JRe(const byte& opCode);             // 0x18
@@ -95,6 +94,7 @@ private:
     void JRZe(const byte& opCode);            // 0x28
     void LDIA_HL_(const byte& opCode);        // 0x2A
     void LDD_HL_A(const byte& opCode);        // 0x32
+    void HALT(const byte& opCode);            // 0x76
     void LD_HL_A(const byte& opCode);         // 0x77
     void ADDA_HL_(const byte& opCode);        // 0x86
     void CP_HL_(const byte& opCode);          // 0xBE
