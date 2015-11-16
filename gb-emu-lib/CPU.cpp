@@ -308,7 +308,7 @@ CPU::CPU() :
     m_operationMap[0xF3] = &CPU::DI;
     //m_operationMap[0xF4] UNUSED
     m_operationMap[0xF5] = &CPU::PUSHrr;
-    //m_operationMap[0xF6] TODO
+    m_operationMap[0xF6] = &CPU::ORn;
     //m_operationMap[0xF7] TODO
     //m_operationMap[0xF8] TODO
     //m_operationMap[0xF9] TODO
@@ -2228,6 +2228,39 @@ void CPU::DI(const byte& opCode)
     m_IME = 0x00;
 
     m_cycles += 4;
+}
+
+/*
+OR n - 0xF6
+
+The logical OR operation is performed between the byte in n and the byte contained in the
+accumulator. The result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z000
+Affects Z, clears n, clears h, clears c
+*/
+void CPU::ORn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    SetHighByte(&m_AF, n | GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*

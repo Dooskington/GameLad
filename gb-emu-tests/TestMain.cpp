@@ -107,6 +107,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, ORH_Test);
     TEST_CALL(CPUTests, ORL_Test);
     TEST_CALL(CPUTests, OR_HL_Test);
+    TEST_CALL(CPUTests, ORn_Test);
 
     TEST_CALL(CPUTests, ANDn_Test);
 

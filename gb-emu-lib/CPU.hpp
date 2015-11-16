@@ -118,12 +118,13 @@ private:
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void ANDn(const byte& opCode);            // 0xE6
-    void JP_HL_(const byte& opCode);         // 0xE9
+    void JP_HL_(const byte& opCode);          // 0xE9
     void LD_nn_A(const byte& opCode);         // 0xEA
     void XORn(const byte& opCode);            // 0xEE
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
     void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void DI(const byte& opCode);              // 0xF3
+    void ORn(const byte& opCode);            // 0xF6
     void LDA_nn_(const byte& opCode);         // 0xFA
     void EI(const byte& opCode);              // 0xFB
     void CPn(const byte& opCode);             // 0xFE
