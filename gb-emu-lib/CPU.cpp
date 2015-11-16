@@ -378,14 +378,14 @@ CPU::CPU() :
     m_operationMapCB[0x2F] = &CPU::SRAr;
 
     // 30
-    //m_operationMapCB[0x30] UNUSED!
-    //m_operationMapCB[0x31] UNUSED!
-    //m_operationMapCB[0x32] UNUSED!
-    //m_operationMapCB[0x33] UNUSED!
-    //m_operationMapCB[0x34] UNUSED!
-    //m_operationMapCB[0x35] UNUSED!
-    //m_operationMapCB[0x36] UNUSED!
-    //m_operationMapCB[0x37] UNUSED!
+    m_operationMapCB[0x30] = &CPU::SRLr;
+    m_operationMapCB[0x31] = &CPU::SRLr;
+    m_operationMapCB[0x32] = &CPU::SRLr;
+    m_operationMapCB[0x33] = &CPU::SRLr;
+    m_operationMapCB[0x34] = &CPU::SRLr;
+    m_operationMapCB[0x35] = &CPU::SRLr;
+    m_operationMapCB[0x36] = &CPU::SRL_HL_;
+    m_operationMapCB[0x37] = &CPU::SRLr;
     m_operationMapCB[0x38] = &CPU::SWAPr;
     m_operationMapCB[0x39] = &CPU::SWAPr;
     m_operationMapCB[0x3A] = &CPU::SWAPr;
@@ -2582,7 +2582,7 @@ void CPU::SLA_HL_(const byte& opCode)
 
 /*
     SRA r
-    11001011 00101rrrr
+    11001011 00101rrr
 
     An arithmetic shift right 1-bit position is performed on the contents of the operand r. The content
     of bit 0 is copied to the carry flag.
@@ -2619,6 +2619,57 @@ void CPU::SRA_HL_(const byte& opCode)
 
     // Shift r right
     r = r >> 1;
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+SRL r
+11001011 00011rrr
+
+The contents of the operand "r" are shifted right 1 -bit.  The content of 
+bit 0 is copied to the carry flag and bit 7 is reset.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+Affects Z, clears n, clears h, affects c
+*/
+void CPU::SRLr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    (*r) = *r >> 1;
+    (*r) = CLEARBIT(*r, 7);
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::SRL_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    r = r >> 1;
+    r = CLEARBIT(r, 7);
     m_MMU->WriteByte(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C

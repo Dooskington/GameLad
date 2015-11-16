@@ -139,6 +139,8 @@ private:
     void RR_HL_(const byte& opCode);
     void SLAr(const byte& opCode);
     void SLA_HL_(const byte& opCode);
+    void SRLr(const byte& opCode);
+    void SRL_HL_(const byte& opCode);
     void SRAr(const byte& opCode);
     void SRA_HL_(const byte& opCode);
     void BITbr(const byte& opCode);
