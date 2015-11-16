@@ -101,6 +101,7 @@ private:
     void LDIA_HL_(const byte& opCode);        // 0x2A
     void JRNCe(const byte& opCode);           // 0x30
     void LDD_HL_A(const byte& opCode);        // 0x32
+    void DEC_HL_(const byte& opCode);         // 0x35
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
     void XOR_HL_(const byte& opCode);         // 0xAE
