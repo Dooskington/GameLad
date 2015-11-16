@@ -84,6 +84,15 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, XORE_Test);
     TEST_CALL(CPUTests, XORH_Test);
     TEST_CALL(CPUTests, XORL_Test);
+
+    TEST_CALL(CPUTests, ORA_Test);
+    TEST_CALL(CPUTests, ORB_Test);
+    TEST_CALL(CPUTests, ORC_Test);
+    TEST_CALL(CPUTests, ORD_Test);
+    TEST_CALL(CPUTests, ORE_Test);
+    TEST_CALL(CPUTests, ORH_Test);
+    TEST_CALL(CPUTests, ORL_Test);
+
     TEST_CALL(CPUTests, RET_Test);
     TEST_CALL(CPUTests, CPn_Test);
     TEST_CALL(CPUTests, CP_HL__Test);

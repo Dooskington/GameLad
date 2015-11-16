@@ -78,6 +78,7 @@ private:
     void LDrrnn(const byte& opCode);
     void INCr(const byte& opCode);
     void INCrr(const byte& opCode);
+    void ORr(const byte& opCode);
     void XORr(const byte& opCode);
     void PUSHrr(const byte& opCode);
     void POPrr(const byte& opCode);
