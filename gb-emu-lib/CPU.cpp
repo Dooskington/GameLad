@@ -86,7 +86,7 @@ CPU::CPU() :
     //m_operationMap[0x2F] TODO
 
     // 30
-    //m_operationMap[0x30] TODO
+    m_operationMap[0x30] = &CPU::JRNCe;
     m_operationMap[0x31] = &CPU::LDrrnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0x33] = &CPU::INCrr;
@@ -1672,14 +1672,14 @@ void CPU::JRZe(const byte& opCode)
 }
 
 /*
-LDI A, (HL)
-0x2A
+    LDI A, (HL)
+    0x2A
 
-Loads the address pointed at by HL into A, then increment HL.
+    Loads the address pointed at by HL into A, then increment HL.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 void CPU::LDIA_HL_(const byte& opCode)
 {
@@ -1689,6 +1689,30 @@ void CPU::LDIA_HL_(const byte& opCode)
     m_cycles += 8;
 }
 
+/*
+    JR NC, e
+    0x30
+
+    Jump relative, if not carry, to the offset e.
+
+    8 or 12 cycles.
+
+    Flags affected(znhc): ----
+*/
+void CPU::JRNCe(const byte& opCode)
+{
+    sbyte e = static_cast<sbyte>(ReadBytePC());
+
+    if (!IsFlagSet(CarryFlag))
+    {
+        m_PC += e;
+        m_cycles += 12;
+    }
+    else
+    {
+        m_cycles += 8;
+    }
+}
 
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)

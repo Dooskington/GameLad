@@ -1821,6 +1821,38 @@ public:
         spCPU.reset();
     }
 
+    // 0x30
+    TEST_METHOD(JRNCe_Test)
+    {
+        byte m_Mem[] = { 0x30, 0x04, 0x00, 0x00, 0x00, 0x00, 0x30, 0xFA };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->ClearFlag(CarryFlag);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0006, (int)spCPU->m_PC);
+
+        spCPU->SetFlag(CarryFlag);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(20, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0008, (int)spCPU->m_PC);
+
+        spCPU.reset();
+    }
+
     // 0x31
     TEST_METHOD(LDSPnn_Test)
     {
