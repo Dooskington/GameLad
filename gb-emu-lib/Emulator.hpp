@@ -28,5 +28,4 @@ public:
 
 private:
     std::unique_ptr<ICPU> m_cpu;
-    void(*m_pVSyncCallback)();
 };
