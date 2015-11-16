@@ -114,6 +114,45 @@ void VSyncCallback()
     renderStart = renderEnd;
 }
 
+void ProcessInput(Emulator& emulator)
+{
+    const Uint8 *keys = SDL_GetKeyboardState(NULL);
+    byte input = JOYPAD_NONE;
+    byte buttons = JOYPAD_NONE;
+
+    if(keys[SDL_SCANCODE_W])
+    {
+        input |= JOYPAD_INPUT_UP;
+    }
+
+    if(keys[SDL_SCANCODE_A])
+    {
+        input |= JOYPAD_INPUT_LEFT;
+    }
+
+    if(keys[SDL_SCANCODE_S])
+    {
+        input |= JOYPAD_INPUT_DOWN;
+    }
+
+    if(keys[SDL_SCANCODE_D])
+    {
+        input |= JOYPAD_INPUT_RIGHT;
+    }
+
+    if(keys[SDL_SCANCODE_K])
+    {
+        buttons |= JOYPAD_BUTTONS_A;
+    }
+
+    if(keys[SDL_SCANCODE_L])
+    {
+        buttons |= JOYPAD_BUTTONS_B;
+    }
+
+    emulator.SetInput(input, buttons);
+}
+
 int main(int argc, char** argv)
 {
     bool isRunning = true;
@@ -161,6 +200,8 @@ int main(int argc, char** argv)
 
         while (isRunning)
         {
+            ProcessInput(emulator);
+
             // Poll for window input
             while (SDL_PollEvent(&event) != 0)
             {

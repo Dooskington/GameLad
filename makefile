@@ -37,8 +37,12 @@ all: build
 run: build
 	@./$(BIN_PATH)/$(BIN_NAME)
 
+# Build the emulator and run the tests
+run_tests: build
+	@./$(BIN_PATH)/$(BIN_NAME)-tests
+
 # Build the emulator
-build: lib emu tests
+build: clean lib emu tests
 	@echo "*** Build complete ***"
 
 # Build the emulator library. This is required for the base emulator.
@@ -70,7 +74,7 @@ tests: build_tests
 
 build_tests: $(OBJ_FILES) $(TEST_OBJ_FILES)
 	@echo "*** Building gb-emu-tests ***"
-	@$(CC) $(LIB_OBJ_FILES) $(TEST_OBJ_FILES) -o $(BIN_PATH)/$(BIN_NAME)-tests -F $(FRAMEWORK_PATH) $(FRAMEWORKS) -L$(LIB_BIN_PATH) -I$(LIB_BIN_PATH) -lgb-emu 
+	@$(CC) $(LIB_OBJ_FILES) $(TEST_OBJ_FILES) -o $(BIN_PATH)/$(BIN_NAME)-tests -F $(FRAMEWORK_PATH) $(FRAMEWORKS) -L$(LIB_BIN_PATH) -I$(LIB_BIN_PATH) -lgb-emu
 
 $(BIN_PATH)/%.o: $(TEST_SRC_PATH)/%.cpp
 	@echo "*** Compiling" $< " ***"
