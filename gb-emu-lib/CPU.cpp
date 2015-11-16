@@ -12,7 +12,8 @@ CPU::CPU() :
     m_DE(0x0000),
     m_HL(0x0000),
     m_SP(0x0000),
-    m_PC(0x0000)
+    m_PC(0x0000),
+    m_IME(0x00)
 {
     for (unsigned int index = 0; index < ARRAYSIZE(m_operationMap); index++)
     {
@@ -250,7 +251,7 @@ CPU::CPU() :
     //m_operationMap[0xC0] TODO
     m_operationMap[0xC1] = &CPU::POPrr;
     //m_operationMap[0xC2] TODO
-    //m_operationMap[0xC3] TODO
+    m_operationMap[0xC3] = &CPU::JPnn;
     //m_operationMap[0xC4] TODO
     m_operationMap[0xC5] = &CPU::PUSHrr;
     //m_operationMap[0xC6] TODO
@@ -304,7 +305,7 @@ CPU::CPU() :
     m_operationMap[0xF0] = &CPU::LDA_0xFF00n_;
     m_operationMap[0xF1] = &CPU::POPrr;
     m_operationMap[0xF2] = &CPU::LDA_0xFF00C_;
-    //m_operationMap[0xF3] TODO
+    m_operationMap[0xF3] = &CPU::DI;
     //m_operationMap[0xF4] TODO
     m_operationMap[0xF5] = &CPU::PUSHrr;
     //m_operationMap[0xF6] TODO
@@ -312,7 +313,7 @@ CPU::CPU() :
     //m_operationMap[0xF8] TODO
     //m_operationMap[0xF9] TODO
     //m_operationMap[0xFA] TODO
-    //m_operationMap[0xFB] TODO
+    m_operationMap[0xFB] = &CPU::EI;
     //m_operationMap[0xFC] TODO
     //m_operationMap[0xFD] TODO
     m_operationMap[0xFE] = &CPU::CPn;
@@ -1412,6 +1413,24 @@ void CPU::CP_HL_(const byte& opCode)
 }
 
 /*
+    JP nn
+    0xC3
+
+    Jump to nn
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::JPnn(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+    m_PC = nn;
+
+    m_cycles += 16;
+}
+
+/*
     RET
     0xC9
 
@@ -1525,6 +1544,40 @@ void CPU::LDA_0xFF00C_(const byte& opCode)
     SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + GetLowByte(m_BC)));
 
     m_cycles += 8;
+}
+
+/*
+    DI
+    0xF3
+
+    Disable interrupts
+
+    4 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::DI(const byte& opCode)
+{
+    m_IME = 0x00;
+
+    m_cycles += 4;
+}
+
+/*
+    EI
+    0xFB
+
+    Enable interrupts
+
+    4 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::EI(const byte& opCode)
+{
+    m_IME = 0x01;
+
+    m_cycles += 4;
 }
 
 /*
