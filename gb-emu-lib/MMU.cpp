@@ -221,18 +221,3 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
 
     return true;
 }
-
-ushort MMU::GetIE()
-{
-    return m_IE;
-}
-
-ushort MMU::GetIF()
-{
-    return m_IF;
-}
-
-void MMU::SetIF(const byte& val)
-{
-    m_IF = val;
-}
