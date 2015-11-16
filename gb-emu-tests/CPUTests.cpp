@@ -6306,4 +6306,28 @@ public:
 
         spCPU.reset();
     }
+
+    TEST_METHOD(RSTn_Test)
+    {
+        for (byte rst = 0x00; rst <= 0x07; rst++)
+        {
+            byte opCode = (byte)(0xC7 | (rst << 3));
+            byte m_Mem[] = { opCode };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(16, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x08 * rst, (int)spCPU->m_PC);
+
+            spCPU.reset();
+        }
+    }
 };

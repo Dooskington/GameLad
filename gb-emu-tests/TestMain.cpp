@@ -218,6 +218,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, JRCe_Test);
     TEST_CALL(CPUTests, LD_DE_A_Test);
     TEST_CALL(CPUTests, LDHLSPe_Test);
+    TEST_CALL(CPUTests, RSTn_Test);
 
     TEST_CLEANUP();
 

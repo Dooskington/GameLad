@@ -255,7 +255,7 @@ CPU::CPU() :
     m_operationMap[0xC4] = &CPU::CALLccnn;
     m_operationMap[0xC5] = &CPU::PUSHrr;
     m_operationMap[0xC6] = &CPU::ADDAn;
-    //m_operationMap[0xC7] TODO
+    m_operationMap[0xC7] = &CPU::RSTn;
     m_operationMap[0xC8] = &CPU::RETcc;
     m_operationMap[0xC9] = &CPU::RET;
     m_operationMap[0xCA] = &CPU::JPccnn;
@@ -263,7 +263,7 @@ CPU::CPU() :
     m_operationMap[0xCC] = &CPU::CALLccnn;
     m_operationMap[0xCD] = &CPU::CALLnn;
     m_operationMap[0xCE] = &CPU::ADCAn;
-    //m_operationMap[0xCF] TODO
+    m_operationMap[0xCF] = &CPU::RSTn;
 
     // D0
     m_operationMap[0xD0] = &CPU::RETcc;
@@ -273,7 +273,7 @@ CPU::CPU() :
     m_operationMap[0xD4] = &CPU::CALLccnn;
     m_operationMap[0xD5] = &CPU::PUSHrr;
     m_operationMap[0xD6] = &CPU::SUBn;
-    //m_operationMap[0xD7] TODO
+    m_operationMap[0xD7] = &CPU::RSTn;
     m_operationMap[0xD8] = &CPU::RETcc;
     //m_operationMap[0xD9] TODO
     m_operationMap[0xDA] = &CPU::JPccnn;
@@ -281,7 +281,7 @@ CPU::CPU() :
     m_operationMap[0xDC] = &CPU::CALLccnn;
     //m_operationMap[0xDD] UNUSED
     //m_operationMap[0xDE] TODO
-    //m_operationMap[0xDF] TODO
+    m_operationMap[0xDF] = &CPU::RSTn;
 
     // E0
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
@@ -291,7 +291,7 @@ CPU::CPU() :
     //m_operationMap[0xE4] UNUSED
     m_operationMap[0xE5] = &CPU::PUSHrr;
     m_operationMap[0xE6] = &CPU::ANDn;
-    //m_operationMap[0xE7] TODO
+    m_operationMap[0xE7] = &CPU::RSTn;
     //m_operationMap[0xE8] TODO
     m_operationMap[0xE9] = &CPU::JP_HL_;
     m_operationMap[0xEA] = &CPU::LD_nn_A;
@@ -299,7 +299,7 @@ CPU::CPU() :
     //m_operationMap[0xEC] UNUSED
     //m_operationMap[0xED] UNUSED
     m_operationMap[0xEE] = &CPU::XORn;
-    //m_operationMap[0xEF] TODO
+    m_operationMap[0xEF] = &CPU::RSTn;
 
     // F0
     m_operationMap[0xF0] = &CPU::LDA_0xFF00n_;
@@ -309,7 +309,7 @@ CPU::CPU() :
     //m_operationMap[0xF4] UNUSED
     m_operationMap[0xF5] = &CPU::PUSHrr;
     m_operationMap[0xF6] = &CPU::ORn;
-    //m_operationMap[0xF7] TODO
+    m_operationMap[0xF7] = &CPU::RSTn;
     m_operationMap[0xF8] = &CPU::LDHLSPe;
     //m_operationMap[0xF9] TODO
     m_operationMap[0xFA] = &CPU::LDA_nn_;
@@ -317,7 +317,7 @@ CPU::CPU() :
     //m_operationMap[0xFC] UNUSED
     //m_operationMap[0xFD] UNUSED
     m_operationMap[0xFE] = &CPU::CPn;
-    //m_operationMap[0xFF] TODO
+    m_operationMap[0xFF] = &CPU::RSTn;
 
     /*
         Z80 Command Set - CB
@@ -1464,6 +1464,31 @@ void CPU::JRcce(const byte& opCode)
     {
         m_cycles += 8;
     }
+}
+
+/*
+RST
+11ttt111
+
+000 0x00
+001 0x08
+010 0x10
+011 0x18
+100 0x20
+101 0x28
+110 0x30
+111 0x38
+
+16 Cycles if taken
+
+Flags affected(znhc): ----
+*/
+void CPU::RSTn(const byte& opCode)
+{
+    byte t = ((opCode >> 3) & 0x07);
+    
+    m_PC = (ushort)(t * 0x08);
+    m_cycles += 16;
 }
 
 /*
