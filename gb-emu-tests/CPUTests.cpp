@@ -2376,8 +2376,6 @@ public:
 
             spCPU->Step();
 
-            byte result = spCPU->GetHighByte(spCPU->m_AF);
-
             // Verify expectations after
             Assert::AreEqual(4, (int)spCPU->m_cycles);
             Assert::AreEqual(1, (int)spCPU->m_PC);
