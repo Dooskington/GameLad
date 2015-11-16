@@ -176,14 +176,14 @@ CPU::CPU() :
     m_operationMap[0x7F] = &CPU::LDrR;
 
     // 80
-    //m_operationMap[0x80] TODO
-    //m_operationMap[0x81] TODO
-    //m_operationMap[0x82] TODO
-    //m_operationMap[0x83] TODO
-    //m_operationMap[0x84] TODO
-    //m_operationMap[0x85] TODO
+    m_operationMap[0x80] = &CPU::ADDAr;
+    m_operationMap[0x81] = &CPU::ADDAr;
+    m_operationMap[0x82] = &CPU::ADDAr;
+    m_operationMap[0x83] = &CPU::ADDAr;
+    m_operationMap[0x84] = &CPU::ADDAr;
+    m_operationMap[0x85] = &CPU::ADDAr;
     m_operationMap[0x86] = &CPU::ADDA_HL_;
-    //m_operationMap[0x87] TODO
+    m_operationMap[0x87] = &CPU::ADDAr;
     //m_operationMap[0x88] TODO
     //m_operationMap[0x89] TODO
     //m_operationMap[0x8A] TODO
@@ -1363,6 +1363,33 @@ void CPU::JPccnn(const byte& opCode)
     {
         m_cycles += 12;
     }
+}
+
+/*
+    ADD A, r
+    10000rrr
+
+    The contents of the r register are added to the contents of the accumulator,
+    and the result is stored in the accumulator. The operand r identifies the registers
+    A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z0hc
+*/
+void CPU::ADDAr(const byte& opCode)
+{
+    byte A = GetHighByte(m_AF);
+    byte* r = GetByteRegister(opCode);
+    byte result = A + (*r);
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 4;
 }
 
 /*
