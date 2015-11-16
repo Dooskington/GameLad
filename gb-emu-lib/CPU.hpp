@@ -90,6 +90,7 @@ private:
     void JRNZe(const byte& opCode);           // 0x20
     void LDI_HL_A(const byte& opCode);        // 0x22
     void JRZe(const byte& opCode);            // 0x28
+    void LDIA_HL_(const byte& opCode);        // 0x2A
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
     void ADDA_HL_(const byte& opCode);        // 0x86

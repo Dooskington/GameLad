@@ -78,7 +78,7 @@ CPU::CPU() :
     //m_operationMap[0x27] TODO
     m_operationMap[0x28] = &CPU::JRZe;
     //m_operationMap[0x29] TODO
-    //m_operationMap[0x2A] TODO
+    m_operationMap[0x2A] = &CPU::LDIA_HL_;
     //m_operationMap[0x2B] TODO
     m_operationMap[0x2C] = &CPU::INCr;
     m_operationMap[0x2D] = &CPU::DECr;
@@ -1398,6 +1398,25 @@ void CPU::JRZe(const byte& opCode)
         m_cycles += 8;
     }
 }
+
+/*
+LDI A, (HL)
+0x2A
+
+Loads the address pointed at by HL into A, then increment HL.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LDIA_HL_(const byte& opCode)
+{
+    SetHighByte(&m_AF, m_MMU->ReadByte(m_HL));
+    m_HL++;
+
+    m_cycles += 8;
+}
+
 
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
