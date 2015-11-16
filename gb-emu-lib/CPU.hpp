@@ -102,7 +102,7 @@ private:
     void LDD_HL_A(const byte& opCode);        // 0x32
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
-    void XOR_HL_(const byte& opCode);
+    void XOR_HL_(const byte& opCode);         // 0xAE
     void CP_HL_(const byte& opCode);          // 0xBE
     void JPnn(const byte& opCode);            // 0xC3
     void ADDAn(const byte& opCode);           // 0xC6
@@ -113,6 +113,7 @@ private:
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void ANDn(const byte& opCode);            // 0xE6
     void LD_nn_A(const byte& opCode);         // 0xEA
+    void XORn(const byte& opCode);            // 0xEE
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
     void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void DI(const byte& opCode);              // 0xF3

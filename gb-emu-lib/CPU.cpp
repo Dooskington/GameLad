@@ -298,7 +298,7 @@ CPU::CPU() :
     //m_operationMap[0xEB] UNUSED
     //m_operationMap[0xEC] UNUSED
     //m_operationMap[0xED] UNUSED
-    //m_operationMap[0xEE] TODO
+    m_operationMap[0xEE] = &CPU::XORn;
     //m_operationMap[0xEF] TODO
 
     // F0
@@ -1936,6 +1936,40 @@ void CPU::LD_nn_A(const byte& opCode)
     m_MMU->WriteByte(nn, GetHighByte(m_AF)); // Load A into (nn)
 
     m_cycles += 16;
+}
+
+/*
+    XOR n
+    0xEE
+
+    The logical exclusive-OR operation is performed between the 8-bit operand and 
+    the byte contained in the accumulator. The result is stored in the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z000
+    Affects Z, clears n, clears h, clears c
+*/
+void CPU::XORn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    SetHighByte(&m_AF, n ^ GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*
