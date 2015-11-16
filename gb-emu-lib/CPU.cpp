@@ -43,7 +43,7 @@ CPU::CPU() :
     //m_operationMap[0x08] TODO
     //m_operationMap[0x09] TODO
     //m_operationMap[0x0A] TODO
-    //m_operationMap[0x0B] TODO
+    m_operationMap[0x0B] = &CPU::DECrr;
     m_operationMap[0x0C] = &CPU::INCr;
     m_operationMap[0x0D] = &CPU::DECr;
     m_operationMap[0x0E] = &CPU::LDrn;
@@ -61,7 +61,7 @@ CPU::CPU() :
     m_operationMap[0x18] = &CPU::JRe;
     //m_operationMap[0x19] TODO
     m_operationMap[0x1A] = &CPU::LDA_DE_;
-    //m_operationMap[0x1B] TODO
+    m_operationMap[0x1B] = &CPU::DECrr;
     m_operationMap[0x1C] = &CPU::INCr;
     m_operationMap[0x1D] = &CPU::DECr;
     m_operationMap[0x1E] = &CPU::LDrn;
@@ -79,7 +79,7 @@ CPU::CPU() :
     m_operationMap[0x28] = &CPU::JRZe;
     //m_operationMap[0x29] TODO
     m_operationMap[0x2A] = &CPU::LDIA_HL_;
-    //m_operationMap[0x2B] TODO
+    m_operationMap[0x2B] = &CPU::DECrr;
     m_operationMap[0x2C] = &CPU::INCr;
     m_operationMap[0x2D] = &CPU::DECr;
     m_operationMap[0x2E] = &CPU::LDrn;
@@ -97,7 +97,7 @@ CPU::CPU() :
     //m_operationMap[0x38] TODO
     //m_operationMap[0x39] TODO
     //m_operationMap[0x3A] TODO
-    //m_operationMap[0x3B] TODO
+    m_operationMap[0x3B] = &CPU::DECrr;
     m_operationMap[0x3C] = &CPU::INCr;
     m_operationMap[0x3D] = &CPU::DECr;
     m_operationMap[0x3E] = &CPU::LDrn;
@@ -1176,6 +1176,24 @@ void CPU::INCrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, false);
     *rr += 1;
+
+    m_cycles += 8;
+}
+
+/*
+DEC rr
+00rr1011
+
+16-bit register rr is decremented, where rr identifies register pairs BC, DE, HL, or SP.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::DECrr(const byte& opCode)
+{
+    ushort* rr = GetUShortRegister(opCode >> 4, false);
+    *rr -= 1;
 
     m_cycles += 8;
 }
