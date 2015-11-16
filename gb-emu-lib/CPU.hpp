@@ -68,8 +68,6 @@ private:
 
     void HandleInterrupts();
 
-    void HALT();
-
     // TODO: Organize the following...
     // Z80 Instruction Set
     void NOP(const byte& opCode);             // 0x00
@@ -86,25 +84,39 @@ private:
     void DECr(const byte& opCode);
     void SUBr(const byte& opCode);
     void CALLccnn(const byte& opCode);
+    void LDr_HL_(const byte& opCode);
+    void LD_HL_r(const byte& opCode);
+    void RETcc(const byte& opCode);
 
+    void LD_BC_A(const byte& opCode);         // 0x02
+    void RLCA(const byte& opCode);            // 0x07
+    void STOP(const byte& opCode);            // 0x10
     void RLA(const byte& opCode);             // 0x17
-    void LDA_DE_(const byte& opCode);         // 0x1A
     void JRe(const byte& opCode);             // 0x18
+    void LDA_DE_(const byte& opCode);         // 0x1A
+    void RRA(const byte& opCode);             // 0x1F
     void JRNZe(const byte& opCode);           // 0x20
     void LDI_HL_A(const byte& opCode);        // 0x22
     void JRZe(const byte& opCode);            // 0x28
     void LDIA_HL_(const byte& opCode);        // 0x2A
+    void JRNCe(const byte& opCode);           // 0x30
     void LDD_HL_A(const byte& opCode);        // 0x32
-    void LD_HL_A(const byte& opCode);         // 0x77
+    void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
+    void XOR_HL_(const byte& opCode);         // 0xAE
+    void OR_HL_(const byte& opCode);          // 0xB6
     void CP_HL_(const byte& opCode);          // 0xBE
     void JPnn(const byte& opCode);            // 0xC3
+    void ADDAn(const byte& opCode);           // 0xC6
     void RET(const byte& opCode);             // 0xC9
     void CALLnn(const byte& opCode);          // 0xCD
+    void ADCAn(const byte& opCode);           // 0xCE
+    void SUBn(const byte& opCode);            // 0xD6
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void ANDn(const byte& opCode);            // 0xE6
     void LD_nn_A(const byte& opCode);         // 0xEA
+    void XORn(const byte& opCode);            // 0xEE
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
     void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void DI(const byte& opCode);              // 0xF3

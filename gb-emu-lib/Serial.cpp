@@ -34,7 +34,7 @@ bool Serial::WriteByte(const ushort& address, const byte val)
     switch (address)
     {
     case SerialTransferData:
-        Logger::Log("%c", val);
+        Logger::LogCharacter(val);
         return true;
     case SerialTransferControl:
         return true;
