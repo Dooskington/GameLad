@@ -310,7 +310,7 @@ CPU::CPU() :
     m_operationMap[0xF5] = &CPU::PUSHrr;
     m_operationMap[0xF6] = &CPU::ORn;
     //m_operationMap[0xF7] TODO
-    //m_operationMap[0xF8] TODO
+    m_operationMap[0xF8] = &CPU::LDHLSPe;
     //m_operationMap[0xF9] TODO
     m_operationMap[0xFA] = &CPU::LDA_nn_;
     m_operationMap[0xFB] = &CPU::EI;
@@ -2357,6 +2357,32 @@ void CPU::ORn(const byte& opCode)
     ClearFlag(CarryFlag);
 
     m_cycles += 8;
+}
+
+/*
+LD HL, SP+e - 0xF8
+
+ld   HL,SP+dd  F8          12 00hc HL = SP +/- dd ;dd is 8bit signed number
+
+12 Cycles
+
+Flags affected(znhc): 00hc
+Clears Z, clears n, affects h, affects c
+*/
+void CPU::LDHLSPe(const byte& opCode)
+{
+    sbyte e = static_cast<sbyte>(ReadBytePC());
+
+    m_HL = m_SP + e;
+
+    ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+
+    // TODO: Not sure how this one works!
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 12;
 }
 
 /*

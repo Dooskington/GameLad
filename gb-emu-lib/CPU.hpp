@@ -127,6 +127,7 @@ private:
     void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void DI(const byte& opCode);              // 0xF3
     void ORn(const byte& opCode);             // 0xF6
+    void LDHLSPe(const byte& opCode);         // 0xF8
     void LDA_nn_(const byte& opCode);         // 0xFA
     void EI(const byte& opCode);              // 0xFB
     void CPn(const byte& opCode);             // 0xFE
