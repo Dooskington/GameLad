@@ -141,6 +141,8 @@ void GPU::Step(unsigned long cycles)
         {
             m_ModeClock -= HBlankCycles;
 
+            RenderScanline();
+
             m_LCDControllerYCoordinate++;
             if (m_LCDControllerYCoordinate == 144)
             {
@@ -154,7 +156,6 @@ void GPU::Step(unsigned long cycles)
             else
             {
                 SETMODE(ModeReadingOAM);
-                RenderScanline();
             }
         }
         break;
