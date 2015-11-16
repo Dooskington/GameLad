@@ -254,7 +254,7 @@ CPU::CPU() :
     m_operationMap[0xC3] = &CPU::JPnn;
     m_operationMap[0xC4] = &CPU::CALLccnn;
     m_operationMap[0xC5] = &CPU::PUSHrr;
-    //m_operationMap[0xC6] TODO
+    m_operationMap[0xC6] = &CPU::ADDAn;
     //m_operationMap[0xC7] TODO
     //m_operationMap[0xC8] TODO
     m_operationMap[0xC9] = &CPU::RET;
@@ -1700,6 +1700,35 @@ void CPU::JPnn(const byte& opCode)
     m_PC = nn;
 
     m_cycles += 16;
+}
+
+/*
+ADD A, n
+0xC6
+
+The integer n is added to the contents of the accumulator, and the reults are
+stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z0hc
+Affects Z, clears n, affects h, affects c
+*/
+void CPU::ADDAn(const byte& opCode)
+{
+    ushort n = ReadBytePC();
+
+    byte A = GetHighByte(m_AF);
+    byte result = A + n;
+
+    SetHighByte(&m_AF, result);
+    
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*
