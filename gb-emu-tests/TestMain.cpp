@@ -93,6 +93,8 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, ORH_Test);
     TEST_CALL(CPUTests, ORL_Test);
 
+    TEST_CALL(CPUTests, ANDn_Test);
+
     TEST_CALL(CPUTests, RET_Test);
     TEST_CALL(CPUTests, CPn_Test);
     TEST_CALL(CPUTests, CP_HL__Test);

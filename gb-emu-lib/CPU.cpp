@@ -290,7 +290,7 @@ CPU::CPU() :
     //m_operationMap[0xE3] UNUSED
     //m_operationMap[0xE4] UNUSED
     m_operationMap[0xE5] = &CPU::PUSHrr;
-    //m_operationMap[0xE6] TODO
+    m_operationMap[0xE6] = &CPU::ANDn;
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
@@ -1224,6 +1224,33 @@ void CPU::PUSHrr(const byte& opCode)
     PushUShortToSP(*rr);
 
     m_cycles += 16;
+}
+
+/*
+AND n
+11100110 (0xE6)
+
+The logical AND operation is performed between the byte specified in n and the byte contained
+in the accumulator. The resutl is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z010
+Affects Z, clears n, sets h, clears c
+*/
+void CPU::ANDn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+
+    byte result = GetHighByte(m_AF) & n;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*
