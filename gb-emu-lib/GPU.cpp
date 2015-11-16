@@ -50,6 +50,7 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     m_MMU(pMMU),
     m_CPU(pCPU),
     m_ModeClock(0),
+    m_pVSyncCallback(nullptr),
     m_LCDControl(0x00),
     m_ScrollY(0x00),
     m_ScrollX(0x00),
@@ -287,6 +288,11 @@ bool GPU::WriteByte(const ushort& address, const byte val)
     }
 }
 
+void GPU::SetVSyncCallback(void(*pCallback)())
+{
+    m_pVSyncCallback = pCallback;
+}
+
 void GPU::LaunchDMATransfer(const byte address)
 {
     /*
@@ -326,6 +332,10 @@ void GPU::RenderScanline()
 
 void GPU::RenderImage()
 {
+    if (m_pVSyncCallback != nullptr)
+    {
+        m_pVSyncCallback();
+    }
 }
 
 void GPU::RenderBackgroundScanline()
