@@ -52,7 +52,7 @@ byte ROMOnly_MBC::ReadByte(const ushort& address)
     {
         if (m_RAM == nullptr)
         {
-            Logger::Log("ROMOnly_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
+            //Logger::Log("ROMOnly_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
             return 0x00;
         }
 
@@ -67,7 +67,7 @@ bool ROMOnly_MBC::WriteByte(const ushort& address, const byte val)
 {
     if (m_RAM == nullptr)
     {
-        Logger::Log("ROMOnly_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
+        //Logger::Log("ROMOnly_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
         return false;
     }
 
@@ -134,13 +134,13 @@ byte MBC1_MBC::ReadByte(const ushort& address)
         */
         if (!m_isRAMEnabled)
         {
-            Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
+            //Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
             return 0x00;
         }
 
         if (m_RAM == nullptr)
         {
-            Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
+            //Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
             return 0x00;
         }
 
@@ -230,13 +230,13 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
 
         if (!m_isRAMEnabled)
         {
-            Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
+            //Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
             return false;
         }
 
         if (m_RAM == nullptr)
         {
-            Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
+            //Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
             return false;
         }
 
@@ -302,7 +302,7 @@ byte MBC2_MBC::ReadByte(const ushort& address)
         */
         if (!m_isRAMEnabled)
         {
-            Logger::Log("MBC2_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
+            //Logger::Log("MBC2_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
             return 0x00;
         }
 
@@ -358,7 +358,7 @@ bool MBC2_MBC::WriteByte(const ushort& address, const byte val)
         */
         if (!m_isRAMEnabled)
         {
-            Logger::Log("MBC2_MBC::ReadByte doesn't support writing to 0x%04X, RAM disabled.", address);
+            //Logger::Log("MBC2_MBC::ReadByte doesn't support writing to 0x%04X, RAM disabled.", address);
             return false;
         }
 
@@ -450,13 +450,13 @@ byte MBC3_MBC::ReadByte(const ushort& address)
         */
         if (!m_isRAMEnabled)
         {
-            Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
+            //Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
             return 0x00;
         }
 
         if (m_RAM == nullptr)
         {
-            Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
+            //Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
             return 0x00;
         }
 
@@ -545,13 +545,13 @@ bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
 
         if (!m_isRAMEnabled)
         {
-            Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
+            //Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
             return false;
         }
 
         if (m_RAM == nullptr)
         {
-            Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
+            //Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
             return false;
         }
 
