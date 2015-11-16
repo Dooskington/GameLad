@@ -34,8 +34,9 @@ bool Serial::WriteByte(const ushort& address, const byte val)
     switch (address)
     {
     case SerialTransferData:
+        Logger::Log("%c", val);
+        return true;
     case SerialTransferControl:
-        Logger::Log("Serial::WriteByte is not implemented for address 0x%04X", address);
         return true;
     default:
         Logger::Log("Serial::WriteByte cannot write to address 0x%04X", address);
