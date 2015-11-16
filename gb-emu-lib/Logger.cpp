@@ -41,3 +41,8 @@ void Logger::LogError(const char* message, ...)
     va_end(argPointer);
     std::cerr << buffer << std::endl;
 }
+
+void Logger::LogCharacter(char character)
+{
+    std::cout << character;
+}
