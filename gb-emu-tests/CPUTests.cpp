@@ -2641,7 +2641,7 @@ public:
     }
 
     // 0xF3
-    TEST_METHOD(DI_TEST)
+    TEST_METHOD(DI_Test)
     {
         byte m_Mem[] = { 0xF3 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
@@ -2689,7 +2689,7 @@ public:
     }
 
     // 0xFB
-    TEST_METHOD(EI_TEST)
+    TEST_METHOD(EI_Test)
     {
         byte m_Mem[] = { 0xFB };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
