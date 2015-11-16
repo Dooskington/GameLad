@@ -92,6 +92,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, XORE_Test);
     TEST_CALL(CPUTests, XORH_Test);
     TEST_CALL(CPUTests, XORL_Test);
+    TEST_CALL(CPUTests, XOR_HL_Test);
 
     TEST_CALL(CPUTests, ORA_Test);
     TEST_CALL(CPUTests, ORB_Test);

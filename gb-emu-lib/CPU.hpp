@@ -100,6 +100,7 @@ private:
     void HALT(const byte& opCode);            // 0x76
     void LD_HL_A(const byte& opCode);         // 0x77
     void ADDA_HL_(const byte& opCode);        // 0x86
+    void XOR_HL_(const byte& opCode);
     void CP_HL_(const byte& opCode);          // 0xBE
     void JPnn(const byte& opCode);            // 0xC3
     void ADDAn(const byte& opCode);           // 0xC6

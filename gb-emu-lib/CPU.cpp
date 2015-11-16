@@ -226,7 +226,7 @@ CPU::CPU() :
     m_operationMap[0xAB] = &CPU::XORr;
     m_operationMap[0xAC] = &CPU::XORr;
     m_operationMap[0xAD] = &CPU::XORr;
-    //m_operationMap[0xAE] TODO
+    m_operationMap[0xAE] = &CPU::XOR_HL_;
     m_operationMap[0xAF] = &CPU::XORr;
 
     // B0
@@ -1296,6 +1296,39 @@ void CPU::XORr(const byte& opCode)
     ClearFlag(CarryFlag);
 
     m_cycles += 4;
+}
+
+/*
+XOR (HL) - 0xAE
+
+The logical exclusive-OR operation is performed between the byte pointed to by the HL register
+and the byte contained in the accumulator. The result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z000
+Affects Z, clears n, clears h, clears c
+*/
+void CPU::XOR_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+    SetHighByte(&m_AF, r ^ GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*
