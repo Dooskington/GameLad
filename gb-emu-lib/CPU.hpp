@@ -66,6 +66,8 @@ private:
     byte ReadBytePC();
     ushort ReadUShortPC();
 
+    void ResetIME();
+
     void HALT();
 
     // TODO: Organize the following...

@@ -162,9 +162,11 @@ byte MMU::ReadByteInternal(const ushort& address)
     }
     else if (address == 0xFFFF)
     {
-        // TODO: Interrupt bit
-        Logger::Log("MMU doesn't support interrupts yet!");
-        return 0x00;
+        return m_IE;
+    }
+    else if (address == 0xFF0F)
+    {
+        return m_IF;
     }
     else if (address == 0xFF50)
     {
@@ -201,9 +203,11 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
     }
     else if (address == 0xFFFF)
     {
-        // TODO: Interrupt bit
-        Logger::Log("MMU doesn't support interrupts yet!");
-        return false;
+        m_IE = val;
+    }
+    else if (address == 0xFF0F)
+    {
+        m_IF = val;
     }
     else if (address == 0xFF50)
     {
@@ -216,4 +220,19 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
     }
 
     return true;
+}
+
+ushort MMU::GetIE()
+{
+    return m_IE;
+}
+
+ushort MMU::GetIF()
+{
+    return m_IF;
+}
+
+void MMU::SetIF(const byte& val)
+{
+    m_IF = val;
 }

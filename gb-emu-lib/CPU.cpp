@@ -719,7 +719,59 @@ void CPU::StepFrame()
 {
     while (m_cycles < CyclesPerFrame)
     {
-        Step();
+        Step(); // Execute the current instruction
+
+        // If the IME is enabled, some interrupts are enabled in IE, and
+        // an interrupt flag is set, handle the interrupt.
+        byte IE = m_MMU->ReadByte(0xFFFF);
+        byte IF = m_MMU->ReadByte(0xFF0F);
+        if (m_IME)
+        {
+            m_IME = 0x00; // Disable further interrupts
+            PushUShortToSP(m_PC); // Push current PC onto stack
+
+            // Jump to the correct handler
+            if ((ISBITSET(IE, 0)) && (ISBITSET(IF, 0)))
+            {
+                IF = CLEARBIT(IF, 0);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // VBlank
+                m_PC = 0x0040;
+            }
+            else if ((ISBITSET(IE, 1)) && (ISBITSET(IF, 1)))
+            {
+                IF = CLEARBIT(IF, 1);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // LCD status
+                m_PC = 0x0048;
+            }
+            else if ((ISBITSET(IE, 2)) && (ISBITSET(IF, 2)))
+            {
+                IF = CLEARBIT(IF, 2);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // Timer
+                m_PC = 0x0050;
+            }
+            else if ((ISBITSET(IE, 3)) && (ISBITSET(IF, 3)))
+            {
+                IF = CLEARBIT(IF, 3);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // Serial
+                m_PC = 0x0058;
+            }
+            else if ((ISBITSET(IE, 4)) && (ISBITSET(IF, 4)))
+            {
+                IF = CLEARBIT(IF, 4);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // Joypad
+                m_PC = 0x0060;
+            }
+        }
     }
 
     // Reset the cycles. If we went over our max cycles, the next frame will start a
@@ -729,7 +781,14 @@ void CPU::StepFrame()
 
 void CPU::TriggerInterrupt(byte interrupt)
 {
-    // TODO: Process interrupts here!
+    byte IF = m_MMU->ReadByte(0xFF0F);
+    if (interrupt == INT40) IF = SETBIT(IF, 0);
+    else if (interrupt == INT48) IF = SETBIT(IF, 1);
+    else if (interrupt == INT50) IF = SETBIT(IF, 2);
+    else if (interrupt == INT58) IF = SETBIT(IF, 3);
+    else if (interrupt == INT60) IF = SETBIT(IF, 4);
+
+    m_MMU->WriteByte(0xFF0F, IF);
 }
 
 byte* CPU::GetCurrentFrame()
@@ -930,6 +989,11 @@ ushort CPU::ReadUShortPC()
     ushort val = m_MMU->ReadUShort(m_PC);
     m_PC += 2;
     return val;
+}
+
+void CPU::ResetIME()
+{
+    m_IME = 0x01;
 }
 
 void CPU::HALT()
