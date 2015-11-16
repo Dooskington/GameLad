@@ -39,7 +39,7 @@ CPU::CPU() :
     m_operationMap[0x04] = &CPU::INCr;
     m_operationMap[0x05] = &CPU::DECr;
     m_operationMap[0x06] = &CPU::LDrn;
-    //m_operationMap[0x07] TODO
+    m_operationMap[0x07] = &CPU::RLCA;
     //m_operationMap[0x08] TODO
     //m_operationMap[0x09] TODO
     //m_operationMap[0x0A] TODO
@@ -1023,6 +1023,40 @@ void CPU::LD_BC_A(const byte& opCode)
 {
     m_MMU->WriteByte(m_BC, GetHighByte(m_AF));
     m_cycles += 8;
+}
+
+/*
+RLCA
+00000111
+
+The contents of the accumulator are rotated left 1-bit position. Bit 7
+is copied to the carry flag and also to bit 0.
+
+4 Cycles
+
+Flags affected(znhc): 000c
+*/
+void CPU::RLCA(const byte& opCode)
+{
+    byte r = GetHighByte(m_AF);
+
+    // Grab bit 7 and store it in the carryflag
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r left
+    r = r << 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    r = IsFlagSet(CarryFlag) ? SETBIT(r, 0) : CLEARBIT(r, 0);
+
+    SetHighByte(&m_AF, r);
+
+    // Clear sZ, clears N, clears H, affects C
+    ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 4;
 }
 
 /*
