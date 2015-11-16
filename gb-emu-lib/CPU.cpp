@@ -252,7 +252,7 @@ CPU::CPU() :
     m_operationMap[0xC1] = &CPU::POPrr;
     //m_operationMap[0xC2] TODO
     m_operationMap[0xC3] = &CPU::JPnn;
-    //m_operationMap[0xC4] TODO
+    m_operationMap[0xC4] = &CPU::CALLccnn;
     m_operationMap[0xC5] = &CPU::PUSHrr;
     //m_operationMap[0xC6] TODO
     //m_operationMap[0xC7] TODO
@@ -260,7 +260,7 @@ CPU::CPU() :
     m_operationMap[0xC9] = &CPU::RET;
     //m_operationMap[0xCA] TODO
     //m_operationMap[0xCB] MAPPED TO 0xCB MAP
-    //m_operationMap[0xCC] TODO
+    m_operationMap[0xCC] = &CPU::CALLccnn;
     m_operationMap[0xCD] = &CPU::CALLnn;
     //m_operationMap[0xCE] TODO
     //m_operationMap[0xCF] TODO
@@ -270,7 +270,7 @@ CPU::CPU() :
     m_operationMap[0xD1] = &CPU::POPrr;
     //m_operationMap[0xD2] TODO
     //m_operationMap[0xD3] UNUSED
-    //m_operationMap[0xD4] TODO
+    m_operationMap[0xD4] = &CPU::CALLccnn;
     m_operationMap[0xD5] = &CPU::PUSHrr;
     //m_operationMap[0xD6] TODO
     //m_operationMap[0xD7] TODO
@@ -278,7 +278,7 @@ CPU::CPU() :
     //m_operationMap[0xD9] TODO
     //m_operationMap[0xDA] TODO
     //m_operationMap[0xDB] UNUSED
-    //m_operationMap[0xDC] TODO
+    m_operationMap[0xDC] = &CPU::CALLccnn;
     //m_operationMap[0xDD] UNUSED
     //m_operationMap[0xDE] TODO
     //m_operationMap[0xDF] TODO
@@ -294,7 +294,7 @@ CPU::CPU() :
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
-    m_operationMap[0xEA]= &CPU::LD_nn_A;
+    m_operationMap[0xEA] = &CPU::LD_nn_A;
     //m_operationMap[0xEB] UNUSED
     //m_operationMap[0xEC] UNUSED
     //m_operationMap[0xED] UNUSED
@@ -1113,6 +1113,53 @@ void CPU::INCr(const byte& opCode)
     }
 
     m_cycles += 4;
+}
+
+/*
+CALL cc, nn
+11ccc100
+
+000 NZ
+001 Z
+010 NC
+011 C
+
+24 Cycles if taken
+12 Cycles if not taken
+
+Flags affected(znhc): ----
+*/
+void CPU::CALLccnn(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    bool check = false;
+    switch ((opCode >> 3) & 0x03)
+    {
+    case 0x00:  // NZ
+        check = !IsFlagSet(ZeroFlag);
+        break;
+    case 0x01:  // Z
+        check = IsFlagSet(ZeroFlag);
+        break;
+    case 0x02:  // NC
+        check = !IsFlagSet(CarryFlag);
+        break;
+    case 0x03:  // C
+        check = IsFlagSet(CarryFlag);
+        break;
+    }
+
+    if (check)
+    {
+        m_cycles += 24;
+        PushUShortToSP(m_PC);
+        m_PC = nn;
+    }
+    else
+    {
+        m_cycles += 12;
+    }
 }
 
 /*

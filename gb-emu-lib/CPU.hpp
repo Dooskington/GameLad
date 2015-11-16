@@ -84,6 +84,7 @@ private:
     void POPrr(const byte& opCode);
     void DECr(const byte& opCode);
     void SUBr(const byte& opCode);
+    void CALLccnn(const byte& opCode);
 
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
