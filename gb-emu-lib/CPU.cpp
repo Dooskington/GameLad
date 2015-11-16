@@ -34,12 +34,12 @@ CPU::CPU() :
     // 00
     m_operationMap[0x00] = &CPU::NOP;
     m_operationMap[0x01] = &CPU::LDrrnn;
-    //m_operationMap[0x02] TODO
+    m_operationMap[0x02] = &CPU::LD_BC_A;
     m_operationMap[0x03] = &CPU::INCrr;
     m_operationMap[0x04] = &CPU::INCr;
     m_operationMap[0x05] = &CPU::DECr;
     m_operationMap[0x06] = &CPU::LDrn;
-    //m_operationMap[0x07] TODO
+    m_operationMap[0x07] = &CPU::RLCA;
     //m_operationMap[0x08] TODO
     //m_operationMap[0x09] TODO
     //m_operationMap[0x0A] TODO
@@ -50,7 +50,7 @@ CPU::CPU() :
     //m_operationMap[0x0F] TODO
 
     // 10
-    //m_operationMap[0x10] TODO
+    m_operationMap[0x10] = &CPU::STOP;
     m_operationMap[0x11] = &CPU::LDrrnn;
     //m_operationMap[0x12] TODO
     m_operationMap[0x13] = &CPU::INCrr;
@@ -65,7 +65,7 @@ CPU::CPU() :
     m_operationMap[0x1C] = &CPU::INCr;
     m_operationMap[0x1D] = &CPU::DECr;
     m_operationMap[0x1E] = &CPU::LDrn;
-    //m_operationMap[0x1F] TODO
+    m_operationMap[0x1F] = &CPU::RRA;
 
     // 20
     m_operationMap[0x20] = &CPU::JRNZe;
@@ -110,7 +110,7 @@ CPU::CPU() :
     m_operationMap[0x43] = &CPU::LDrR;
     m_operationMap[0x44] = &CPU::LDrR;
     m_operationMap[0x45] = &CPU::LDrR;
-    //m_operationMap[0x46] TODO
+    m_operationMap[0x46] = &CPU::LDr_HL_;
     m_operationMap[0x47] = &CPU::LDrR;
     m_operationMap[0x48] = &CPU::LDrR;
     m_operationMap[0x49] = &CPU::LDrR;
@@ -118,7 +118,7 @@ CPU::CPU() :
     m_operationMap[0x4B] = &CPU::LDrR;
     m_operationMap[0x4C] = &CPU::LDrR;
     m_operationMap[0x4D] = &CPU::LDrR;
-    //m_operationMap[0x4E] TODO
+    m_operationMap[0x4E] = &CPU::LDr_HL_;
     m_operationMap[0x4F] = &CPU::LDrR;
 
     // 50
@@ -128,7 +128,7 @@ CPU::CPU() :
     m_operationMap[0x53] = &CPU::LDrR;
     m_operationMap[0x54] = &CPU::LDrR;
     m_operationMap[0x55] = &CPU::LDrR;
-    //m_operationMap[0x56] TODO
+    m_operationMap[0x56] = &CPU::LDr_HL_;
     m_operationMap[0x57] = &CPU::LDrR;
     m_operationMap[0x58] = &CPU::LDrR;
     m_operationMap[0x59] = &CPU::LDrR;
@@ -136,7 +136,7 @@ CPU::CPU() :
     m_operationMap[0x5B] = &CPU::LDrR;
     m_operationMap[0x5C] = &CPU::LDrR;
     m_operationMap[0x5D] = &CPU::LDrR;
-    //m_operationMap[0x5E] TODO
+    m_operationMap[0x5E] = &CPU::LDr_HL_;
     m_operationMap[0x5F] = &CPU::LDrR;
 
     // 60
@@ -146,7 +146,7 @@ CPU::CPU() :
     m_operationMap[0x63] = &CPU::LDrR;
     m_operationMap[0x64] = &CPU::LDrR;
     m_operationMap[0x65] = &CPU::LDrR;
-    //m_operationMap[0x66] TODO
+    m_operationMap[0x66] = &CPU::LDr_HL_;
     m_operationMap[0x67] = &CPU::LDrR;
     m_operationMap[0x68] = &CPU::LDrR;
     m_operationMap[0x69] = &CPU::LDrR;
@@ -154,7 +154,7 @@ CPU::CPU() :
     m_operationMap[0x6B] = &CPU::LDrR;
     m_operationMap[0x6C] = &CPU::LDrR;
     m_operationMap[0x6D] = &CPU::LDrR;
-    //m_operationMap[0x6E] TODO
+    m_operationMap[0x6E] = &CPU::LDr_HL_;
     m_operationMap[0x6F] = &CPU::LDrR;
 
     // 70
@@ -164,7 +164,7 @@ CPU::CPU() :
     //m_operationMap[0x73] TODO
     //m_operationMap[0x74] TODO
     //m_operationMap[0x75] TODO
-    //m_operationMap[0x76] TODO
+    m_operationMap[0x76] = &CPU::HALT;
     m_operationMap[0x77] = &CPU::LD_HL_A;
     m_operationMap[0x78] = &CPU::LDrR;
     m_operationMap[0x79] = &CPU::LDrR;
@@ -172,7 +172,7 @@ CPU::CPU() :
     m_operationMap[0x7B] = &CPU::LDrR;
     m_operationMap[0x7C] = &CPU::LDrR;
     m_operationMap[0x7D] = &CPU::LDrR;
-    //m_operationMap[0x7E] TODO
+    m_operationMap[0x7E] = &CPU::LDr_HL_;
     m_operationMap[0x7F] = &CPU::LDrR;
 
     // 80
@@ -226,7 +226,7 @@ CPU::CPU() :
     m_operationMap[0xAB] = &CPU::XORr;
     m_operationMap[0xAC] = &CPU::XORr;
     m_operationMap[0xAD] = &CPU::XORr;
-    //m_operationMap[0xAE] TODO
+    m_operationMap[0xAE] = &CPU::XOR_HL_;
     m_operationMap[0xAF] = &CPU::XORr;
 
     // B0
@@ -254,7 +254,7 @@ CPU::CPU() :
     m_operationMap[0xC3] = &CPU::JPnn;
     m_operationMap[0xC4] = &CPU::CALLccnn;
     m_operationMap[0xC5] = &CPU::PUSHrr;
-    //m_operationMap[0xC6] TODO
+    m_operationMap[0xC6] = &CPU::ADDAn;
     //m_operationMap[0xC7] TODO
     //m_operationMap[0xC8] TODO
     m_operationMap[0xC9] = &CPU::RET;
@@ -272,7 +272,7 @@ CPU::CPU() :
     //m_operationMap[0xD3] UNUSED
     m_operationMap[0xD4] = &CPU::CALLccnn;
     m_operationMap[0xD5] = &CPU::PUSHrr;
-    //m_operationMap[0xD6] TODO
+    m_operationMap[0xD6] = &CPU::SUBn;
     //m_operationMap[0xD7] TODO
     //m_operationMap[0xD8] TODO
     //m_operationMap[0xD9] TODO
@@ -789,7 +789,7 @@ void CPU::Step()
         else
         {
             Logger::LogError("OpCode 0x%02X at address 0x%04X could not be interpreted.", opCode, addr);
-            HALT();
+            HALT(0x76);
         }
     }
 
@@ -996,12 +996,6 @@ void CPU::HandleInterrupts()
     }
 }
 
-void CPU::HALT()
-{
-    m_isHalted = true;
-    Logger::Log("!!!! HALTED !!!!");
-}
-
 /*
     CPU INSTRUCTION MAP
 */
@@ -1012,6 +1006,57 @@ void CPU::NOP(const byte& opCode)
     m_cycles += 4;
 
     // No flags affected
+}
+
+/*
+LD (bc), a 
+00000010
+
+The contents of the accumulator are loaded to the memory location specified by
+the contents of the register pair BC.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LD_BC_A(const byte& opCode)
+{
+    m_MMU->WriteByte(m_BC, GetHighByte(m_AF));
+    m_cycles += 8;
+}
+
+/*
+RLCA
+00000111
+
+The contents of the accumulator are rotated left 1-bit position. Bit 7
+is copied to the carry flag and also to bit 0.
+
+4 Cycles
+
+Flags affected(znhc): 000c
+*/
+void CPU::RLCA(const byte& opCode)
+{
+    byte r = GetHighByte(m_AF);
+
+    // Grab bit 7 and store it in the carryflag
+    ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r left
+    r = r << 1;
+
+    // Set bit 0 of r to the old CarryFlag
+    r = IsFlagSet(CarryFlag) ? SETBIT(r, 0) : CLEARBIT(r, 0);
+
+    SetHighByte(&m_AF, r);
+
+    // Clear sZ, clears N, clears H, affects C
+    ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 4;
 }
 
 /*
@@ -1052,6 +1097,26 @@ void CPU::LDrR(const byte& opCode)
     (*r) = *R;
 
     m_cycles += 4;
+}
+
+/*
+LD r, (hl)
+01rrr110
+
+The contents of the memory location (HL) are loaded into register r, where
+r identifies a register A, B, C, D, E, H, or L.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LDr_HL_(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode >> 3);
+
+    (*r) = m_MMU->ReadByte(m_HL);
+
+    m_cycles += 8;
 }
 
 /*
@@ -1234,6 +1299,39 @@ void CPU::XORr(const byte& opCode)
 }
 
 /*
+XOR (HL) - 0xAE
+
+The logical exclusive-OR operation is performed between the byte pointed to by the HL register
+and the byte contained in the accumulator. The result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z000
+Affects Z, clears n, clears h, clears c
+*/
+void CPU::XOR_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+    SetHighByte(&m_AF, r ^ GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
 OR r
 10110rrr
 
@@ -1407,6 +1505,13 @@ void CPU::SUBr(const byte& opCode)
     m_cycles += 4;
 }
 
+// 0x10 (STOP)
+void CPU::STOP(const byte& opCode)
+{
+    // For the emulator, these are effectively the same thing
+    HALT(opCode);
+}
+
 // 0x17 (RL A)
 void CPU::RLA(const byte& opCode)
 {
@@ -1460,6 +1565,29 @@ void CPU::LDA_DE_(const byte& opCode)
     // No flags affected
 }
 
+// 0x17 (RR A)
+void CPU::RRA(const byte& opCode)
+{
+    // Grab the current CarryFlag val
+    bool carry = IsFlagSet(CarryFlag);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(GetHighByte(m_AF), 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift A right
+    SetHighByte(&m_AF, GetHighByte(m_AF) >> 1);
+
+    // Set bit 7 of A to the old CarryFlag
+    SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 7) : CLEARBIT(GetHighByte(m_AF), 7));
+
+    // Affects Z, clears N, clears H, affects C
+    (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 4;
+}
+
 // 0x20 0xFB (JR NZ, e)
 void CPU::JRNZe(const byte& opCode)
 {
@@ -1490,11 +1618,7 @@ void CPU::JRNZe(const byte& opCode)
 */
 void CPU::LDI_HL_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
-    {
-        HALT();
-        return;
-    }
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL++;
 
@@ -1548,11 +1672,7 @@ void CPU::LDIA_HL_(const byte& opCode)
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
-    {
-        HALT();
-        return;
-    }
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL--;
     m_cycles += 8;
@@ -1560,14 +1680,27 @@ void CPU::LDD_HL_A(const byte& opCode)
     // No flags affected
 }
 
+// 0x76 (HALT)
+void CPU::HALT(const byte& opCode)
+{
+    m_isHalted = true;
+    m_cycles += 4;
+
+    if (opCode == 0x76)
+    {
+        Logger::Log("!!!! HALTED !!!!");
+    }
+    else
+    {
+        Logger::Log("!!!! STOPPED !!!!");
+    }
+}
+
 // 0x77 (LD (HL), A)
 // Identical to 0x32, except does not decrement
 void CPU::LD_HL_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(m_HL, GetHighByte(m_AF))) // Load A into the address pointed at by HL.
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_cycles += 8;
 
@@ -1646,6 +1779,35 @@ void CPU::JPnn(const byte& opCode)
 }
 
 /*
+ADD A, n
+0xC6
+
+The integer n is added to the contents of the accumulator, and the reults are
+stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z0hc
+Affects Z, clears n, affects h, affects c
+*/
+void CPU::ADDAn(const byte& opCode)
+{
+    ushort n = ReadBytePC();
+
+    byte A = GetHighByte(m_AF);
+    byte result = A + n;
+
+    SetHighByte(&m_AF, result);
+    
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
     RET
     0xC9
 
@@ -1675,15 +1837,37 @@ void CPU::CALLnn(const byte& opCode)
     // No flags affected
 }
 
+/*
+SUB n (0xD6)
+
+The 8-bit value n is subtracted from the contents of the Accumulator, and the
+result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z1hc
+*/
+void CPU::SUBn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    byte A = GetHighByte(m_AF);
+    byte result = A - n;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(AddFlag);
+    ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
 // 0xE0 (LD(0xFF00 + n), A)
 void CPU::LD_0xFF00n_A(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
 
-    if (!m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF))) // Load A into 0xFF00 + n
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
 
     m_cycles += 8;
 
@@ -1693,10 +1877,7 @@ void CPU::LD_0xFF00n_A(const byte& opCode)
 // 0xE2 (LD(0xFF00 + C), A)
 void CPU::LD_0xFF00C_A(const byte& opCode)
 {
-    if (!m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF))) // Load A into 0xFF00 + C
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
 
     m_cycles += 8;
 
@@ -1718,10 +1899,7 @@ void CPU::LD_nn_A(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
-    if (!m_MMU->WriteByte(nn, GetHighByte(m_AF))) // Load A into (nn)
-    {
-        HALT();
-    }
+    m_MMU->WriteByte(nn, GetHighByte(m_AF)); // Load A into (nn)
 
     m_cycles += 16;
 }
