@@ -312,7 +312,7 @@ CPU::CPU() :
     //m_operationMap[0xF7] TODO
     //m_operationMap[0xF8] TODO
     //m_operationMap[0xF9] TODO
-    //m_operationMap[0xFA] TODO
+    m_operationMap[0xFA] = &CPU::LDA_nn_;
     m_operationMap[0xFB] = &CPU::EI;
     //m_operationMap[0xFC] UNUSED
     //m_operationMap[0xFD] UNUSED
@@ -1684,6 +1684,24 @@ void CPU::DI(const byte& opCode)
     m_IME = 0x00;
 
     m_cycles += 4;
+}
+
+/*
+LD A, (nn)
+0xFA
+
+The contents of the address specified by the operand nn are loaded into the accumulator.
+
+16 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LDA_nn_(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+    SetHighByte(&m_AF, m_MMU->ReadByte(nn));
+
+    m_cycles += 16;
 }
 
 /*
