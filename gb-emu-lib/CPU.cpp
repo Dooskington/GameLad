@@ -259,7 +259,7 @@ CPU::CPU() :
     //m_operationMap[0xC8] TODO
     m_operationMap[0xC9] = &CPU::RET;
     //m_operationMap[0xCA] TODO
-    //m_operationMap[0xCB] TODO
+    //m_operationMap[0xCB] MAPPED TO 0xCB MAP
     //m_operationMap[0xCC] TODO
     m_operationMap[0xCD] = &CPU::CALLnn;
     //m_operationMap[0xCE] TODO
@@ -269,7 +269,7 @@ CPU::CPU() :
     //m_operationMap[0xD0] TODO
     m_operationMap[0xD1] = &CPU::POPrr;
     //m_operationMap[0xD2] TODO
-    //m_operationMap[0xD3] TODO
+    //m_operationMap[0xD3] UNUSED
     //m_operationMap[0xD4] TODO
     m_operationMap[0xD5] = &CPU::PUSHrr;
     //m_operationMap[0xD6] TODO
@@ -277,9 +277,9 @@ CPU::CPU() :
     //m_operationMap[0xD8] TODO
     //m_operationMap[0xD9] TODO
     //m_operationMap[0xDA] TODO
-    //m_operationMap[0xDB] TODO
+    //m_operationMap[0xDB] UNUSED
     //m_operationMap[0xDC] TODO
-    //m_operationMap[0xDD] TODO
+    //m_operationMap[0xDD] UNUSED
     //m_operationMap[0xDE] TODO
     //m_operationMap[0xDF] TODO
 
@@ -287,17 +287,17 @@ CPU::CPU() :
     m_operationMap[0xE0] = &CPU::LD_0xFF00n_A;
     m_operationMap[0xE1] = &CPU::POPrr;
     m_operationMap[0xE2] = &CPU::LD_0xFF00C_A;
-    //m_operationMap[0xE3] TODO
-    //m_operationMap[0xE4] TODO
+    //m_operationMap[0xE3] UNUSED
+    //m_operationMap[0xE4] UNUSED
     m_operationMap[0xE5] = &CPU::PUSHrr;
     //m_operationMap[0xE6] TODO
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
     m_operationMap[0xEA]= &CPU::LD_nn_A;
-    //m_operationMap[0xEB] TODO
-    //m_operationMap[0xEC] TODO
-    //m_operationMap[0xED] TODO
+    //m_operationMap[0xEB] UNUSED
+    //m_operationMap[0xEC] UNUSED
+    //m_operationMap[0xED] UNUSED
     //m_operationMap[0xEE] TODO
     //m_operationMap[0xEF] TODO
 
@@ -306,7 +306,7 @@ CPU::CPU() :
     m_operationMap[0xF1] = &CPU::POPrr;
     m_operationMap[0xF2] = &CPU::LDA_0xFF00C_;
     m_operationMap[0xF3] = &CPU::DI;
-    //m_operationMap[0xF4] TODO
+    //m_operationMap[0xF4] UNUSED
     m_operationMap[0xF5] = &CPU::PUSHrr;
     //m_operationMap[0xF6] TODO
     //m_operationMap[0xF7] TODO
@@ -314,8 +314,8 @@ CPU::CPU() :
     //m_operationMap[0xF9] TODO
     //m_operationMap[0xFA] TODO
     m_operationMap[0xFB] = &CPU::EI;
-    //m_operationMap[0xFC] TODO
-    //m_operationMap[0xFD] TODO
+    //m_operationMap[0xFC] UNUSED
+    //m_operationMap[0xFD] UNUSED
     m_operationMap[0xFE] = &CPU::CPn;
     //m_operationMap[0xFF] TODO
 
@@ -719,7 +719,59 @@ void CPU::StepFrame()
 {
     while (m_cycles < CyclesPerFrame)
     {
-        Step();
+        Step(); // Execute the current instruction
+
+        // If the IME is enabled, some interrupts are enabled in IE, and
+        // an interrupt flag is set, handle the interrupt.
+        byte IE = m_MMU->ReadByte(0xFFFF);
+        byte IF = m_MMU->ReadByte(0xFF0F);
+        if (m_IME)
+        {
+            m_IME = 0x00; // Disable further interrupts
+            PushUShortToSP(m_PC); // Push current PC onto stack
+
+            // Jump to the correct handler
+            if ((ISBITSET(IE, 0)) && (ISBITSET(IF, 0)))
+            {
+                IF = CLEARBIT(IF, 0);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // VBlank
+                m_PC = 0x0040;
+            }
+            else if ((ISBITSET(IE, 1)) && (ISBITSET(IF, 1)))
+            {
+                IF = CLEARBIT(IF, 1);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // LCD status
+                m_PC = 0x0048;
+            }
+            else if ((ISBITSET(IE, 2)) && (ISBITSET(IF, 2)))
+            {
+                IF = CLEARBIT(IF, 2);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // Timer
+                m_PC = 0x0050;
+            }
+            else if ((ISBITSET(IE, 3)) && (ISBITSET(IF, 3)))
+            {
+                IF = CLEARBIT(IF, 3);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // Serial
+                m_PC = 0x0058;
+            }
+            else if ((ISBITSET(IE, 4)) && (ISBITSET(IF, 4)))
+            {
+                IF = CLEARBIT(IF, 4);
+                m_MMU->WriteByte(0xFF0F, IF);
+
+                // Joypad
+                m_PC = 0x0060;
+            }
+        }
     }
 
     // Reset the cycles. If we went over our max cycles, the next frame will start a
@@ -729,7 +781,14 @@ void CPU::StepFrame()
 
 void CPU::TriggerInterrupt(byte interrupt)
 {
-    // TODO: Process interrupts here!
+    byte IF = m_MMU->ReadByte(0xFF0F);
+    if (interrupt == INT40) IF = SETBIT(IF, 0);
+    else if (interrupt == INT48) IF = SETBIT(IF, 1);
+    else if (interrupt == INT50) IF = SETBIT(IF, 2);
+    else if (interrupt == INT58) IF = SETBIT(IF, 3);
+    else if (interrupt == INT60) IF = SETBIT(IF, 4);
+
+    m_MMU->WriteByte(0xFF0F, IF);
 }
 
 byte* CPU::GetCurrentFrame()
@@ -930,6 +989,11 @@ ushort CPU::ReadUShortPC()
     ushort val = m_MMU->ReadUShort(m_PC);
     m_PC += 2;
     return val;
+}
+
+void CPU::ResetIME()
+{
+    m_IME = 0x01;
 }
 
 void CPU::HALT()
