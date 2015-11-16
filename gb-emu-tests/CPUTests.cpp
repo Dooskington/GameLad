@@ -1557,6 +1557,32 @@ public:
         spCPU.reset();
     }
 
+    // 0x2A
+    TEST_METHOD(LDIA_HL_Test)
+    {
+        byte m_Mem[] = { 0x2A };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_HL = 0x1234;
+        spCPU->m_MMU->WriteByte(0x1234, 0x12);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+        Assert::AreEqual(0x1200, (int)spCPU->m_AF);
+        Assert::AreEqual(0x1235, (int)spCPU->m_HL);
+
+        spCPU.reset();
+    }
+
     // 0x32
     TEST_METHOD(LDD_HL_A_Test)
     {
@@ -2256,6 +2282,229 @@ public:
         spCPU.reset();
     }
 
+    // 0xB0
+    TEST_METHOD(ORB_Test)
+    {
+        // Load ORB
+        byte m_Mem[] = { 0xB0 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_BC = 0x1200;
+        spCPU->m_AF = 0x1400;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x1600, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
+    // 0xB1
+    TEST_METHOD(ORC_Test)
+    {
+        // Load ORC
+        byte m_Mem[] = { 0xB1 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_BC = 0x0012;
+        spCPU->m_AF = 0x1400;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x1600, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
+    // 0xB2
+    TEST_METHOD(ORD_Test)
+    {
+        // Load ORD
+        byte m_Mem[] = { 0xB2 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_DE = 0x1200;
+        spCPU->m_AF = 0x1400;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x1600, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
+    // 0xB3
+    TEST_METHOD(ORE_Test)
+    {
+        // Load ORE
+        byte m_Mem[] = { 0xB3 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_DE = 0x0012;
+        spCPU->m_AF = 0x1400;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x1600, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
+    // 0xB4
+    TEST_METHOD(ORH_Test)
+    {
+        // Load ORH
+        byte m_Mem[] = { 0xB4 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_HL = 0x1200;
+        spCPU->m_AF = 0x1400;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x1600, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
+    // 0xB5
+    TEST_METHOD(ORL_Test)
+    {
+        // Load ORL
+        byte m_Mem[] = { 0xB5 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_HL = 0x0012;
+        spCPU->m_AF = 0x1400;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x1600, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
+    // 0xB7
+    TEST_METHOD(ORA_Test)
+    {
+        // Load ORA
+        byte m_Mem[] = { 0xB7 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x1200;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x1200, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
     // 0xBE
     TEST_METHOD(CP_HL__Test)
     {
@@ -2407,6 +2656,85 @@ public:
         Assert::AreEqual(0x0003, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
 
         spCPU.reset();
+    }
+
+    // 0xC4 0xCC 0xD4 0xDC
+    TEST_METHOD(CALLccnn_Test)
+    {
+        for (byte flag = 0x00; flag <= 0x01; flag++)
+        {
+            for (byte test = 0x00; test <= 0x03; test++)
+            {
+                byte opCode = 0xC4 | (test << 3);
+                // Load CALL
+                byte m_Mem[] = { opCode, 0x34, 0x12 };
+                std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+                spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+                spCPU->m_SP = 0xFFFE;
+
+                if (flag == 0x00)
+                {
+                    switch (test)
+                    {
+                    case 0x00:
+                        spCPU->ClearFlag(ZeroFlag);
+                        break;
+                    case 0x01:
+                        spCPU->SetFlag(ZeroFlag);
+                        break;
+                    case 0x02:
+                        spCPU->ClearFlag(CarryFlag);
+                        break;
+                    case 0x03:
+                        spCPU->SetFlag(CarryFlag);
+                        break;
+                    }
+                }
+                else
+                {
+                    switch (test)
+                    {
+                    case 0x00:
+                        spCPU->SetFlag(ZeroFlag);
+                        break;
+                    case 0x01:
+                        spCPU->ClearFlag(ZeroFlag);
+                        break;
+                    case 0x02:
+                        spCPU->SetFlag(CarryFlag);
+                        break;
+                    case 0x03:
+                        spCPU->ClearFlag(CarryFlag);
+                        break;
+                    }
+                }
+
+                // Verify expectations before we run
+                Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+                // Step the CPU 1 OpCode
+                spCPU->Step();
+
+                if (flag == 0x00)
+                {
+                    // Verify expectations after
+                    Assert::AreEqual(24, (int)spCPU->m_cycles);
+                    Assert::AreEqual(0x1234, (int)spCPU->m_PC);
+                    Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
+                    Assert::AreEqual(0x0003, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
+                }
+                else
+                {
+                    // Verify expectations after
+                    Assert::AreEqual(12, (int)spCPU->m_cycles);
+                    Assert::AreEqual(0x0003, (int)spCPU->m_PC);
+                    Assert::AreEqual(0xFFFE, (int)spCPU->m_SP);
+                }
+
+                spCPU.reset();
+            }
+        }
     }
 
     // 0xD1
@@ -2562,6 +2890,51 @@ public:
         spCPU.reset();
     }
 
+    // 0xE6
+    TEST_METHOD(ANDn_Test)
+    {
+        // Load AND n
+        byte m_Mem[] = { 0xE6, 0xF0, 0xE6, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x8F00;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x8020, (int)spCPU->m_AF);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0004, (int)spCPU->m_PC);
+
+        Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        Assert::AreEqual(0x00A0, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
     // 0xF0
     TEST_METHOD(LDA_0xFF00n__Test)
     {
@@ -2684,6 +3057,28 @@ public:
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
         Assert::AreEqual(0x1234, (int)(spCPU->m_MMU->ReadUShort(0xFFFC)));
+
+        spCPU.reset();
+    }
+
+    // 0xFA
+    TEST_METHOD(LDA_nn_Test)
+    {
+        byte m_Mem[] = { 0xFA, 0x34, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_MMU->WriteByte(0x1234, 0x55);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x5500, (int)spCPU->m_AF);
 
         spCPU.reset();
     }

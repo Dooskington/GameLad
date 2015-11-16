@@ -78,11 +78,13 @@ private:
     void LDrrnn(const byte& opCode);
     void INCr(const byte& opCode);
     void INCrr(const byte& opCode);
+    void ORr(const byte& opCode);
     void XORr(const byte& opCode);
     void PUSHrr(const byte& opCode);
     void POPrr(const byte& opCode);
     void DECr(const byte& opCode);
     void SUBr(const byte& opCode);
+    void CALLccnn(const byte& opCode);
 
     void RLA(const byte& opCode);             // 0x17
     void LDA_DE_(const byte& opCode);         // 0x1A
@@ -90,6 +92,7 @@ private:
     void JRNZe(const byte& opCode);           // 0x20
     void LDI_HL_A(const byte& opCode);        // 0x22
     void JRZe(const byte& opCode);            // 0x28
+    void LDIA_HL_(const byte& opCode);        // 0x2A
     void LDD_HL_A(const byte& opCode);        // 0x32
     void LD_HL_A(const byte& opCode);         // 0x77
     void ADDA_HL_(const byte& opCode);        // 0x86
@@ -99,10 +102,12 @@ private:
     void CALLnn(const byte& opCode);          // 0xCD
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
+    void ANDn(const byte& opCode);            // 0xE6
     void LD_nn_A(const byte& opCode);         // 0xEA
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
     void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void DI(const byte& opCode);              // 0xF3
+    void LDA_nn_(const byte& opCode);         // 0xFA
     void EI(const byte& opCode);              // 0xFB
     void CPn(const byte& opCode);             // 0xFE
 

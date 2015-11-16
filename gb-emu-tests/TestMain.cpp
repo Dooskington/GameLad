@@ -25,6 +25,7 @@ int main(int arg, char** argv)
     // TODO: Organize the following...
     // Z80 Instruction Set Tests
     TEST_CALL(CPUTests, LDI_HL_A_Test);
+    TEST_CALL(CPUTests, LDIA_HL_Test);
     TEST_CALL(CPUTests, LDrR_Test);
     TEST_CALL(CPUTests, NOP_Test);
     TEST_CALL(CPUTests, LDBn_Test);
@@ -54,6 +55,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, PUSHHL_Test);
     TEST_CALL(CPUTests, PUSHAF_Test);
     TEST_CALL(CPUTests, CALLnn_Test);
+    TEST_CALL(CPUTests, CALLccnn_Test);
     TEST_CALL(CPUTests, LD_0xFF00n_A_Test);
     TEST_CALL(CPUTests, LD_0xFF00C_A_Test);
     TEST_CALL(CPUTests, LDA_0xFF00n__Test);
@@ -83,6 +85,17 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, XORE_Test);
     TEST_CALL(CPUTests, XORH_Test);
     TEST_CALL(CPUTests, XORL_Test);
+
+    TEST_CALL(CPUTests, ORA_Test);
+    TEST_CALL(CPUTests, ORB_Test);
+    TEST_CALL(CPUTests, ORC_Test);
+    TEST_CALL(CPUTests, ORD_Test);
+    TEST_CALL(CPUTests, ORE_Test);
+    TEST_CALL(CPUTests, ORH_Test);
+    TEST_CALL(CPUTests, ORL_Test);
+
+    TEST_CALL(CPUTests, ANDn_Test);
+
     TEST_CALL(CPUTests, RET_Test);
     TEST_CALL(CPUTests, CPn_Test);
     TEST_CALL(CPUTests, CP_HL__Test);
@@ -97,6 +110,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, ADDA_HL__Test);
     TEST_CALL(CPUTests, JPnn_Test);
     TEST_CALL(CPUTests, DI_Test);
+    TEST_CALL(CPUTests, LDA_nn_Test);
     TEST_CALL(CPUTests, EI_Test);
 
     // Z80 Instruction Set - CB Tests

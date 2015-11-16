@@ -78,7 +78,7 @@ CPU::CPU() :
     //m_operationMap[0x27] TODO
     m_operationMap[0x28] = &CPU::JRZe;
     //m_operationMap[0x29] TODO
-    //m_operationMap[0x2A] TODO
+    m_operationMap[0x2A] = &CPU::LDIA_HL_;
     //m_operationMap[0x2B] TODO
     m_operationMap[0x2C] = &CPU::INCr;
     m_operationMap[0x2D] = &CPU::DECr;
@@ -230,14 +230,14 @@ CPU::CPU() :
     m_operationMap[0xAF] = &CPU::XORr;
 
     // B0
-    //m_operationMap[0xB0] TODO
-    //m_operationMap[0xB1] TODO
-    //m_operationMap[0xB2] TODO
-    //m_operationMap[0xB3] TODO
-    //m_operationMap[0xB4] TODO
-    //m_operationMap[0xB5] TODO
+    m_operationMap[0xB0] = &CPU::ORr;
+    m_operationMap[0xB1] = &CPU::ORr;
+    m_operationMap[0xB2] = &CPU::ORr;
+    m_operationMap[0xB3] = &CPU::ORr;
+    m_operationMap[0xB4] = &CPU::ORr;
+    m_operationMap[0xB5] = &CPU::ORr;
     //m_operationMap[0xB6] TODO
-    //m_operationMap[0xB7] TODO
+    m_operationMap[0xB7] = &CPU::ORr;
     //m_operationMap[0xB8] TODO
     //m_operationMap[0xB9] TODO
     //m_operationMap[0xBA] TODO
@@ -252,7 +252,7 @@ CPU::CPU() :
     m_operationMap[0xC1] = &CPU::POPrr;
     //m_operationMap[0xC2] TODO
     m_operationMap[0xC3] = &CPU::JPnn;
-    //m_operationMap[0xC4] TODO
+    m_operationMap[0xC4] = &CPU::CALLccnn;
     m_operationMap[0xC5] = &CPU::PUSHrr;
     //m_operationMap[0xC6] TODO
     //m_operationMap[0xC7] TODO
@@ -260,7 +260,7 @@ CPU::CPU() :
     m_operationMap[0xC9] = &CPU::RET;
     //m_operationMap[0xCA] TODO
     //m_operationMap[0xCB] MAPPED TO 0xCB MAP
-    //m_operationMap[0xCC] TODO
+    m_operationMap[0xCC] = &CPU::CALLccnn;
     m_operationMap[0xCD] = &CPU::CALLnn;
     //m_operationMap[0xCE] TODO
     //m_operationMap[0xCF] TODO
@@ -270,7 +270,7 @@ CPU::CPU() :
     m_operationMap[0xD1] = &CPU::POPrr;
     //m_operationMap[0xD2] TODO
     //m_operationMap[0xD3] UNUSED
-    //m_operationMap[0xD4] TODO
+    m_operationMap[0xD4] = &CPU::CALLccnn;
     m_operationMap[0xD5] = &CPU::PUSHrr;
     //m_operationMap[0xD6] TODO
     //m_operationMap[0xD7] TODO
@@ -278,7 +278,7 @@ CPU::CPU() :
     //m_operationMap[0xD9] TODO
     //m_operationMap[0xDA] TODO
     //m_operationMap[0xDB] UNUSED
-    //m_operationMap[0xDC] TODO
+    m_operationMap[0xDC] = &CPU::CALLccnn;
     //m_operationMap[0xDD] UNUSED
     //m_operationMap[0xDE] TODO
     //m_operationMap[0xDF] TODO
@@ -290,11 +290,11 @@ CPU::CPU() :
     //m_operationMap[0xE3] UNUSED
     //m_operationMap[0xE4] UNUSED
     m_operationMap[0xE5] = &CPU::PUSHrr;
-    //m_operationMap[0xE6] TODO
+    m_operationMap[0xE6] = &CPU::ANDn;
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
     //m_operationMap[0xE9] TODO
-    m_operationMap[0xEA]= &CPU::LD_nn_A;
+    m_operationMap[0xEA] = &CPU::LD_nn_A;
     //m_operationMap[0xEB] UNUSED
     //m_operationMap[0xEC] UNUSED
     //m_operationMap[0xED] UNUSED
@@ -312,7 +312,7 @@ CPU::CPU() :
     //m_operationMap[0xF7] TODO
     //m_operationMap[0xF8] TODO
     //m_operationMap[0xF9] TODO
-    //m_operationMap[0xFA] TODO
+    m_operationMap[0xFA] = &CPU::LDA_nn_;
     m_operationMap[0xFB] = &CPU::EI;
     //m_operationMap[0xFC] UNUSED
     //m_operationMap[0xFD] UNUSED
@@ -1116,6 +1116,53 @@ void CPU::INCr(const byte& opCode)
 }
 
 /*
+CALL cc, nn
+11ccc100
+
+000 NZ
+001 Z
+010 NC
+011 C
+
+24 Cycles if taken
+12 Cycles if not taken
+
+Flags affected(znhc): ----
+*/
+void CPU::CALLccnn(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    bool check = false;
+    switch ((opCode >> 3) & 0x03)
+    {
+    case 0x00:  // NZ
+        check = !IsFlagSet(ZeroFlag);
+        break;
+    case 0x01:  // Z
+        check = IsFlagSet(ZeroFlag);
+        break;
+    case 0x02:  // NC
+        check = !IsFlagSet(CarryFlag);
+        break;
+    case 0x03:  // C
+        check = IsFlagSet(CarryFlag);
+        break;
+    }
+
+    if (check)
+    {
+        m_cycles += 24;
+        PushUShortToSP(m_PC);
+        m_PC = nn;
+    }
+    else
+    {
+        m_cycles += 12;
+    }
+}
+
+/*
     INC rr
     00rr0011
 
@@ -1135,7 +1182,7 @@ void CPU::INCrr(const byte& opCode)
 
 /*
     XOR r
-    10110rrr
+    10101rrr
 
     The logical exclusive-OR operation is performed between the register specified in the r
     operand and the byte contained in the accumulator. The result is stored in the accumulator.
@@ -1150,6 +1197,41 @@ void CPU::XORr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     SetHighByte(&m_AF, *r ^ GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
+/*
+OR r
+10110rrr
+
+The logical OR operation is performed between the register specified in the r
+operand and the byte contained in the accumulator. The result is stored in the accumulator.
+Register r can be A, B, C, D, E, H, or L.
+
+4 Cycles
+
+Flags affected(znhc): z000
+Affects Z, clears n, clears h, clears c
+*/
+void CPU::ORr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    SetHighByte(&m_AF, *r | GetHighByte(m_AF));
 
     // Affects Z and clears NHC
     if (GetHighByte(m_AF) == 0x00)
@@ -1189,6 +1271,33 @@ void CPU::PUSHrr(const byte& opCode)
     PushUShortToSP(*rr);
 
     m_cycles += 16;
+}
+
+/*
+AND n
+11100110 (0xE6)
+
+The logical AND operation is performed between the byte specified in n and the byte contained
+in the accumulator. The resutl is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z010
+Affects Z, clears n, sets h, clears c
+*/
+void CPU::ANDn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+
+    byte result = GetHighByte(m_AF) & n;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*
@@ -1398,6 +1507,25 @@ void CPU::JRZe(const byte& opCode)
         m_cycles += 8;
     }
 }
+
+/*
+LDI A, (HL)
+0x2A
+
+Loads the address pointed at by HL into A, then increment HL.
+
+8 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LDIA_HL_(const byte& opCode)
+{
+    SetHighByte(&m_AF, m_MMU->ReadByte(m_HL));
+    m_HL++;
+
+    m_cycles += 8;
+}
+
 
 // 0x32 (LDD (HL), A)
 void CPU::LDD_HL_A(const byte& opCode)
@@ -1630,6 +1758,24 @@ void CPU::DI(const byte& opCode)
     m_IME = 0x00;
 
     m_cycles += 4;
+}
+
+/*
+LD A, (nn)
+0xFA
+
+The contents of the address specified by the operand nn are loaded into the accumulator.
+
+16 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::LDA_nn_(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+    SetHighByte(&m_AF, m_MMU->ReadByte(nn));
+
+    m_cycles += 16;
 }
 
 /*
