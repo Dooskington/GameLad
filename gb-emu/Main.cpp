@@ -150,6 +150,16 @@ void ProcessInput(Emulator& emulator)
         buttons |= JOYPAD_BUTTONS_B;
     }
 
+    if(keys[SDL_SCANCODE_N])
+    {
+        buttons |= JOYPAD_BUTTONS_START;
+    }
+
+    if(keys[SDL_SCANCODE_M])
+    {
+        buttons |= JOYPAD_BUTTONS_SELECT;
+    }
+
     emulator.SetInput(input, buttons);
 }
 
