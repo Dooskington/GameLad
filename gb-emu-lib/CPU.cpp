@@ -262,7 +262,7 @@ CPU::CPU() :
     //m_operationMap[0xCB] MAPPED TO 0xCB MAP
     m_operationMap[0xCC] = &CPU::CALLccnn;
     m_operationMap[0xCD] = &CPU::CALLnn;
-    //m_operationMap[0xCE] TODO
+    m_operationMap[0xCE] = &CPU::ADCAn;
     //m_operationMap[0xCF] TODO
 
     // D0
@@ -1872,14 +1872,41 @@ void CPU::CALLnn(const byte& opCode)
 }
 
 /*
-SUB n (0xD6)
+    ADC A, n
+    0xCE
 
-The 8-bit value n is subtracted from the contents of the Accumulator, and the
-result is stored in the accumulator.
+    The 8-bit n operand, along with the carry flag, is added to the contents of the
+    accumulator, and the result is stored in the accumulator.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z1hc
+    Flags affected(znhc): z0hc
+*/
+void CPU::ADCAn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    byte A = GetHighByte(m_AF);
+    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
+    byte result = A + n + C;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    SUB n (0xD6)
+
+    The 8-bit value n is subtracted from the contents of the Accumulator, and the
+    result is stored in the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
 */
 void CPU::SUBn(const byte& opCode)
 {

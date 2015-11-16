@@ -3105,6 +3105,44 @@ public:
         spCPU.reset();
     }
 
+    // 0xCE
+    TEST_METHOD(ADCAn_Test)
+    {
+        byte m_Mem[] = { 0xCE, 0x05, 0xCE, 0x05, 0xCE, 0x01 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x0000;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0500, (int)spCPU->m_AF);
+
+        spCPU->SetFlag(CarryFlag);
+        spCPU->Step();
+
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0B00, (int)spCPU->m_AF);
+
+        spCPU->m_AF = 0xFF00;
+        spCPU->Step();
+
+        Assert::AreEqual(24, (int)spCPU->m_cycles);
+        Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+        Assert::AreEqual(0x00B0, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
     // 0xC4 0xCC 0xD4 0xDC
     TEST_METHOD(CALLccnn_Test)
     {
