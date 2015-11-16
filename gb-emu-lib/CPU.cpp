@@ -236,7 +236,7 @@ CPU::CPU() :
     m_operationMap[0xB3] = &CPU::ORr;
     m_operationMap[0xB4] = &CPU::ORr;
     m_operationMap[0xB5] = &CPU::ORr;
-    //m_operationMap[0xB6] TODO
+    m_operationMap[0xB6] = &CPU::OR_HL_;
     m_operationMap[0xB7] = &CPU::ORr;
     //m_operationMap[0xB8] TODO
     //m_operationMap[0xB9] TODO
@@ -1429,6 +1429,39 @@ void CPU::ORr(const byte& opCode)
     ClearFlag(CarryFlag);
 
     m_cycles += 4;
+}
+
+/*
+OR (HL) - 0xB6
+
+The logical OR operation is performed between the value at memory location (HL)
+and the byte contained in the accumulator. The result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z000
+Affects Z, clears n, clears h, clears c
+*/
+void CPU::OR_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+    SetHighByte(&m_AF, r | GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 /*
