@@ -96,6 +96,8 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LD_nn_A_Test);
     TEST_CALL(CPUTests, ADDA_HL__Test);
     TEST_CALL(CPUTests, JPnn_Test);
+    TEST_CALL(CPUTests, DI_Test);
+    TEST_CALL(CPUTests, EI_Test);
 
     // Z80 Instruction Set - CB Tests
     TEST_CALL(CPUTests, BITbr_Test);

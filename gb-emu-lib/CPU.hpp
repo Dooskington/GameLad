@@ -100,6 +100,8 @@ private:
     void LD_nn_A(const byte& opCode);         // 0xEA
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
     void LDA_0xFF00C_(const byte& opCode);    // 0xF2
+    void DI(const byte& opCode);              // 0xF3
+    void EI(const byte& opCode);              // 0xFB
     void CPn(const byte& opCode);             // 0xFE
 
     // Z80 Instruction Set - CB
@@ -159,6 +161,10 @@ private:
     ushort m_PC; // Program counter
     byte* m_ByteRegisterMap[0x07 + 1];
     ushort* m_UShortRegisterMap[0x03 + 1];
+
+    // Interrupts
+    byte m_IME; // Interrupt master enable
+    // TODO: Implement interrupts
 
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)(const byte& opCode);
