@@ -30,10 +30,10 @@
 #define ModeReadingOAM 2
 #define ModeReadingOAMVRAM 3
 
-#define VBlankCycles 4560 / 4
-#define HBlankCycles 204 / 4
-#define ReadingOAMCycles 80 / 4
-#define ReadingOAMVRAMCycles 172 / 4
+#define VBlankCycles 4560 / 8
+#define HBlankCycles 204 / 8
+#define ReadingOAMCycles 80 / 8
+#define ReadingOAMVRAMCycles 172 / 8
 
 class GPU : public IMemoryUnit
 {
