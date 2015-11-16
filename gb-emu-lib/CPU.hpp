@@ -66,7 +66,7 @@ private:
     byte ReadBytePC();
     ushort ReadUShortPC();
 
-    void ResetIME();
+    void HandleInterrupts();
 
     void HALT();
 

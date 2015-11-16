@@ -720,58 +720,6 @@ void CPU::StepFrame()
     while (m_cycles < CyclesPerFrame)
     {
         Step(); // Execute the current instruction
-
-        // If the IME is enabled, some interrupts are enabled in IE, and
-        // an interrupt flag is set, handle the interrupt.
-        byte IE = m_MMU->ReadByte(0xFFFF);
-        byte IF = m_MMU->ReadByte(0xFF0F);
-        if (m_IME)
-        {
-            m_IME = 0x00; // Disable further interrupts
-            PushUShortToSP(m_PC); // Push current PC onto stack
-
-            // Jump to the correct handler
-            if ((ISBITSET(IE, 0)) && (ISBITSET(IF, 0)))
-            {
-                IF = CLEARBIT(IF, 0);
-                m_MMU->WriteByte(0xFF0F, IF);
-
-                // VBlank
-                m_PC = 0x0040;
-            }
-            else if ((ISBITSET(IE, 1)) && (ISBITSET(IF, 1)))
-            {
-                IF = CLEARBIT(IF, 1);
-                m_MMU->WriteByte(0xFF0F, IF);
-
-                // LCD status
-                m_PC = 0x0048;
-            }
-            else if ((ISBITSET(IE, 2)) && (ISBITSET(IF, 2)))
-            {
-                IF = CLEARBIT(IF, 2);
-                m_MMU->WriteByte(0xFF0F, IF);
-
-                // Timer
-                m_PC = 0x0050;
-            }
-            else if ((ISBITSET(IE, 3)) && (ISBITSET(IF, 3)))
-            {
-                IF = CLEARBIT(IF, 3);
-                m_MMU->WriteByte(0xFF0F, IF);
-
-                // Serial
-                m_PC = 0x0058;
-            }
-            else if ((ISBITSET(IE, 4)) && (ISBITSET(IF, 4)))
-            {
-                IF = CLEARBIT(IF, 4);
-                m_MMU->WriteByte(0xFF0F, IF);
-
-                // Joypad
-                m_PC = 0x0060;
-            }
-        }
     }
 
     // Reset the cycles. If we went over our max cycles, the next frame will start a
@@ -834,6 +782,7 @@ void CPU::Step()
         if (instruction != nullptr)
         {
             (this->*instruction)(opCode);
+            HandleInterrupts();
         }
         else
         {
@@ -991,9 +940,69 @@ ushort CPU::ReadUShortPC()
     return val;
 }
 
-void CPU::ResetIME()
+void CPU::HandleInterrupts()
 {
-    m_IME = 0x01;
+
+    // If the IME is enabled, some interrupts are enabled in IE, and
+    // an interrupt flag is set, handle the interrupt.
+    if (m_IME)
+    {
+        byte IE = m_MMU->ReadByte(0xFFFF);
+        byte IF = m_MMU->ReadByte(0xFF0F);
+        m_IME = 0x00; // Disable further interrupts
+
+        // Jump to the correct handler
+        if ((ISBITSET(IE, 0)) && (ISBITSET(IF, 0)))
+        {
+            IF = CLEARBIT(IF, 0);
+            m_MMU->WriteByte(0xFF0F, IF);
+
+            PushUShortToSP(m_PC); // Push current PC onto stack
+
+            // VBlank
+            m_PC = INT40;
+        }
+        else if ((ISBITSET(IE, 1)) && (ISBITSET(IF, 1)))
+        {
+            IF = CLEARBIT(IF, 1);
+            m_MMU->WriteByte(0xFF0F, IF);
+
+            PushUShortToSP(m_PC); // Push current PC onto stack
+
+            // LCD status
+            m_PC = INT48;
+        }
+        else if ((ISBITSET(IE, 2)) && (ISBITSET(IF, 2)))
+        {
+            IF = CLEARBIT(IF, 2);
+            m_MMU->WriteByte(0xFF0F, IF);
+
+            PushUShortToSP(m_PC); // Push current PC onto stack
+
+            // Timer
+            m_PC = INT50;
+        }
+        else if ((ISBITSET(IE, 3)) && (ISBITSET(IF, 3)))
+        {
+            IF = CLEARBIT(IF, 3);
+            m_MMU->WriteByte(0xFF0F, IF);
+
+            PushUShortToSP(m_PC); // Push current PC onto stack
+
+            // Serial
+            m_PC = INT58;
+        }
+        else if ((ISBITSET(IE, 4)) && (ISBITSET(IF, 4)))
+        {
+            IF = CLEARBIT(IF, 4);
+            m_MMU->WriteByte(0xFF0F, IF);
+
+            PushUShortToSP(m_PC); // Push current PC onto stack
+
+            // Joypad
+            m_PC = INT60;
+        }
+    }
 }
 
 void CPU::HALT()

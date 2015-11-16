@@ -13,10 +13,6 @@ public:
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
 
-    ushort GetIE();
-    ushort GetIF();
-    void SetIF(const byte& val);
-
 private:
     byte ReadByteInternal(const ushort& address);
     bool WriteByteInternal(const ushort& address, const byte val);
