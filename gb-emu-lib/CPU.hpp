@@ -40,6 +40,7 @@ public:
     void TriggerInterrupt(byte interrupt);
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);
+    void SetVSyncCallback(void(*pCallback)());
 
 private:
     void Step();

@@ -1,7 +1,7 @@
 #include "PCH.hpp"
 #include <Emulator.hpp>
 
-const Uint32 TimePerFrame = static_cast<Uint32>((1.0 / 60.0) * 1000.0);
+const double TimePerFrame = 1.0 / 60.0;
 
 struct SDLWindowDeleter
 {
@@ -70,12 +70,53 @@ void Render(SDL_Renderer* pRenderer, SDL_Texture* pTexture, Emulator& emulator)
     SDL_RenderPresent(pRenderer);
 }
 
+// TODO: refactor this
+std::unique_ptr<SDL_Renderer, SDLRendererDeleter> spRenderer;
+std::unique_ptr<SDL_Texture, SDLTextureDeleter> spTexture;
+Emulator emulator;
+
+int renderFrames = 0;
+double renderElapsedInSec = 0;
+double renderTimeInSec = 0;
+Uint64 renderStart = SDL_GetPerformanceCounter();
+
+// The emulator will call this whenever we hit VBlank
+void VSyncCallback()
+{
+    Render(spRenderer.get(), spTexture.get(), emulator);
+    renderFrames++;
+
+    Uint64 renderEnd = SDL_GetPerformanceCounter();
+
+    // Loop until we use up the rest of our frame time
+    while (true)
+    {
+        renderEnd = SDL_GetPerformanceCounter();
+        renderElapsedInSec = (double)(renderEnd - renderStart) / SDL_GetPerformanceFrequency();
+
+        // Break out once we use up our time per frame
+        if (renderElapsedInSec >= TimePerFrame)
+        {
+            break;
+        }
+    }
+
+    // Print Render FPS every 5 seconds
+    renderTimeInSec += renderElapsedInSec;
+    if (renderTimeInSec > 5)
+    {
+        Logger::Log("RFPS: %f", renderFrames / renderTimeInSec);
+        renderFrames = 0;
+        renderTimeInSec = 0;
+    }
+
+    renderStart = renderEnd;
+}
+
 int main(int argc, char** argv)
 {
     bool isRunning = true;
     std::unique_ptr<SDL_Window, SDLWindowDeleter> spWindow;
-    std::unique_ptr<SDL_Renderer, SDLRendererDeleter> spRenderer;
-    std::unique_ptr<SDL_Texture, SDLTextureDeleter> spTexture;
 
     SDL_Event event;
 
@@ -113,20 +154,19 @@ int main(int argc, char** argv)
     spTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(
         SDL_CreateTexture(spRenderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144));
 
-    Emulator emulator;
-
     if (emulator.Initialize("res/tests/cpu_instrs.gb"))
     {
+        emulator.SetVSyncCallback(&VSyncCallback);
+
         while (isRunning)
         {
-            Uint32 frameStartTime = SDL_GetTicks();
-
             // Poll for window input
             while (SDL_PollEvent(&event) != 0)
             {
                 if (event.type == SDL_QUIT)
                 {
                     isRunning = false;
+                    emulator.SetVSyncCallback(nullptr);
                 }
             }
 
@@ -140,21 +180,6 @@ int main(int argc, char** argv)
 
             // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
             emulator.StepFrame();
-            Render(spRenderer.get(), spTexture.get(), emulator);
-
-            // If we haven't used up our time, we need to delay the rest of the frame time
-            Uint32 frameElapsedTime = SDL_GetTicks() - frameStartTime;
-            if (frameElapsedTime < TimePerFrame)
-            {
-                Uint32 delay = TimePerFrame - frameElapsedTime;
-
-                // Sleep for (16ms - elapsed frame time)
-                SDL_Delay(delay);
-            }
-            else if (frameElapsedTime > TimePerFrame)
-            {
-                Logger::Log("Frame time was too long: %dms  (Expect less than %dms)", frameElapsedTime, TimePerFrame);
-            }
         }
     }
 

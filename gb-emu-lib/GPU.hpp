@@ -30,10 +30,10 @@
 #define ModeReadingOAM 2
 #define ModeReadingOAMVRAM 3
 
-#define VBlankCycles 4560
-#define HBlankCycles 204
-#define ReadingOAMCycles 80
-#define ReadingOAMVRAMCycles 172
+#define VBlankCycles 4560 / 4
+#define HBlankCycles 204 / 4
+#define ReadingOAMCycles 80 / 4
+#define ReadingOAMVRAMCycles 172 / 4
 
 class GPU : public IMemoryUnit
 {
@@ -49,6 +49,7 @@ public:
     // IMemoryUnit
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
+    void SetVSyncCallback(void(*pCallback)());
 
 private:
     void LaunchDMATransfer(const byte address);
@@ -64,6 +65,7 @@ private:
     byte m_DisplayPixels[160 * 144];
 
     unsigned long m_ModeClock;
+    void(*m_pVSyncCallback)();
     
     byte m_LCDControl;
     byte m_LCDControllerStatus;

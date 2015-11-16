@@ -2,7 +2,7 @@
 #include "CPU.hpp"
 
 // The number of CPU cycles per frame
-const unsigned int CyclesPerFrame = 70244;
+const unsigned int CyclesPerFrame = 70224;
 
 CPU::CPU() :
     m_cycles(0),
@@ -740,6 +740,11 @@ byte* CPU::GetCurrentFrame()
 void CPU::SetInput(byte input, byte buttons)
 {
     m_joypad->SetInput(input, buttons);
+}
+
+void CPU::SetVSyncCallback(void(*pCallback)())
+{
+    m_GPU->SetVSyncCallback(pCallback);
 }
 
 void CPU::Step()

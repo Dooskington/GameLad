@@ -24,7 +24,9 @@ public:
     bool Initialize(const char* rom);
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);
+    void SetVSyncCallback(void(*pCallback)());
 
 private:
     std::unique_ptr<ICPU> m_cpu;
+    void(*m_pVSyncCallback)();
 };

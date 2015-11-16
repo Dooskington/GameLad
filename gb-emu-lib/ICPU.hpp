@@ -16,4 +16,5 @@ public:
     virtual void TriggerInterrupt(byte interrupt) = 0;
     virtual byte* GetCurrentFrame() = 0;
     virtual void SetInput(byte input, byte buttons) = 0;
+    virtual void SetVSyncCallback(void(*pCallback)()) = 0;
 };

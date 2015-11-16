@@ -52,3 +52,8 @@ void Emulator::SetInput(byte input, byte buttons)
 {
     m_cpu->SetInput(input, buttons);
 }
+
+void Emulator::SetVSyncCallback(void(*pCallback)())
+{
+    m_cpu->SetVSyncCallback(pCallback);
+}
