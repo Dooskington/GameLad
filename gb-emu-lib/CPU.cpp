@@ -184,14 +184,14 @@ CPU::CPU() :
     m_operationMap[0x85] = &CPU::ADDAr;
     m_operationMap[0x86] = &CPU::ADDA_HL_;
     m_operationMap[0x87] = &CPU::ADDAr;
-    //m_operationMap[0x88] TODO
-    //m_operationMap[0x89] TODO
-    //m_operationMap[0x8A] TODO
-    //m_operationMap[0x8B] TODO
-    //m_operationMap[0x8C] TODO
-    //m_operationMap[0x8D] TODO
-    //m_operationMap[0x8E] TODO
-    //m_operationMap[0x8F] TODO
+    m_operationMap[0x88] = &CPU::ADCAr;
+    m_operationMap[0x89] = &CPU::ADCAr;
+    m_operationMap[0x8A] = &CPU::ADCAr;
+    m_operationMap[0x8B] = &CPU::ADCAr;
+    m_operationMap[0x8C] = &CPU::ADCAr;
+    m_operationMap[0x8D] = &CPU::ADCAr;
+    m_operationMap[0x8E] = &CPU::ADCAr;
+    m_operationMap[0x8F] = &CPU::ADCAr;
 
     // 90
     m_operationMap[0x90] = &CPU::SUBr;
@@ -1388,6 +1388,34 @@ void CPU::ADDAr(const byte& opCode)
     ClearFlag(AddFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
+/*
+    ADC A, r
+    10001rrr
+
+    The contents of the r register, and the contents of the carry flag, 
+    are added to the contents of the accumulator, and the result is stored 
+    in the accumulator. The operand r identifies the registers A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z0hc
+*/
+void CPU::ADCAr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    byte A = GetHighByte(m_AF);
+    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
+    byte result = A + (*r) + C;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 4;
 }

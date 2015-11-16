@@ -126,6 +126,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, ADDA_HL__Test);
     TEST_CALL(CPUTests, ADDAr_Test);
     TEST_CALL(CPUTests, ADDAn_Test);
+    TEST_CALL(CPUTests, ADCAr_Test);
     TEST_CALL(CPUTests, JPnn_Test);
     TEST_CALL(CPUTests, DI_Test);
     TEST_CALL(CPUTests, LDA_nn_Test);
