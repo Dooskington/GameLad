@@ -107,6 +107,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, ORH_Test);
     TEST_CALL(CPUTests, ORL_Test);
     TEST_CALL(CPUTests, OR_HL_Test);
+    TEST_CALL(CPUTests, ORn_Test);
 
     TEST_CALL(CPUTests, ANDn_Test);
 
@@ -198,8 +199,20 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, SRA_HL_Test);
     TEST_CALL(CPUTests, SRAA_Test);
 
+    TEST_CALL(CPUTests, SRLB_Test);
+    TEST_CALL(CPUTests, SRLC_Test);
+    TEST_CALL(CPUTests, SRLD_Test);
+    TEST_CALL(CPUTests, SRLE_Test);
+    TEST_CALL(CPUTests, SRLH_Test);
+    TEST_CALL(CPUTests, SRLL_Test);
+    TEST_CALL(CPUTests, SRL_HL_Test);
+    TEST_CALL(CPUTests, SRLA_Test);
+
     TEST_CALL(CPUTests, SWAP_HL_Test);
     TEST_CALL(CPUTests, SWAPr_Test);
+    TEST_CALL(CPUTests, JP_HL_Test);
+    TEST_CALL(CPUTests, SCF_Test);
+    TEST_CALL(CPUTests, JPccnn_Test);
 
     TEST_CLEANUP();
 

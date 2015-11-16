@@ -93,7 +93,7 @@ CPU::CPU() :
     //m_operationMap[0x34] TODO
     m_operationMap[0x35] = &CPU::DEC_HL_;
     //m_operationMap[0x36] TODO
-    //m_operationMap[0x37] TODO
+    m_operationMap[0x37] = &CPU::SCF;
     //m_operationMap[0x38] TODO
     m_operationMap[0x39] = &CPU::ADDHLss;
     //m_operationMap[0x3A] TODO
@@ -250,7 +250,7 @@ CPU::CPU() :
     // C0
     m_operationMap[0xC0] = &CPU::RETcc;
     m_operationMap[0xC1] = &CPU::POPrr;
-    //m_operationMap[0xC2] TODO
+    m_operationMap[0xC2] = &CPU::JPccnn;
     m_operationMap[0xC3] = &CPU::JPnn;
     m_operationMap[0xC4] = &CPU::CALLccnn;
     m_operationMap[0xC5] = &CPU::PUSHrr;
@@ -258,7 +258,7 @@ CPU::CPU() :
     //m_operationMap[0xC7] TODO
     m_operationMap[0xC8] = &CPU::RETcc;
     m_operationMap[0xC9] = &CPU::RET;
-    //m_operationMap[0xCA] TODO
+    m_operationMap[0xCA] = &CPU::JPccnn;
     //m_operationMap[0xCB] MAPPED TO 0xCB MAP
     m_operationMap[0xCC] = &CPU::CALLccnn;
     m_operationMap[0xCD] = &CPU::CALLnn;
@@ -268,7 +268,7 @@ CPU::CPU() :
     // D0
     m_operationMap[0xD0] = &CPU::RETcc;
     m_operationMap[0xD1] = &CPU::POPrr;
-    //m_operationMap[0xD2] TODO
+    m_operationMap[0xD2] = &CPU::JPccnn;
     //m_operationMap[0xD3] UNUSED
     m_operationMap[0xD4] = &CPU::CALLccnn;
     m_operationMap[0xD5] = &CPU::PUSHrr;
@@ -276,7 +276,7 @@ CPU::CPU() :
     //m_operationMap[0xD7] TODO
     m_operationMap[0xD8] = &CPU::RETcc;
     //m_operationMap[0xD9] TODO
-    //m_operationMap[0xDA] TODO
+    m_operationMap[0xDA] = &CPU::JPccnn;
     //m_operationMap[0xDB] UNUSED
     m_operationMap[0xDC] = &CPU::CALLccnn;
     //m_operationMap[0xDD] UNUSED
@@ -293,7 +293,7 @@ CPU::CPU() :
     m_operationMap[0xE6] = &CPU::ANDn;
     //m_operationMap[0xE7] TODO
     //m_operationMap[0xE8] TODO
-    //m_operationMap[0xE9] TODO
+    m_operationMap[0xE9] = &CPU::JP_HL_;
     m_operationMap[0xEA] = &CPU::LD_nn_A;
     //m_operationMap[0xEB] UNUSED
     //m_operationMap[0xEC] UNUSED
@@ -308,7 +308,7 @@ CPU::CPU() :
     m_operationMap[0xF3] = &CPU::DI;
     //m_operationMap[0xF4] UNUSED
     m_operationMap[0xF5] = &CPU::PUSHrr;
-    //m_operationMap[0xF6] TODO
+    m_operationMap[0xF6] = &CPU::ORn;
     //m_operationMap[0xF7] TODO
     //m_operationMap[0xF8] TODO
     //m_operationMap[0xF9] TODO
@@ -378,14 +378,14 @@ CPU::CPU() :
     m_operationMapCB[0x2F] = &CPU::SRAr;
 
     // 30
-    //m_operationMapCB[0x30] UNUSED!
-    //m_operationMapCB[0x31] UNUSED!
-    //m_operationMapCB[0x32] UNUSED!
-    //m_operationMapCB[0x33] UNUSED!
-    //m_operationMapCB[0x34] UNUSED!
-    //m_operationMapCB[0x35] UNUSED!
-    //m_operationMapCB[0x36] UNUSED!
-    //m_operationMapCB[0x37] UNUSED!
+    m_operationMapCB[0x30] = &CPU::SRLr;
+    m_operationMapCB[0x31] = &CPU::SRLr;
+    m_operationMapCB[0x32] = &CPU::SRLr;
+    m_operationMapCB[0x33] = &CPU::SRLr;
+    m_operationMapCB[0x34] = &CPU::SRLr;
+    m_operationMapCB[0x35] = &CPU::SRLr;
+    m_operationMapCB[0x36] = &CPU::SRL_HL_;
+    m_operationMapCB[0x37] = &CPU::SRLr;
     m_operationMapCB[0x38] = &CPU::SWAPr;
     m_operationMapCB[0x39] = &CPU::SWAPr;
     m_operationMapCB[0x3A] = &CPU::SWAPr;
@@ -1320,6 +1320,52 @@ void CPU::ADDHLss(const byte& opCode)
 }
 
 /*
+JP cc, nn
+11ccc010
+
+000 NZ
+001 Z
+010 NC
+011 C
+
+16 Cycles if taken
+12 Cycles if not taken
+
+Flags affected(znhc): ----
+*/
+void CPU::JPccnn(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    bool check = false;
+    switch ((opCode >> 3) & 0x03)
+    {
+    case 0x00:  // NZ
+        check = !IsFlagSet(ZeroFlag);
+        break;
+    case 0x01:  // Z
+        check = IsFlagSet(ZeroFlag);
+        break;
+    case 0x02:  // NC
+        check = !IsFlagSet(CarryFlag);
+        break;
+    case 0x03:  // C
+        check = IsFlagSet(CarryFlag);
+        break;
+    }
+
+    if (check)
+    {
+        m_cycles += 16;
+        m_PC = nn;
+    }
+    else
+    {
+        m_cycles += 12;
+    }
+}
+
+/*
     INC rr
     00rr0011
 
@@ -1542,6 +1588,21 @@ void CPU::ANDn(const byte& opCode)
 }
 
 /*
+JP HL - 0xE9
+
+The PC is loaded with the value of HL.
+
+4 Cycles
+
+Flags affected(znhc): ----
+*/
+void CPU::JP_HL_(const byte& opCode)
+{
+    m_PC = m_HL;
+    m_cycles += 4;
+}
+
+/*
     POP rr
     11qq0001
 
@@ -1643,6 +1704,25 @@ void CPU::DEC_HL_(const byte& opCode)
     }
 
     m_cycles += 12;
+}
+
+/*
+SCF - 0x37
+
+Sets the carry flag.
+
+4 Cycles
+
+Flags affected(znhc): -001
+Clears N, Clears h, Sets c
+*/
+void CPU::SCF(const byte& opCode)
+{
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    SetFlag(CarryFlag);
+
+    m_cycles += 4;
 }
 
 /*
@@ -2197,6 +2277,39 @@ void CPU::DI(const byte& opCode)
 }
 
 /*
+OR n - 0xF6
+
+The logical OR operation is performed between the byte in n and the byte contained in the
+accumulator. The result is stored in the accumulator.
+
+8 Cycles
+
+Flags affected(znhc): z000
+Affects Z, clears n, clears h, clears c
+*/
+void CPU::ORn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    SetHighByte(&m_AF, n | GetHighByte(m_AF));
+
+    // Affects Z and clears NHC
+    if (GetHighByte(m_AF) == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
 LD A, (nn)
 0xFA
 
@@ -2548,7 +2661,7 @@ void CPU::SLA_HL_(const byte& opCode)
 
 /*
     SRA r
-    11001011 00101rrrr
+    11001011 00101rrr
 
     An arithmetic shift right 1-bit position is performed on the contents of the operand r. The content
     of bit 0 is copied to the carry flag.
@@ -2585,6 +2698,57 @@ void CPU::SRA_HL_(const byte& opCode)
 
     // Shift r right
     r = r >> 1;
+    m_MMU->WriteByte(m_HL, r);
+
+    // Affects Z, clears N, clears H, affects C
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 16;
+}
+
+/*
+SRL r
+11001011 00011rrr
+
+The contents of the operand "r" are shifted right 1 -bit.  The content of 
+bit 0 is copied to the carry flag and bit 7 is reset.
+
+8 Cycles
+
+Flags affected(znhc): z00c
+Affects Z, clears n, clears h, affects c
+*/
+void CPU::SRLr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    (*r) = *r >> 1;
+    (*r) = CLEARBIT(*r, 7);
+
+    // Affects Z, clears N, clears H, affects C
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 8;
+}
+
+void CPU::SRL_HL_(const byte& opCode)
+{
+    byte r = m_MMU->ReadByte(m_HL);
+
+    // Grab bit 0 and store it in the carryflag
+    ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    // Shift r right
+    r = r >> 1;
+    r = CLEARBIT(r, 7);
     m_MMU->WriteByte(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C

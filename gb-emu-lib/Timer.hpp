@@ -40,5 +40,4 @@ private:
 
     byte m_TimerModulo;
     byte m_TimerControl;
-    byte m_memory[0xFFFF + 1];
 };

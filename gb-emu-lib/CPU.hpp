@@ -88,6 +88,7 @@ private:
     void LD_HL_r(const byte& opCode);
     void RETcc(const byte& opCode);
     void ADDHLss(const byte& opCode);
+    void JPccnn(const byte& opCode);
 
     void LD_BC_A(const byte& opCode);         // 0x02
     void RLCA(const byte& opCode);            // 0x07
@@ -103,6 +104,7 @@ private:
     void JRNCe(const byte& opCode);           // 0x30
     void LDD_HL_A(const byte& opCode);        // 0x32
     void DEC_HL_(const byte& opCode);         // 0x35
+    void SCF(const byte& opCode);             // 0x35
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
     void XOR_HL_(const byte& opCode);         // 0xAE
@@ -117,11 +119,13 @@ private:
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void ANDn(const byte& opCode);            // 0xE6
+    void JP_HL_(const byte& opCode);          // 0xE9
     void LD_nn_A(const byte& opCode);         // 0xEA
     void XORn(const byte& opCode);            // 0xEE
     void LDA_0xFF00n_(const byte& opCode);    // 0xF0
     void LDA_0xFF00C_(const byte& opCode);    // 0xF2
     void DI(const byte& opCode);              // 0xF3
+    void ORn(const byte& opCode);            // 0xF6
     void LDA_nn_(const byte& opCode);         // 0xFA
     void EI(const byte& opCode);              // 0xFB
     void CPn(const byte& opCode);             // 0xFE
@@ -137,6 +141,8 @@ private:
     void RR_HL_(const byte& opCode);
     void SLAr(const byte& opCode);
     void SLA_HL_(const byte& opCode);
+    void SRLr(const byte& opCode);
+    void SRL_HL_(const byte& opCode);
     void SRAr(const byte& opCode);
     void SRA_HL_(const byte& opCode);
     void BITbr(const byte& opCode);
