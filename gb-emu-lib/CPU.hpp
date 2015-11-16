@@ -88,6 +88,7 @@ private:
     void LD_HL_r(const byte& opCode);
     void RETcc(const byte& opCode);
     void ADDHLss(const byte& opCode);
+    void JPccnn(const byte& opCode);
 
     void LD_BC_A(const byte& opCode);         // 0x02
     void RLCA(const byte& opCode);            // 0x07

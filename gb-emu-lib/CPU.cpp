@@ -250,7 +250,7 @@ CPU::CPU() :
     // C0
     m_operationMap[0xC0] = &CPU::RETcc;
     m_operationMap[0xC1] = &CPU::POPrr;
-    //m_operationMap[0xC2] TODO
+    m_operationMap[0xC2] = &CPU::JPccnn;
     m_operationMap[0xC3] = &CPU::JPnn;
     m_operationMap[0xC4] = &CPU::CALLccnn;
     m_operationMap[0xC5] = &CPU::PUSHrr;
@@ -258,7 +258,7 @@ CPU::CPU() :
     //m_operationMap[0xC7] TODO
     m_operationMap[0xC8] = &CPU::RETcc;
     m_operationMap[0xC9] = &CPU::RET;
-    //m_operationMap[0xCA] TODO
+    m_operationMap[0xCA] = &CPU::JPccnn;
     //m_operationMap[0xCB] MAPPED TO 0xCB MAP
     m_operationMap[0xCC] = &CPU::CALLccnn;
     m_operationMap[0xCD] = &CPU::CALLnn;
@@ -268,7 +268,7 @@ CPU::CPU() :
     // D0
     m_operationMap[0xD0] = &CPU::RETcc;
     m_operationMap[0xD1] = &CPU::POPrr;
-    //m_operationMap[0xD2] TODO
+    m_operationMap[0xD2] = &CPU::JPccnn;
     //m_operationMap[0xD3] UNUSED
     m_operationMap[0xD4] = &CPU::CALLccnn;
     m_operationMap[0xD5] = &CPU::PUSHrr;
@@ -276,7 +276,7 @@ CPU::CPU() :
     //m_operationMap[0xD7] TODO
     m_operationMap[0xD8] = &CPU::RETcc;
     //m_operationMap[0xD9] TODO
-    //m_operationMap[0xDA] TODO
+    m_operationMap[0xDA] = &CPU::JPccnn;
     //m_operationMap[0xDB] UNUSED
     m_operationMap[0xDC] = &CPU::CALLccnn;
     //m_operationMap[0xDD] UNUSED
@@ -1317,6 +1317,52 @@ void CPU::ADDHLss(const byte& opCode)
     m_HL = result;
 
     m_cycles += 8;
+}
+
+/*
+JP cc, nn
+11ccc010
+
+000 NZ
+001 Z
+010 NC
+011 C
+
+16 Cycles if taken
+12 Cycles if not taken
+
+Flags affected(znhc): ----
+*/
+void CPU::JPccnn(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    bool check = false;
+    switch ((opCode >> 3) & 0x03)
+    {
+    case 0x00:  // NZ
+        check = !IsFlagSet(ZeroFlag);
+        break;
+    case 0x01:  // Z
+        check = IsFlagSet(ZeroFlag);
+        break;
+    case 0x02:  // NC
+        check = !IsFlagSet(CarryFlag);
+        break;
+    case 0x03:  // C
+        check = IsFlagSet(CarryFlag);
+        break;
+    }
+
+    if (check)
+    {
+        m_cycles += 16;
+        m_PC = nn;
+    }
+    else
+    {
+        m_cycles += 12;
+    }
 }
 
 /*

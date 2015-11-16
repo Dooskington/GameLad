@@ -3430,6 +3430,80 @@ public:
         }
     }
 
+    // 0xC2 0xCA 0xD2 0xDA
+    TEST_METHOD(JPccnn_Test)
+    {
+        for (byte flag = 0x00; flag <= 0x01; flag++)
+        {
+            for (byte test = 0x00; test <= 0x03; test++)
+            {
+                byte opCode = 0xC2 | (test << 3);
+                // Load CALL
+                byte m_Mem[] = { opCode, 0x34, 0x12 };
+                std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+                spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+                if (flag == 0x00)
+                {
+                    switch (test)
+                    {
+                    case 0x00:
+                        spCPU->ClearFlag(ZeroFlag);
+                        break;
+                    case 0x01:
+                        spCPU->SetFlag(ZeroFlag);
+                        break;
+                    case 0x02:
+                        spCPU->ClearFlag(CarryFlag);
+                        break;
+                    case 0x03:
+                        spCPU->SetFlag(CarryFlag);
+                        break;
+                    }
+                }
+                else
+                {
+                    switch (test)
+                    {
+                    case 0x00:
+                        spCPU->SetFlag(ZeroFlag);
+                        break;
+                    case 0x01:
+                        spCPU->ClearFlag(ZeroFlag);
+                        break;
+                    case 0x02:
+                        spCPU->SetFlag(CarryFlag);
+                        break;
+                    case 0x03:
+                        spCPU->ClearFlag(CarryFlag);
+                        break;
+                    }
+                }
+
+                // Verify expectations before we run
+                Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+                // Step the CPU 1 OpCode
+                spCPU->Step();
+
+                if (flag == 0x00)
+                {
+                    // Verify expectations after
+                    Assert::AreEqual(16, (int)spCPU->m_cycles);
+                    Assert::AreEqual(0x1234, (int)spCPU->m_PC);
+                }
+                else
+                {
+                    // Verify expectations after
+                    Assert::AreEqual(12, (int)spCPU->m_cycles);
+                    Assert::AreEqual(0x0003, (int)spCPU->m_PC);
+                }
+
+                spCPU.reset();
+            }
+        }
+    }
+
     // 0xD1
     TEST_METHOD(POPDE_Test)
     {
