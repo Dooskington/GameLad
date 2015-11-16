@@ -1,7 +1,7 @@
 #include "PCH.hpp"
 #include <Emulator.hpp>
 
-const Uint32 TimePerFrame = static_cast<Uint32>((1.0 / 60.0) * 1000.0);
+const double TimePerFrame = 1.0 / 60.0;
 
 struct SDLWindowDeleter
 {
@@ -117,10 +117,14 @@ int main(int argc, char** argv)
 
     if (emulator.Initialize("res/tests/cpu_instrs.gb"))
     {
+        int frames = 0;
+        double timeInSec = 0;
+        Uint64 start = 0;
+        Uint64 end = SDL_GetPerformanceCounter();
+
         while (isRunning)
         {
-            Uint32 frameStartTime = SDL_GetTicks();
-
+            start = end;
             // Poll for window input
             while (SDL_PollEvent(&event) != 0)
             {
@@ -141,19 +145,27 @@ int main(int argc, char** argv)
             // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
             emulator.StepFrame();
             Render(spRenderer.get(), spTexture.get(), emulator);
+            frames++;
 
-            // If we haven't used up our time, we need to delay the rest of the frame time
-            Uint32 frameElapsedTime = SDL_GetTicks() - frameStartTime;
-            if (frameElapsedTime < TimePerFrame)
+            double elapsedInSec = 0.0;
+            while (true)
             {
-                Uint32 delay = TimePerFrame - frameElapsedTime;
+                end = SDL_GetPerformanceCounter();
+                elapsedInSec = (double)(end - start) / SDL_GetPerformanceFrequency();
 
-                // Sleep for (16ms - elapsed frame time)
-                SDL_Delay(delay);
+                // Break out once we use up our time per frame
+                if (elapsedInSec >= TimePerFrame)
+                {
+                    break;
+                }
             }
-            else if (frameElapsedTime > TimePerFrame)
+
+            timeInSec += elapsedInSec;
+            if (timeInSec >= 1)
             {
-                Logger::Log("Frame time was too long: %dms  (Expect less than %dms)", frameElapsedTime, TimePerFrame);
+                Logger::Log("Frames: %d    FPS: %f   Time: %fs   Elapsed: %fs", frames, (double)frames / timeInSec, timeInSec, elapsedInSec);
+                timeInSec = 0;
+                frames = 0;
             }
         }
     }
