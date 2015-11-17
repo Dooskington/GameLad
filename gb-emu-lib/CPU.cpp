@@ -42,7 +42,7 @@ CPU::CPU() :
     m_operationMap[0x07] = &CPU::RLCA;
     m_operationMap[0x08] = &CPU::LD_nn_SP;
     m_operationMap[0x09] = &CPU::ADDHLss;
-    //m_operationMap[0x0A] TODO
+    m_operationMap[0x0A] = &CPU::LDA_BC_;
     m_operationMap[0x0B] = &CPU::DECrr;
     m_operationMap[0x0C] = &CPU::INCr;
     m_operationMap[0x0D] = &CPU::DECr;
@@ -2111,6 +2111,24 @@ void CPU::LDA_DE_(const byte& opCode)
     m_cycles += 8;
 
     // No flags affected
+}
+
+
+/*
+    LD A, (BC) - 0x0A
+
+    Loads the value stored at the address pointed to by BC into the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDA_BC_(const byte& opCode)
+{
+    byte val = m_MMU->ReadByte(m_BC);
+    SetHighByte(&m_AF, val);
+
+    m_cycles += 8;
 }
 
 // 0x17 (RR A)
