@@ -311,7 +311,7 @@ CPU::CPU() :
     m_operationMap[0xF6] = &CPU::ORn;
     //m_operationMap[0xF7] TODO
     //m_operationMap[0xF8] TODO
-    //m_operationMap[0xF9] TODO
+    m_operationMap[0xF9] = &CPU::LDSPHL;
     m_operationMap[0xFA] = &CPU::LDA_nn_;
     m_operationMap[0xFB] = &CPU::EI;
     //m_operationMap[0xFC] UNUSED
@@ -2458,15 +2458,15 @@ void CPU::DI(const byte& opCode)
 }
 
 /*
-OR n - 0xF6
+    OR n - 0xF6
 
-The logical OR operation is performed between the byte in n and the byte contained in the
-accumulator. The result is stored in the accumulator.
+    The logical OR operation is performed between the byte in n and the byte contained in the
+    accumulator. The result is stored in the accumulator.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z000
-Affects Z, clears n, clears h, clears c
+    Flags affected(znhc): z000
+    Affects Z, clears n, clears h, clears c
 */
 void CPU::ORn(const byte& opCode)
 {
@@ -2486,6 +2486,23 @@ void CPU::ORn(const byte& opCode)
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    LD SP, HL
+    0xF9
+
+    Load HL into SP.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDSPHL(const byte& opCode)
+{
+    m_SP = m_HL;
 
     m_cycles += 8;
 }

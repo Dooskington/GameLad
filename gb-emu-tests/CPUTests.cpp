@@ -4241,6 +4241,29 @@ public:
         spCPU.reset();
     }
 
+    // 0xF9
+    TEST_METHOD(LDSPHL_Test)
+    {
+        byte m_Mem[] = { 0xF9 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_SP = 0x1234;
+        spCPU->m_HL = 0xFFFF;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0xFFFF, (int)spCPU->m_SP);
+
+        spCPU.reset();
+    }
+
     // 0xFA
     TEST_METHOD(LDA_nn_Test)
     {
