@@ -40,7 +40,7 @@ CPU::CPU() :
     m_operationMap[0x05] = &CPU::DECr;
     m_operationMap[0x06] = &CPU::LDrn;
     m_operationMap[0x07] = &CPU::RLCA;
-    //m_operationMap[0x08] TODO
+    m_operationMap[0x08] = &CPU::LD_nn_SP;
     m_operationMap[0x09] = &CPU::ADDHLss;
     //m_operationMap[0x0A] TODO
     m_operationMap[0x0B] = &CPU::DECrr;
@@ -1290,6 +1290,27 @@ void CPU::RETcc(const byte& opCode)
     {
         m_cycles += 8;
     }
+}
+
+/*
+    LD (nn), SP - 0x08
+
+    The contents of the stack pointer are loaded into the address specified by the
+    operand nn.
+
+    20 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LD_nn_SP(const byte& opCode)
+{
+    ushort nn = ReadUShortPC();
+
+    // Load A into (nn)
+    m_MMU->WriteByte(nn + 1, GetHighByte(m_SP));
+    m_MMU->WriteByte(nn, GetLowByte(m_SP));
+
+    m_cycles += 20;
 }
 
 /*

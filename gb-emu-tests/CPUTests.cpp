@@ -1383,6 +1383,30 @@ public:
         spCPU.reset();
     }
 
+    // 0x08
+    TEST_METHOD(LD_nn_SP_Test)
+    {
+        byte m_Mem[] = { 0x08, 0x34, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_SP = 0xFFFE;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(20, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0003, (int)spCPU->m_PC);
+        Assert::AreEqual(0xFFFE, (int)spCPU->m_MMU->ReadUShort(0x1234));
+
+        spCPU.reset();
+    }
+
     // 0x13
     TEST_METHOD(INCDE_Test)
     {
