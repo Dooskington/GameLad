@@ -92,6 +92,7 @@ private:
     void ADDAr(const byte& opCode);
     void ADCAr(const byte& opCode);
     void JRcce(const byte& opCode);
+    void ANDr(const byte& opCode);
 
     void LD_BC_A(const byte& opCode);         // 0x02
     void RLCA(const byte& opCode);            // 0x07

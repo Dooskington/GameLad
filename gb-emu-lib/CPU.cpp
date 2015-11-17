@@ -212,14 +212,14 @@ CPU::CPU() :
     //m_operationMap[0x9F] TODO
 
     // A0
-    //m_operationMap[0xA0] TODO
-    //m_operationMap[0xA1] TODO
-    //m_operationMap[0xA2] TODO
-    //m_operationMap[0xA3] TODO
-    //m_operationMap[0xA4] TODO
-    //m_operationMap[0xA5] TODO
+    m_operationMap[0xA0] = &CPU::ANDr;
+    m_operationMap[0xA1] = &CPU::ANDr;
+    m_operationMap[0xA2] = &CPU::ANDr;
+    m_operationMap[0xA3] = &CPU::ANDr;
+    m_operationMap[0xA4] = &CPU::ANDr;
+    m_operationMap[0xA5] = &CPU::ANDr;
     //m_operationMap[0xA6] TODO
-    //m_operationMap[0xA7] TODO
+    m_operationMap[0xA7] = &CPU::ANDr;
     m_operationMap[0xA8] = &CPU::XORr;
     m_operationMap[0xA9] = &CPU::XORr;
     m_operationMap[0xAA] = &CPU::XORr;
@@ -1465,6 +1465,41 @@ void CPU::JRcce(const byte& opCode)
         m_cycles += 8;
     }
 }
+
+/*
+    AND r
+    10100rrr
+
+    The logical AND operation is performed between the register specified in the r
+    operand and the byte contained in the accumulator. The result is stored in the accumulator.
+    Register r can be A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z010
+*/
+void CPU::ANDr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    byte result = (*r) & GetHighByte(m_AF);
+    SetHighByte(&m_AF, result);
+
+    if (result == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
 
 /*
     INC rr
