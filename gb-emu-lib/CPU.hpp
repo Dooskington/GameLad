@@ -87,6 +87,7 @@ private:
     void POPrr(const byte& opCode);
     void DECr(const byte& opCode);
     void SUBr(const byte& opCode);
+    void SBCAr(const byte& opCode);
     void CALLccnn(const byte& opCode);
     void LDr_HL_(const byte& opCode);
     void LD_HL_r(const byte& opCode);

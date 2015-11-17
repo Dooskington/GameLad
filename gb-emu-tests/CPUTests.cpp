@@ -1789,6 +1789,101 @@ public:
         spCPU.reset();
     }
 
+    TEST_METHOD(SBCAr_Test)
+    {
+        // Test for each register (Except F, of course)
+        for (byte reg = 0x00; reg <= 0x07; reg++)
+        {
+            if (reg == 0x06) continue;
+
+            byte m_Mem[] = { (byte)((0x90 | reg) + 8), (byte)((0x90 | reg) + 8) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            spCPU->m_AF = 0xFF00;
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0, (int)spCPU->m_PC);
+
+            switch (reg)
+            {
+            case 0x00:  // B
+                spCPU->m_BC = 0xFF00;
+                break;
+            case 0x01:  // C
+                spCPU->m_BC = 0x00FF;
+                break;
+            case 0x02:  // D
+                spCPU->m_DE = 0xFF00;
+                break;
+            case 0x03:  // E
+                spCPU->m_DE = 0x00FF;
+                break;
+            case 0x04:  // H
+                spCPU->m_HL = 0xFF00;
+                break;
+            case 0x05:  // L
+                spCPU->m_HL = 0x00FF;
+                break;
+            case 0x07:  // A
+                spCPU->m_AF = 0xFF00;
+                break;
+            }
+
+            spCPU->Step();
+
+            byte result = spCPU->GetHighByte(spCPU->m_AF);
+
+
+            Assert::AreEqual(4, (int)spCPU->m_cycles);
+            Assert::AreEqual(1, (int)spCPU->m_PC);
+            Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+            Assert::AreEqual(0x00, (int)result);
+
+            spCPU->m_AF = 0x0500;
+
+            switch (reg)
+            {
+            case 0x00:  // B
+                spCPU->m_BC = 0x0500;
+                break;
+            case 0x01:  // C
+                spCPU->m_BC = 0x0005;
+                break;
+            case 0x02:  // D
+                spCPU->m_DE = 0x0500;
+                break;
+            case 0x03:  // E
+                spCPU->m_DE = 0x0005;
+                break;
+            case 0x04:  // H
+                spCPU->m_HL = 0x0500;
+                break;
+            case 0x05:  // L
+                spCPU->m_HL = 0x0005;
+                break;
+            case 0x07:  // A
+                spCPU->m_AF = 0x0500;
+                break;
+            }
+
+            spCPU->SetFlag(CarryFlag);
+
+            spCPU->Step();
+
+            Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+            Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+            Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+            Assert::AreEqual(0xFF70, (int)spCPU->m_AF);
+
+            Assert::AreEqual(8, (int)spCPU->m_cycles);
+            Assert::AreEqual(2, (int)spCPU->m_PC);
+
+            spCPU.reset();
+        }
+    }
+
     // 0x1D
     TEST_METHOD(DECE_Test)
     {
