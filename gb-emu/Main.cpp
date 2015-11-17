@@ -222,8 +222,6 @@ int main(int argc, char** argv)
 
         while (isRunning)
         {
-            ProcessInput(emulator);
-
             // Poll for window input
             while (SDL_PollEvent(&event) != 0)
             {
@@ -240,7 +238,7 @@ int main(int argc, char** argv)
                 continue;
             }
 
-            emulator.SetInput(JOYPAD_NONE, JOYPAD_NONE);
+            ProcessInput(emulator);
 
             // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
             emulator.StepFrame();
