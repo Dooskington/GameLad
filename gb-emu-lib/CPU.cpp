@@ -2513,7 +2513,7 @@ void CPU::ADDA_HL_(const byte& opCode)
 }
 
 /*
-    ADC A, (HL) - 0xE8
+    ADC A, (HL) - 0x8E
 
     The contents specified by the address of the HL register pair and the contents of
     the carry flag are added to the contents of the accumulator, and the result is
@@ -2526,16 +2526,7 @@ void CPU::ADDA_HL_(const byte& opCode)
 void CPU::ADCA_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
-    byte A = GetHighByte(m_AF);
-    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
-    byte result = A + HL + C;
-    SetHighByte(&m_AF, result);
-
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(SubtractFlag);
-    (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-
+    ADC(HL);
     m_cycles += 8;
 }
 
@@ -2580,16 +2571,7 @@ void CPU::SUB_HL_(const byte& opCode)
 void CPU::SBCA_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
-    byte A = GetHighByte(m_AF);
-    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
-    byte result = A - HL - C;
-    SetHighByte(&m_AF, result);
-
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    SetFlag(SubtractFlag);
-    ((A & 0x0F) < (result & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((A & 0xFF) < (result & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-
+    SBC(HL);
     m_cycles += 8;
 }
 

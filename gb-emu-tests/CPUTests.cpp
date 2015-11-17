@@ -6594,7 +6594,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x007E, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x00FE, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6603,7 +6603,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x003F, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x00FF, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
