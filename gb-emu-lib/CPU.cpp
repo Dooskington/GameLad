@@ -969,6 +969,29 @@ ushort CPU::ReadUShortPC()
     return val;
 }
 
+byte CPU::AddByte(byte b1, byte b2)
+{
+    byte val = b1 + b2;
+
+    ClearFlag(SubtractFlag);
+    (val == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    (((val ^ b2 ^ b1) & 0x10) == 0x10) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (val < b1) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    
+    return val;
+}
+
+ushort CPU::AddUShort(ushort u1, ushort u2)
+{
+    ushort result = u1 + u2;
+    
+    ClearFlag(SubtractFlag);
+    (result < u1) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((result ^ u1 ^ u2) & 0x1000) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+
+    return result;
+}
+
 void CPU::HandleInterrupts()
 {
     // If the IME is enabled, some interrupts are enabled in IE, and
@@ -1356,13 +1379,7 @@ void CPU::ADDHLss(const byte& opCode)
 {
     ushort* ss = GetUShortRegister(opCode >> 4, false);
 
-    ushort result = (m_HL + *ss);
-
-    ClearFlag(SubtractFlag);
-    ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-
-    m_HL = result;
+    m_HL = AddUShort(m_HL, *ss);
 
     m_cycles += 8;
 }
@@ -1452,13 +1469,8 @@ void CPU::ADDAr(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
     byte* r = GetByteRegister(opCode);
-    byte result = A + (*r);
-    SetHighByte(&m_AF, result);
 
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(SubtractFlag);
-    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    SetHighByte(&m_AF, AddByte(A, *r));
 
     m_cycles += 4;
 }
@@ -2214,7 +2226,7 @@ void CPU::RRCA(const byte& opCode)
     }
 
     SetHighByte(&m_AF, A);
-   
+
     ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
@@ -2430,13 +2442,7 @@ void CPU::ADDA_HL_(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
     byte HL = m_MMU->ReadByte(m_HL);
-    byte result = A + HL;
-    SetHighByte(&m_AF, result);
-
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(SubtractFlag);
-    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    SetHighByte(&m_AF, AddByte(A, HL));
 
     m_cycles += 8;
 }
@@ -2614,17 +2620,10 @@ Affects Z, clears n, affects h, affects c
 */
 void CPU::ADDAn(const byte& opCode)
 {
-    ushort n = ReadBytePC();
-
+    byte n = ReadBytePC();
     byte A = GetHighByte(m_AF);
-    byte result = A + n;
 
-    SetHighByte(&m_AF, result);
-
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(SubtractFlag);
-    ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    SetHighByte(&m_AF, AddByte(A, n));
 
     m_cycles += 8;
 }
@@ -2675,13 +2674,31 @@ void CPU::ADCAn(const byte& opCode)
     byte n = ReadBytePC();
     byte A = GetHighByte(m_AF);
     byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
+
+    ClearFlag(SubtractFlag);
+
+    if (((int)(A & 0x0F) + (int)(n & 0x0F) + (int)C) > 0x0F)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
+
+    if (((int)(A & 0xFF) + (int)(n & 0xFF) + (int)C) > 0xFF)
+    {
+        SetFlag(CarryFlag);
+    }
+    else
+    {
+        ClearFlag(CarryFlag);
+    }
+
     byte result = A + n + C;
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(SubtractFlag);
-    (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 8;
 }
@@ -2949,11 +2966,13 @@ void CPU::LDHLSPe(const byte& opCode)
 
     ushort result = m_SP + e;
 
+    ushort check = m_SP ^ e ^ ((m_SP + e) & 0xFFFF);
+
+    ((check & 0x100) == 0x100) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((check & 0x10) == 0x10) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+
     ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
-
-    ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_HL = result;
 
