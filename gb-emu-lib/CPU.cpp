@@ -2895,11 +2895,13 @@ void CPU::LDHLSPe(const byte& opCode)
 
     ushort result = m_SP + e;
 
+    ushort check = m_SP ^ e ^ ((m_SP + e) & 0xFFFF);
+
+    ((check & 0x100) == 0x100) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((check & 0x10) == 0x10) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+
     ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
-
-    ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_HL = result;
 
