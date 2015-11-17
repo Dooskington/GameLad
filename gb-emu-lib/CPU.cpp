@@ -1359,8 +1359,8 @@ void CPU::ADDHLss(const byte& opCode)
     ushort result = (m_HL + *ss);
 
     ClearFlag(SubtractFlag);
-    ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    (result < m_HL) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((result ^ m_HL ^ *ss) & 0x1000) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
 
     m_HL = result;
 
@@ -2214,7 +2214,7 @@ void CPU::RRCA(const byte& opCode)
     }
 
     SetHighByte(&m_AF, A);
-   
+
     ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
