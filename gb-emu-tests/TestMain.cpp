@@ -48,6 +48,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDHn_Test);
     TEST_CALL(CPUTests, LDLn_Test);
     TEST_CALL(CPUTests, LDD_HL_A_Test);
+    TEST_CALL(CPUTests, LDDA_HL__Test);
     TEST_CALL(CPUTests, LDAn_Test);
     TEST_CALL(CPUTests, HALT_Test);
     TEST_CALL(CPUTests, POPBC_Test);
@@ -76,6 +77,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, INCDE_Test);
     TEST_CALL(CPUTests, INCHL_Test);
     TEST_CALL(CPUTests, INCSP_Test);
+    TEST_CALL(CPUTests, INCHL_Test);
     TEST_CALL(CPUTests, DECBC_Test);
     TEST_CALL(CPUTests, DECDE_Test);
     TEST_CALL(CPUTests, DECHL_Test);
@@ -98,6 +100,10 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, XORn_Test);
     TEST_CALL(CPUTests, XOR_HL_Test);
     TEST_CALL(CPUTests, ADDHLss_Test);
+    TEST_CALL(CPUTests, ANDr_Test);
+    TEST_CALL(CPUTests, AND_HL__Test);
+    TEST_CALL(CPUTests, LDSPHL);
+    TEST_CALL(CPUTests, LD_HL_n_Test);
 
     TEST_CALL(CPUTests, ORA_Test);
     TEST_CALL(CPUTests, ORB_Test);
@@ -113,6 +119,7 @@ int main(int arg, char** argv)
 
     TEST_CALL(CPUTests, RET_Test);
     TEST_CALL(CPUTests, CPn_Test);
+    TEST_CALL(CPUTests, CPr_Test);
     TEST_CALL(CPUTests, CP_HL__Test);
     TEST_CALL(CPUTests, SUBB_Test);
     TEST_CALL(CPUTests, SUBC_Test);
@@ -131,6 +138,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, DI_Test);
     TEST_CALL(CPUTests, LDA_nn_Test);
     TEST_CALL(CPUTests, EI_Test);
+    TEST_CALL(CPUTests, RETI_Test);
 
     TEST_CALL(CPUTests, LDr_HL_Test);
 
@@ -214,6 +222,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, SWAPr_Test);
     TEST_CALL(CPUTests, JP_HL_Test);
     TEST_CALL(CPUTests, SCF_Test);
+    TEST_CALL(CPUTests, CCF_Test);
     TEST_CALL(CPUTests, JPccnn_Test);
     TEST_CALL(CPUTests, JRCe_Test);
     TEST_CALL(CPUTests, LD_DE_A_Test);

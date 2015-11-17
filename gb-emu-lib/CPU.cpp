@@ -90,18 +90,18 @@ CPU::CPU() :
     m_operationMap[0x31] = &CPU::LDrrnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0x33] = &CPU::INCrr;
-    //m_operationMap[0x34] TODO
+    m_operationMap[0x34] = &CPU::INC_HL_;
     m_operationMap[0x35] = &CPU::DEC_HL_;
-    //m_operationMap[0x36] TODO
+    m_operationMap[0x36] = &CPU::LD_HL_n;
     m_operationMap[0x37] = &CPU::SCF;
     m_operationMap[0x38] = &CPU::JRcce;
     m_operationMap[0x39] = &CPU::ADDHLss;
-    //m_operationMap[0x3A] TODO
+    m_operationMap[0x3A] = &CPU::LDDA_HL_;
     m_operationMap[0x3B] = &CPU::DECrr;
     m_operationMap[0x3C] = &CPU::INCr;
     m_operationMap[0x3D] = &CPU::DECr;
     m_operationMap[0x3E] = &CPU::LDrn;
-    //m_operationMap[0x3F] TODO
+    m_operationMap[0x3F] = &CPU::CCF;
 
     // 40
     m_operationMap[0x40] = &CPU::LDrR;
@@ -212,14 +212,14 @@ CPU::CPU() :
     //m_operationMap[0x9F] TODO
 
     // A0
-    //m_operationMap[0xA0] TODO
-    //m_operationMap[0xA1] TODO
-    //m_operationMap[0xA2] TODO
-    //m_operationMap[0xA3] TODO
-    //m_operationMap[0xA4] TODO
-    //m_operationMap[0xA5] TODO
-    //m_operationMap[0xA6] TODO
-    //m_operationMap[0xA7] TODO
+    m_operationMap[0xA0] = &CPU::ANDr;
+    m_operationMap[0xA1] = &CPU::ANDr;
+    m_operationMap[0xA2] = &CPU::ANDr;
+    m_operationMap[0xA3] = &CPU::ANDr;
+    m_operationMap[0xA4] = &CPU::ANDr;
+    m_operationMap[0xA5] = &CPU::ANDr;
+    m_operationMap[0xA6] = &CPU::AND_HL_;
+    m_operationMap[0xA7] = &CPU::ANDr;
     m_operationMap[0xA8] = &CPU::XORr;
     m_operationMap[0xA9] = &CPU::XORr;
     m_operationMap[0xAA] = &CPU::XORr;
@@ -238,14 +238,14 @@ CPU::CPU() :
     m_operationMap[0xB5] = &CPU::ORr;
     m_operationMap[0xB6] = &CPU::OR_HL_;
     m_operationMap[0xB7] = &CPU::ORr;
-    //m_operationMap[0xB8] TODO
-    //m_operationMap[0xB9] TODO
-    //m_operationMap[0xBA] TODO
-    //m_operationMap[0xBB] TODO
-    //m_operationMap[0xBC] TODO
-    //m_operationMap[0xBD] TODO
+    m_operationMap[0xB8] = &CPU::CPr;
+    m_operationMap[0xB9] = &CPU::CPr;
+    m_operationMap[0xBA] = &CPU::CPr;
+    m_operationMap[0xBB] = &CPU::CPr;
+    m_operationMap[0xBC] = &CPU::CPr;
+    m_operationMap[0xBD] = &CPU::CPr;
     m_operationMap[0xBE] = &CPU::CP_HL_;
-    //m_operationMap[0xBF] TODO
+    m_operationMap[0xBF] = &CPU::CPr;
 
     // C0
     m_operationMap[0xC0] = &CPU::RETcc;
@@ -275,7 +275,7 @@ CPU::CPU() :
     m_operationMap[0xD6] = &CPU::SUBn;
     m_operationMap[0xD7] = &CPU::RSTn;
     m_operationMap[0xD8] = &CPU::RETcc;
-    //m_operationMap[0xD9] TODO
+    m_operationMap[0xD9] = &CPU::RETI;
     m_operationMap[0xDA] = &CPU::JPccnn;
     //m_operationMap[0xDB] UNUSED
     m_operationMap[0xDC] = &CPU::CALLccnn;
@@ -311,7 +311,7 @@ CPU::CPU() :
     m_operationMap[0xF6] = &CPU::ORn;
     m_operationMap[0xF7] = &CPU::RSTn;
     m_operationMap[0xF8] = &CPU::LDHLSPe;
-    //m_operationMap[0xF9] TODO
+    m_operationMap[0xF9] = &CPU::LDSPHL;
     m_operationMap[0xFA] = &CPU::LDA_nn_;
     m_operationMap[0xFB] = &CPU::EI;
     //m_operationMap[0xFC] UNUSED
@@ -1492,6 +1492,66 @@ void CPU::RSTn(const byte& opCode)
 }
 
 /*
+    AND r
+    10100rrr
+
+    The logical AND operation is performed between the register specified in the r
+    operand and the byte contained in the accumulator. The result is stored in the accumulator.
+    Register r can be A, B, C, D, E, H, or L.
+
+    4 Cycles
+
+    Flags affected(znhc): z010
+*/
+void CPU::ANDr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    byte result = (*r) & GetHighByte(m_AF);
+    SetHighByte(&m_AF, result);
+
+    if (result == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
+/*
+    CP r
+    10111rrr
+
+    The contents of 8-bit register r are compared with the contents of the accumulator.
+    If there is a true compare, the Z flag is set. The execution of this instruction
+    does not affect the contents of the accumulator.
+
+    4 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::CPr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    byte A = GetHighByte(m_AF);
+    byte result = A - (*r);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(AddFlag);
+    ((A & 0xFF) < ((*r) & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((A & 0x0F) < ((*r) & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+
+    m_cycles += 4;
+}
+
+/*
     INC rr
     00rr0011
 
@@ -1792,6 +1852,47 @@ void CPU::DECr(const byte& opCode)
 }
 
 /*
+    INC (HL) - 0x34
+
+    The byte at the address (HL) is incremented.
+
+    12 Cycles
+
+    Flags affected(znhc): z0h-
+*/
+void CPU::INC_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    bool isBit3Before = ISBITSET(HL, 3);
+    HL += 1;
+    bool isBit3After = ISBITSET(HL, 3);
+
+    m_MMU->WriteByte(m_HL, HL);
+
+    if (HL == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+
+    if (isBit3Before && !isBit3After)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
+
+    m_cycles += 12;
+}
+
+/*
 DEC (hl) - 0x35
 
 The byte at the address (HL) is decremented.
@@ -1818,7 +1919,7 @@ void CPU::DEC_HL_(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    SetFlag(AddFlag);
 
     if (!isBit4Before && isBit4After)
     {
@@ -1828,6 +1929,25 @@ void CPU::DEC_HL_(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    m_cycles += 12;
+}
+
+/*
+    LD (HL), n
+    0x36
+
+    The contents of n are loaded into the memory location specifed by the
+    contents of the HL register pair.
+
+    12 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LD_HL_n(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    m_MMU->WriteByte(m_HL, n); // Load n into the address pointed at by HL.
 
     m_cycles += 12;
 }
@@ -1847,6 +1967,24 @@ void CPU::SCF(const byte& opCode)
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     SetFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
+/*
+    CCF - 0x3F
+
+    Toggle the carry flag.
+
+    4 Cycles
+
+    Flags affected(znhc): -00c
+*/
+void CPU::CCF(const byte& opCode)
+{
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    IsFlagSet(CarryFlag) ? ClearFlag(CarryFlag) : SetFlag(CarryFlag);
 
     m_cycles += 4;
 }
@@ -2025,6 +2163,25 @@ void CPU::LDD_HL_A(const byte& opCode)
     // No flags affected
 }
 
+/*
+    LDD A, (HL)
+    0x3A
+
+    Load the byte at the address specified in the HL register into A, and decrement HL.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDDA_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    SetHighByte(&m_AF, HL);
+
+    m_HL--;
+    m_cycles += 8;
+}
+
 // 0x76 (HALT)
 void CPU::HALT(const byte& opCode)
 {
@@ -2064,6 +2221,40 @@ void CPU::ADDA_HL_(const byte& opCode)
     ClearFlag(AddFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    AND (HL)
+    0xA6
+
+    The logical AND operation is performed between the byte contained at
+    the memory address specified by the HL register  and the byte contained
+    in the accumulator. The result is stored in the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z010
+*/
+void CPU::AND_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte result = HL & GetHighByte(m_AF);
+    SetHighByte(&m_AF, result);
+
+    if (result == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
 
     m_cycles += 8;
 }
@@ -2223,6 +2414,24 @@ void CPU::SUBn(const byte& opCode)
     m_cycles += 4;
 }
 
+/*
+    RETI
+    0xD9
+
+    Return and enable interrupts.
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::RETI(const byte& opCode)
+{
+    m_IME = 0x01; // Restore interrupts
+    m_PC = PopUShort(); // Return
+
+    m_cycles += 16;
+}
+
 // 0xE0 (LD(0xFF00 + n), A)
 void CPU::LD_0xFF00n_A(const byte& opCode)
 {
@@ -2380,6 +2589,23 @@ void CPU::ORn(const byte& opCode)
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    LD SP, HL
+    0xF9
+
+    Load HL into SP.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDSPHL(const byte& opCode)
+{
+    m_SP = m_HL;
 
     m_cycles += 8;
 }
