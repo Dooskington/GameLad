@@ -177,10 +177,10 @@ int main(int argc, char** argv)
     //std::string romPath = "res/tests/01-special.gb";            // PASSED
     //std::string romPath = "res/tests/02-interrupts.gb";         // PASSED
     //std::string romPath = "res/tests/03-op sp,hl.gb";           // PASSED
-    //std::string romPath = "res/tests/04-op r,imm.gb";
-    //std::string romPath = "res/tests/05-op rp.gb";
+    //std::string romPath = "res/tests/04-op r,imm.gb";           // PASSED
+    //std::string romPath = "res/tests/05-op rp.gb";              // PASSED
     //std::string romPath = "res/tests/06-ld r,r.gb";             // PASSED
-    //std::string romPath = "res/tests/07-jr,jp,call,ret,rst.gb";
+    //std::string romPath = "res/tests/07-jr,jp,call,ret,rst.gb"; // PASSED
     //std::string romPath = "res/tests/08-misc instrs.gb";        // PASSED
     //std::string romPath = "res/tests/09-op r,r.gb";
     //std::string romPath = "res/tests/10-bit ops.gb";            // PASSED
