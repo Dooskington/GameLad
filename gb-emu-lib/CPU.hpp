@@ -18,7 +18,7 @@ Bit  Name  Set Clr  Expl.
 3-0  -     -   -    Not used (always zero)
 */
 #define ZeroFlag        7
-#define AddFlag         6
+#define SubtractFlag    6
 #define HalfCarryFlag   5
 #define CarryFlag       4
 
