@@ -42,5 +42,5 @@ private:
     */
     byte m_IE; // Interrupt enable register (0xFFFF)
     byte m_IF; // Interrupt flag register (0xFF0F)
-    // TODO: TESTS FOR INTERRUPTS!!!!
+    byte m_Key1;
 };
