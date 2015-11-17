@@ -8,6 +8,39 @@
       <Filter>res\tests</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="..\res\tests\01-special.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\02-interrupts.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\03-op sp,hl.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\04-op r,imm.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\05-op rp.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\06-ld r,r.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\07-jr,jp,call,ret,rst.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\08-misc instrs.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\09-op r,r.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\10-bit ops.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\11-op a,(hl).gb">
+      <Filter>res\tests</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="res">

@@ -22,6 +22,17 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\res\tests\01-special.gb" />
+    <None Include="..\res\tests\02-interrupts.gb" />
+    <None Include="..\res\tests\03-op sp,hl.gb" />
+    <None Include="..\res\tests\04-op r,imm.gb" />
+    <None Include="..\res\tests\05-op rp.gb" />
+    <None Include="..\res\tests\06-ld r,r.gb" />
+    <None Include="..\res\tests\07-jr,jp,call,ret,rst.gb" />
+    <None Include="..\res\tests\08-misc instrs.gb" />
+    <None Include="..\res\tests\09-op r,r.gb" />
+    <None Include="..\res\tests\10-bit ops.gb" />
+    <None Include="..\res\tests\11-op a,(hl).gb" />
     <None Include="packages.config" />
     <None Include="res\tests\cpu_instrs.gb" />
     <None Include="res\tests\instr_timing.gb" />
