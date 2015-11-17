@@ -1,8 +1,22 @@
 #include "pch.hpp"
 #include "CPU.hpp"
 
+#include <vector>
+
 // The number of CPU cycles per frame
 const unsigned int CyclesPerFrame = 70224;
+
+struct Trace
+{
+    byte opCode;
+    ushort AF;
+    ushort BC;
+    ushort DE;
+    ushort HL;
+    ushort SP;
+    ushort PC;
+};
+std::vector<Trace> trace;
 
 CPU::CPU() :
     m_cycles(0),
@@ -379,22 +393,22 @@ CPU::CPU() :
     m_operationMapCB[0x2F] = &CPU::SRAr;
 
     // 30
-    m_operationMapCB[0x30] = &CPU::SRLr;
-    m_operationMapCB[0x31] = &CPU::SRLr;
-    m_operationMapCB[0x32] = &CPU::SRLr;
-    m_operationMapCB[0x33] = &CPU::SRLr;
-    m_operationMapCB[0x34] = &CPU::SRLr;
-    m_operationMapCB[0x35] = &CPU::SRLr;
-    m_operationMapCB[0x36] = &CPU::SRL_HL_;
-    m_operationMapCB[0x37] = &CPU::SRLr;
-    m_operationMapCB[0x38] = &CPU::SWAPr;
-    m_operationMapCB[0x39] = &CPU::SWAPr;
-    m_operationMapCB[0x3A] = &CPU::SWAPr;
-    m_operationMapCB[0x3B] = &CPU::SWAPr;
-    m_operationMapCB[0x3C] = &CPU::SWAPr;
-    m_operationMapCB[0x3D] = &CPU::SWAPr;
-    m_operationMapCB[0x3E] = &CPU::SWAP_HL_;
-    m_operationMapCB[0x3F] = &CPU::SWAPr;
+    m_operationMapCB[0x30] = &CPU::SWAPr;
+    m_operationMapCB[0x31] = &CPU::SWAPr;
+    m_operationMapCB[0x32] = &CPU::SWAPr;
+    m_operationMapCB[0x33] = &CPU::SWAPr;
+    m_operationMapCB[0x34] = &CPU::SWAPr;
+    m_operationMapCB[0x35] = &CPU::SWAPr;
+    m_operationMapCB[0x36] = &CPU::SWAP_HL_;
+    m_operationMapCB[0x37] = &CPU::SWAPr;
+    m_operationMapCB[0x38] = &CPU::SRLr;
+    m_operationMapCB[0x39] = &CPU::SRLr;
+    m_operationMapCB[0x3A] = &CPU::SRLr;
+    m_operationMapCB[0x3B] = &CPU::SRLr;
+    m_operationMapCB[0x3C] = &CPU::SRLr;
+    m_operationMapCB[0x3D] = &CPU::SRLr;
+    m_operationMapCB[0x3E] = &CPU::SRL_HL_;
+    m_operationMapCB[0x3F] = &CPU::SRLr;
 
     // 40
     m_operationMapCB[0x40] = &CPU::BITbr;
@@ -792,6 +806,12 @@ void CPU::Step()
         if (instruction != nullptr)
         {
             (this->*instruction)(opCode);
+            Trace t = { opCode, m_AF, m_BC, m_DE, m_HL, m_SP, m_PC };
+            trace.push_back(t);
+            if (trace.size() > 10)
+            {
+                trace.erase(trace.begin());
+            }
         }
         else
         {
@@ -2236,16 +2256,6 @@ NEG     1           6-7     1           6-F     9A      1*
 Flags affected(znhc): z-0x
 Affected Z, Cleared H, Affected C
 */
-byte GetUpperNibble(byte val)
-{
-    return (byte)(val >> 4);
-}
-
-byte GetLowerNibble(byte val)
-{
-    return (byte)(val & 0x0F);
-}
-
 void CPU::DAA(const byte& opCode)
 {
     int aVal = GetHighByte(m_AF);
@@ -2631,7 +2641,7 @@ void CPU::RETI(const byte& opCode)
 /*
     SBC A, n (0xDE)
 
-    The 8-bit value n, along with the carry flag, is subtracted from the contents 
+    The 8-bit value n, along with the carry flag, is subtracted from the contents
     of the Accumulator, and the result is stored in the accumulator.
 
     8 Cycles
