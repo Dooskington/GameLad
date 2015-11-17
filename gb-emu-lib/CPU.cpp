@@ -1967,22 +1967,12 @@ void CPU::POPrr(const byte& opCode)
 void CPU::DECr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode >> 3);
-    bool isBit4Before = ISBITSET(*r, 4);
-    *r -= 1;
-    bool isBit4After = ISBITSET(*r, 4);
-
-    if (*r == 0x00)
-    {
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        ClearFlag(ZeroFlag);
-    }
+    byte calc = (*r - 1);
 
     SetFlag(SubtractFlag);
+    (calc == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
-    if (!isBit4Before && isBit4After)
+    if (((calc ^ 0x01 ^ *r) & 0x10) == 0x10)
     {
         SetFlag(HalfCarryFlag);
     }
@@ -1990,6 +1980,8 @@ void CPU::DECr(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    *r = calc;
 
     m_cycles += 4;
 }
