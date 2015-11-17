@@ -120,6 +120,7 @@ private:
     void CALLnn(const byte& opCode);          // 0xCD
     void ADCAn(const byte& opCode);           // 0xCE
     void SUBn(const byte& opCode);            // 0xD6
+    void RETI(const byte& opCode);            // 0xD9
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void ANDn(const byte& opCode);            // 0xE6

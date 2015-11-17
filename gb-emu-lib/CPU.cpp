@@ -275,7 +275,7 @@ CPU::CPU() :
     m_operationMap[0xD6] = &CPU::SUBn;
     //m_operationMap[0xD7] TODO
     m_operationMap[0xD8] = &CPU::RETcc;
-    //m_operationMap[0xD9] TODO
+    m_operationMap[0xD9] = &CPU::RETI;
     m_operationMap[0xDA] = &CPU::JPccnn;
     //m_operationMap[0xDB] UNUSED
     m_operationMap[0xDC] = &CPU::CALLccnn;
@@ -2290,6 +2290,24 @@ void CPU::SUBn(const byte& opCode)
     ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 4;
+}
+
+/*
+    RETI
+    0xD9
+
+    Return and enable interrupts.
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::RETI(const byte& opCode)
+{
+    m_IME = 0x01; // Restore interrupts
+    m_PC = PopUShort(); // Return
+
+    m_cycles += 16;
 }
 
 // 0xE0 (LD(0xFF00 + n), A)
