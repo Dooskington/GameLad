@@ -1679,6 +1679,78 @@ public:
         spCPU.reset();
     }
 
+    // 0x96
+    TEST_METHOD(SUB_HL__Test)
+    {
+        byte m_Mem[] = { 0x96, 0x96 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0xFF00;
+        spCPU->m_HL = 0x1234;
+        spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(1, (int)spCPU->m_PC);
+        Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+        Assert::AreEqual(0x00C0, (int)spCPU->m_AF);
+
+        spCPU->m_AF = 0x0400;
+        spCPU->m_MMU->WriteByte(0x1234, 0x05);
+
+        spCPU->Step();
+
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::AreEqual(0xFF70, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
+    // 0xDE
+    TEST_METHOD(SBCAn_Test)
+    {
+        byte m_Mem[] = { 0xDE, 0xFF, 0xDE, 0x05 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0xFF00;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(2, (int)spCPU->m_PC);
+        Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+        Assert::AreEqual(0x00C0, (int)spCPU->m_AF);
+
+        spCPU->m_AF = 0x0500;
+        spCPU->SetFlag(CarryFlag);
+
+        spCPU->Step();
+
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::AreEqual(0xFF70, (int)spCPU->m_AF);
+
+        spCPU.reset();
+    }
+
     // 0x1D
     TEST_METHOD(DECE_Test)
     {

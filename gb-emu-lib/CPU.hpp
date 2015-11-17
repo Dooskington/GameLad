@@ -120,6 +120,7 @@ private:
     void CCF(const byte& opCode);             // 0x3F
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
+    void SUB_HL_(const byte& opCode);         // 0x96
     void AND_HL_(const byte& opCode);         // 0xA6
     void XOR_HL_(const byte& opCode);         // 0xAE
     void OR_HL_(const byte& opCode);          // 0xB6
@@ -131,6 +132,7 @@ private:
     void ADCAn(const byte& opCode);           // 0xCE
     void SUBn(const byte& opCode);            // 0xD6
     void RETI(const byte& opCode);            // 0xD9
+    void SBCAn(const byte& opCode);           // 0xDE
     void LD_0xFF00n_A(const byte& opCode);    // 0xE0
     void LD_0xFF00C_A(const byte& opCode);    // 0xE2
     void ANDn(const byte& opCode);            // 0xE6

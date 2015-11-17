@@ -200,7 +200,7 @@ CPU::CPU() :
     m_operationMap[0x93] = &CPU::SUBr;
     m_operationMap[0x94] = &CPU::SUBr;
     m_operationMap[0x95] = &CPU::SUBr;
-    //m_operationMap[0x96] TODO
+    m_operationMap[0x96] = &CPU::SUB_HL_;
     m_operationMap[0x97] = &CPU::SUBr;
     //m_operationMap[0x98] TODO
     //m_operationMap[0x99] TODO
@@ -280,7 +280,7 @@ CPU::CPU() :
     //m_operationMap[0xDB] UNUSED
     m_operationMap[0xDC] = &CPU::CALLccnn;
     //m_operationMap[0xDD] UNUSED
-    //m_operationMap[0xDE] TODO
+    m_operationMap[0xDE] = &CPU::SBCAn;
     m_operationMap[0xDF] = &CPU::RSTn;
 
     // E0
@@ -2396,6 +2396,33 @@ void CPU::ADDA_HL_(const byte& opCode)
 }
 
 /*
+    SUB (HL)
+    0x96
+
+    The byte at the memory address specified by the contents of the HL register pair
+    is subtracted to the contents of the accumulator, and the result is stored in the
+    accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::SUB_HL_(const byte& opCode)
+{
+    byte A = GetHighByte(m_AF);
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte result = A - HL;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(SubtractFlag);
+    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
     AND (HL)
     0xA6
 
@@ -2600,6 +2627,32 @@ void CPU::RETI(const byte& opCode)
     m_PC = PopUShort(); // Return
 
     m_cycles += 16;
+}
+
+/*
+    SBC A, n (0xDE)
+
+    The 8-bit value n, along with the carry flag, is subtracted from the contents 
+    of the Accumulator, and the result is stored in the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::SBCAn(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    byte A = GetHighByte(m_AF);
+    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
+    byte result = A - n - C;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(SubtractFlag);
+    ((A & 0x0F) < (result & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (result & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
 }
 
 // 0xE0 (LD(0xFF00 + n), A)
