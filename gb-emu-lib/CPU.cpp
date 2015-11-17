@@ -292,7 +292,7 @@ CPU::CPU() :
     m_operationMap[0xE5] = &CPU::PUSHrr;
     m_operationMap[0xE6] = &CPU::ANDn;
     m_operationMap[0xE7] = &CPU::RSTn;
-    //m_operationMap[0xE8] TODO
+    m_operationMap[0xE8] = &CPU::ADDSPdd;
     m_operationMap[0xE9] = &CPU::JP_HL_;
     m_operationMap[0xEA] = &CPU::LD_nn_A;
     //m_operationMap[0xEB] UNUSED
@@ -1341,6 +1341,29 @@ void CPU::ADDHLss(const byte& opCode)
 }
 
 /*
+    ADD SP, dd
+    0xE8
+
+    16 Cycles
+
+    Flags affected(znhc): 00hc
+*/
+void CPU::ADDSPdd(const byte& opCode)
+{
+    sbyte arg = static_cast<sbyte>(ReadBytePC());
+    ushort result = (m_SP + arg);
+
+    ClearFlag(ZeroFlag);
+    ClearFlag(AddFlag);
+    ((result & 0xF) < (m_SP & 0xF)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((result & 0xFF) < (m_SP & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_SP = result;
+
+    m_cycles += 16;
+}
+
+/*
 JP cc, nn
 11ccc010
 
@@ -1442,18 +1465,18 @@ void CPU::ADCAr(const byte& opCode)
 }
 
 /*
-JR cc, nn
-001cc000
+    JR cc, nn
+    001cc000
 
-00 NZ
-01 Z
-10 NC
-11 C
+    00 NZ
+    01 Z
+    10 NC
+    11 C
 
-12 Cycles if taken
-8 Cycles if not taken
+    12 Cycles if taken
+    8 Cycles if not taken
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 void CPU::JRcce(const byte& opCode)
 {
