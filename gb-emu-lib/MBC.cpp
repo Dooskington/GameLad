@@ -134,13 +134,13 @@ byte MBC1_MBC::ReadByte(const ushort& address)
         */
         if (!m_isRAMEnabled)
         {
-            //Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
+            // RAM disabled
             return 0x00;
         }
 
         if (m_RAM == nullptr)
         {
-            //Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
+            // RAM not initialized
             return 0x00;
         }
 
@@ -230,13 +230,13 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
 
         if (!m_isRAMEnabled)
         {
-            //Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
+            // RAM disabled
             return false;
         }
 
         if (m_RAM == nullptr)
         {
-            //Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
+            // RAM not initialized
             return false;
         }
 
