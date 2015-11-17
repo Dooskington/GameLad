@@ -235,6 +235,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, RSTn_Test);
     TEST_CALL(CPUTests, LD_nn_SP_Test);
     TEST_CALL(CPUTests, DAA_Test);
+    TEST_CALL(CPUTests, RRCA2_Test);
 
     TEST_CLEANUP();
 

@@ -62,7 +62,7 @@ CPU::CPU() :
     m_operationMap[0x0C] = &CPU::INCr;
     m_operationMap[0x0D] = &CPU::DECr;
     m_operationMap[0x0E] = &CPU::LDrn;
-    //m_operationMap[0x0F] TODO
+    m_operationMap[0x0F] = &CPU::RRCA;
 
     // 10
     m_operationMap[0x10] = &CPU::STOP;
@@ -2183,6 +2183,43 @@ void CPU::LDA_BC_(const byte& opCode)
     SetHighByte(&m_AF, val);
 
     m_cycles += 8;
+}
+
+/*
+RRCA - 0x0F
+
+The contents off the accumulator are roated right 1-bit. Bit 0 is copied to the carry
+flag and also to bit 7.
+
+4 Cycles
+
+Flags affected(znhc): 000c
+*/
+void CPU::RRCA(const byte& opCode)
+{
+    byte A = GetHighByte(m_AF);
+    bool carry = ISBITSET(A, 0);
+
+    A = A >> 1;
+
+    if (carry)
+    {
+        SetFlag(CarryFlag);
+        A = SETBIT(A, 7);
+    }
+    else
+    {
+        ClearFlag(CarryFlag);
+        A = CLEARBIT(A, 7);
+    }
+
+    SetHighByte(&m_AF, A);
+   
+    ClearFlag(ZeroFlag);
+    ClearFlag(SubtractFlag);
+    ClearFlag(HalfCarryFlag);
+
+    m_cycles += 4;
 }
 
 // 0x17 (RR A)

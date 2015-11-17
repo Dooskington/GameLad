@@ -101,6 +101,7 @@ private:
     void RLCA(const byte& opCode);            // 0x07
     void LD_nn_SP(const byte& opCode);        // 0x08
     void LDA_BC_(const byte& opCode);         // 0x0A
+    void RRCA(const byte& opCode);            // 0x0F
     void STOP(const byte& opCode);            // 0x10
     void LD_DE_A(const byte& opCode);         // 0x12
     void RLA(const byte& opCode);             // 0x17
