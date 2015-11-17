@@ -1055,7 +1055,7 @@ public:
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0xFE00, (int)spCPU->m_BC);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_BC = 0x0100;
@@ -1066,7 +1066,7 @@ public:
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_BC);
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_BC = 0x0000;
@@ -1077,7 +1077,7 @@ public:
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
         Assert::AreEqual(0xFF00, (int)spCPU->m_BC);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU.reset();
@@ -1309,7 +1309,7 @@ public:
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0x00FE, (int)spCPU->m_BC);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_BC = 0x0001;
@@ -1320,7 +1320,7 @@ public:
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_BC);
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_BC = 0x0000;
@@ -1331,7 +1331,7 @@ public:
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
         Assert::AreEqual(0x00FF, (int)spCPU->m_BC);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU.reset();
@@ -1530,7 +1530,7 @@ public:
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0xFE00, (int)spCPU->m_DE);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_DE = 0x0100;
@@ -1541,7 +1541,7 @@ public:
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_DE);
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_DE = 0x0000;
@@ -1552,7 +1552,7 @@ public:
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
         Assert::AreEqual(0xFF00, (int)spCPU->m_DE);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU.reset();
@@ -1668,8 +1668,8 @@ public:
         spCPU->Step();
 
         // Verify expectations after
-        Assert::AreEqual(8, (int)spCPU->m_cycles);
-        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0002, (int)spCPU->m_SP);
 
         // TODO
@@ -1700,7 +1700,7 @@ public:
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0x00FE, (int)spCPU->m_DE);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_DE = 0x0001;
@@ -1711,7 +1711,7 @@ public:
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_DE);
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_DE = 0x0000;
@@ -1722,7 +1722,7 @@ public:
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
         Assert::AreEqual(0x00FF, (int)spCPU->m_DE);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU.reset();
@@ -1890,7 +1890,7 @@ public:
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0xFE00, (int)spCPU->m_HL);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_HL = 0x0100;
@@ -1901,7 +1901,7 @@ public:
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_HL);
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_HL = 0x0000;
@@ -1912,7 +1912,7 @@ public:
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
         Assert::AreEqual(0xFF00, (int)spCPU->m_HL);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU.reset();
@@ -2032,7 +2032,7 @@ public:
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::AreEqual(0x00FE, (int)spCPU->m_HL);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_HL = 0x0001;
@@ -2043,7 +2043,7 @@ public:
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x0000, (int)spCPU->m_HL);
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_HL = 0x0000;
@@ -2054,7 +2054,7 @@ public:
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
         Assert::AreEqual(0x00FF, (int)spCPU->m_HL);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU.reset();
@@ -2482,9 +2482,9 @@ public:
         // Verify expectations after
         Assert::AreEqual(4, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0xFE00, (int)spCPU->m_AF);
+        Assert::AreEqual(0xFE00, (int)(spCPU->m_AF & 0xFF00));
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_AF = 0x0100;
@@ -2493,9 +2493,9 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x0080, (int)spCPU->m_AF);
+        Assert::AreEqual(0x0000, (int)(spCPU->m_AF & 0xFF00));
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU->m_AF = 0x0000;
@@ -2504,9 +2504,9 @@ public:
         // Verify expectations after
         Assert::AreEqual(12, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
-        Assert::AreEqual(0xFF20, (int)spCPU->m_AF);
+        Assert::AreEqual(0xFF00, (int)(spCPU->m_AF & 0xFF00));
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
-        Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
+        Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
 
         spCPU.reset();
