@@ -1053,7 +1053,7 @@ void CPU::RLCA(const byte& opCode)
 
     // Clear sZ, clears N, clears H, affects C
     ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 4;
@@ -1187,7 +1187,7 @@ void CPU::INCr(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
 
     if (isBit3Before && !isBit3After)
     {
@@ -1331,7 +1331,7 @@ void CPU::ADDHLss(const byte& opCode)
 
     ushort result = (m_HL + *ss);
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -1354,7 +1354,7 @@ void CPU::ADDSPdd(const byte& opCode)
     ushort result = (m_SP + arg);
 
     ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ((result & 0xF) < (m_SP & 0xF)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((result & 0xFF) < (m_SP & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -1429,7 +1429,7 @@ void CPU::ADDAr(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -1457,7 +1457,7 @@ void CPU::ADCAr(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -1562,7 +1562,7 @@ void CPU::ANDr(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     SetFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -1588,7 +1588,7 @@ void CPU::CPr(const byte& opCode)
     byte result = A - (*r);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    SetFlag(AddFlag);
+    SetFlag(SubtractFlag);
     ((A & 0xFF) < ((*r) & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
     ((A & 0x0F) < ((*r) & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
 
@@ -1659,7 +1659,7 @@ void CPU::XORr(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -1692,7 +1692,7 @@ void CPU::XOR_HL_(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -1727,7 +1727,7 @@ void CPU::ORr(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -1760,7 +1760,7 @@ void CPU::OR_HL_(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -1810,7 +1810,7 @@ void CPU::ANDn(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     SetFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -1886,7 +1886,7 @@ void CPU::DECr(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    SetFlag(SubtractFlag);
 
     if (!isBit4Before && isBit4After)
     {
@@ -1927,7 +1927,7 @@ void CPU::INC_HL_(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
 
     if (isBit3Before && !isBit3After)
     {
@@ -1968,7 +1968,7 @@ void CPU::DEC_HL_(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    SetFlag(AddFlag);
+    SetFlag(SubtractFlag);
 
     if (!isBit4Before && isBit4After)
     {
@@ -2013,7 +2013,7 @@ Clears N, Clears h, Sets c
 */
 void CPU::SCF(const byte& opCode)
 {
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     SetFlag(CarryFlag);
 
@@ -2031,7 +2031,7 @@ void CPU::SCF(const byte& opCode)
 */
 void CPU::CCF(const byte& opCode)
 {
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     IsFlagSet(CarryFlag) ? ClearFlag(CarryFlag) : SetFlag(CarryFlag);
 
@@ -2057,7 +2057,7 @@ void CPU::SUBr(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    SetFlag(AddFlag);
+    SetFlag(SubtractFlag);
     ((A & 0x0F) < ((*r) & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((A & 0xFF) < ((*r) & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -2105,7 +2105,7 @@ void CPU::RLA(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 4;
@@ -2175,7 +2175,7 @@ void CPU::RRA(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 4;
@@ -2234,7 +2234,7 @@ void CPU::DAA(const byte& opCode)
     m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     // Trust me
-    if (!IsFlagSet(AddFlag))
+    if (!IsFlagSet(SubtractFlag))
     {
         if (IsFlagSet(CarryFlag) || (GetHighByte(m_AF) > 0x99))
         {
@@ -2302,7 +2302,7 @@ void CPU::CPL(const byte& opCode)
     byte result = A ^ 0xFF;
     SetHighByte(&m_AF, result);
 
-    SetFlag(AddFlag);
+    SetFlag(SubtractFlag);
     SetFlag(HalfCarryFlag);
 
     m_cycles += 4;
@@ -2374,7 +2374,7 @@ void CPU::ADDA_HL_(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -2408,7 +2408,7 @@ void CPU::AND_HL_(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     SetFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -2434,7 +2434,7 @@ void CPU::CP_HL_(const byte& opCode)
     byte result = A - HL;
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    SetFlag(AddFlag);
+    SetFlag(SubtractFlag);
     ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -2481,7 +2481,7 @@ void CPU::ADDAn(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -2538,7 +2538,7 @@ void CPU::ADCAn(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -2563,7 +2563,7 @@ void CPU::SUBn(const byte& opCode)
     SetHighByte(&m_AF, result);
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    SetFlag(AddFlag);
+    SetFlag(SubtractFlag);
     ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
@@ -2657,7 +2657,7 @@ void CPU::XORn(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -2742,7 +2742,7 @@ void CPU::ORn(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
@@ -2783,7 +2783,7 @@ void CPU::LDHLSPe(const byte& opCode)
     ushort result = m_SP + e;
 
     ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
 
     ((ISBITSET(m_HL, 11))) && (!ISBITSET(result, 11)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(m_HL, 15))) && (!ISBITSET(result, 15)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
@@ -2849,7 +2849,7 @@ void CPU::CPn(const byte& opCode)
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
     ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    SetFlag(AddFlag);
+    SetFlag(SubtractFlag);
 
     m_cycles += 8;
 }
@@ -2885,7 +2885,7 @@ void CPU::RLCr(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     SetFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
@@ -2908,7 +2908,7 @@ void CPU::RLC_HL_(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     SetFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 16;
@@ -2941,7 +2941,7 @@ void CPU::RRCr(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
@@ -2964,7 +2964,7 @@ void CPU::RRC_HL_(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 16;
@@ -3000,7 +3000,7 @@ void CPU::RLr(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
@@ -3026,7 +3026,7 @@ void CPU::RL_HL_(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 16;
@@ -3062,7 +3062,7 @@ void CPU::RRr(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
@@ -3088,7 +3088,7 @@ void CPU::RR_HL_(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 16;
@@ -3118,7 +3118,7 @@ void CPU::SLAr(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
@@ -3137,7 +3137,7 @@ void CPU::SLA_HL_(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 16;
@@ -3167,7 +3167,7 @@ void CPU::SRAr(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
@@ -3186,7 +3186,7 @@ void CPU::SRA_HL_(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 16;
@@ -3217,7 +3217,7 @@ void CPU::SRLr(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 8;
@@ -3237,7 +3237,7 @@ void CPU::SRL_HL_(const byte& opCode)
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(AddFlag);
+    ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
     m_cycles += 16;
@@ -3265,7 +3265,7 @@ void CPU::BITbr(const byte& opCode)
     (!ISBITSET(*r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
     SetFlag(HalfCarryFlag); // H is set
-    ClearFlag(AddFlag); // N is reset
+    ClearFlag(SubtractFlag); // N is reset
 }
 
 void CPU::BITb_HL_(const byte& opCode)
@@ -3279,7 +3279,7 @@ void CPU::BITb_HL_(const byte& opCode)
     (!ISBITSET(r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
     SetFlag(HalfCarryFlag); // H is set
-    ClearFlag(AddFlag); // N is reset
+    ClearFlag(SubtractFlag); // N is reset
 }
 
 /*
