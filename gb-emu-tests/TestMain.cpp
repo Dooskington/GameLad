@@ -135,6 +135,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, SUBn_Test);
     TEST_CALL(CPUTests, LD_nn_A_Test);
     TEST_CALL(CPUTests, ADDA_HL__Test);
+    TEST_CALL(CPUTests, ADCA_HL__Test);
     TEST_CALL(CPUTests, ADDAr_Test);
     TEST_CALL(CPUTests, ADDAn_Test);
     TEST_CALL(CPUTests, ADCAr_Test);
@@ -143,6 +144,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDA_nn_Test);
     TEST_CALL(CPUTests, EI_Test);
     TEST_CALL(CPUTests, RETI_Test);
+    TEST_CALL(CPUTests, SBCA_HL__Test);
 
     TEST_CALL(CPUTests, LDr_HL_Test);
 
