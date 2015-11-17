@@ -92,7 +92,7 @@ CPU::CPU() :
     m_operationMap[0x33] = &CPU::INCrr;
     //m_operationMap[0x34] TODO
     m_operationMap[0x35] = &CPU::DEC_HL_;
-    //m_operationMap[0x36] TODO
+    m_operationMap[0x36] = &CPU::LD_HL_n;
     m_operationMap[0x37] = &CPU::SCF;
     m_operationMap[0x38] = &CPU::JRcce;
     m_operationMap[0x39] = &CPU::ADDHLss;
@@ -1863,6 +1863,25 @@ void CPU::DEC_HL_(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    m_cycles += 12;
+}
+
+/*
+    LD (HL), n
+    0x36
+
+    The contents of n are loaded into the memory location specifed by the
+    contents of the HL register pair.
+
+    12 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LD_HL_n(const byte& opCode)
+{
+    byte n = ReadBytePC();
+    m_MMU->WriteByte(m_HL, n); // Load n into the address pointed at by HL.
 
     m_cycles += 12;
 }

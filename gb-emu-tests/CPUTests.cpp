@@ -2239,6 +2239,32 @@ public:
         spCPU.reset();
     }
 
+    // 0x36
+    TEST_METHOD(LD_HL_n_Test)
+    {
+        byte m_Mem[] = { 0x36, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0, (int)spCPU->m_PC);
+
+        spCPU->m_HL = 0x1234;
+
+        spCPU->Step();
+
+        byte result = spCPU->m_MMU->ReadByte(spCPU->m_HL);
+
+        // Verify expectations after
+        Assert::AreEqual(0x12, (int)result);
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(2, (int)spCPU->m_PC);
+
+        spCPU.reset();
+    }
+
+
     // 0x38
     TEST_METHOD(JRCe_Test)
     {
