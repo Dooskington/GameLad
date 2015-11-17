@@ -205,7 +205,7 @@ CPU::CPU() :
     m_operationMap[0x8B] = &CPU::ADCAr;
     m_operationMap[0x8C] = &CPU::ADCAr;
     m_operationMap[0x8D] = &CPU::ADCAr;
-    m_operationMap[0x8E] = &CPU::ADCAr;
+    m_operationMap[0x8E] = &CPU::ADCA_HL_;
     m_operationMap[0x8F] = &CPU::ADCAr;
 
     // 90
@@ -2437,6 +2437,33 @@ void CPU::ADDA_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    ADC A, (HL) - 0xE8
+
+    The contents specified by the address of the HL register pair and the contents of 
+    the carry flag are added to the contents of the accumulator, and the result is 
+    stored in the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z0hc
+*/
+void CPU::ADCA_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte A = GetHighByte(m_AF);
+    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
+    byte result = A + HL + C;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(SubtractFlag);
+    (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 8;
 }

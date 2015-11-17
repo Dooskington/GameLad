@@ -121,6 +121,7 @@ private:
     void CCF(const byte& opCode);             // 0x3F
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
+    void ADCA_HL_(const byte& opCode);        // 0x8E
     void SUB_HL_(const byte& opCode);         // 0x96
     void AND_HL_(const byte& opCode);         // 0xA6
     void XOR_HL_(const byte& opCode);         // 0xAE
