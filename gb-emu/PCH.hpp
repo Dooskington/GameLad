@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstring>
+#include <string>
 #include <memory>
+#include <cstdlib>
 
 #if WINDOWS
     #include <SDL.h>
