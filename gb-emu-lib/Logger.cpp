@@ -44,5 +44,5 @@ void Logger::LogError(const char* message, ...)
 
 void Logger::LogCharacter(char character)
 {
-    std::cout << character;
+    std::cout << character << std::flush;
 }
