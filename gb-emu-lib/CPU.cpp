@@ -3121,7 +3121,7 @@ void CPU::RLC_HL_(const byte& opCode)
     m_MMU->WriteByte(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
@@ -3395,7 +3395,7 @@ void CPU::SRA_HL_(const byte& opCode)
     ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r right
-    r = r >> 1;
+    r = (r >> 1) | (r & 0x80);
     m_MMU->WriteByte(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
