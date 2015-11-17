@@ -32,6 +32,7 @@
 /bin
 /gb-emu_bin
 /gb-emu-lib_bin
+/res/games
 
 # Other
 .DS_STORE
