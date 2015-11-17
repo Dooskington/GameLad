@@ -200,7 +200,7 @@ CPU::CPU() :
     m_operationMap[0x93] = &CPU::SUBr;
     m_operationMap[0x94] = &CPU::SUBr;
     m_operationMap[0x95] = &CPU::SUBr;
-    //m_operationMap[0x96] TODO
+    m_operationMap[0x96] = &CPU::SUB_HL_;
     m_operationMap[0x97] = &CPU::SUBr;
     //m_operationMap[0x98] TODO
     //m_operationMap[0x99] TODO
@@ -2377,6 +2377,33 @@ void CPU::ADDA_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    SUB (HL)
+    0x96
+
+    The byte at the memory address specified by the contents of the HL register pair
+    is subtracted to the contents of the accumulator, and the result is stored in the
+    accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::SUB_HL_(const byte& opCode)
+{
+    byte A = GetHighByte(m_AF);
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte result = A - HL;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(SubtractFlag);
+    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 8;
 }
