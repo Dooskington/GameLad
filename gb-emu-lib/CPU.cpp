@@ -90,7 +90,7 @@ CPU::CPU() :
     m_operationMap[0x31] = &CPU::LDrrnn;
     m_operationMap[0x32] = &CPU::LDD_HL_A;
     m_operationMap[0x33] = &CPU::INCrr;
-    //m_operationMap[0x34] TODO
+    m_operationMap[0x34] = &CPU::INC_HL_;
     m_operationMap[0x35] = &CPU::DEC_HL_;
     m_operationMap[0x36] = &CPU::LD_HL_n;
     m_operationMap[0x37] = &CPU::SCF;
@@ -1827,13 +1827,54 @@ void CPU::DECr(const byte& opCode)
 }
 
 /*
-DEC (hl) - 0x35
+    INC (HL) - 0x34
 
-The byte at the address (HL) is decremented.
+    The byte at the address (HL) is incremented.
 
-12 Cycles
+    12 Cycles
 
-Flags affected(znhc): z1h-
+    Flags affected(znhc): z0h-
+*/
+void CPU::INC_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    bool isBit3Before = ISBITSET(HL, 3);
+    HL += 1;
+    bool isBit3After = ISBITSET(HL, 3);
+
+    m_MMU->WriteByte(m_HL, HL);
+
+    if (HL == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+
+    if (isBit3Before && !isBit3After)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
+
+    m_cycles += 12;
+}
+
+/*
+    DEC (hl) - 0x35
+
+    The byte at the address (HL) is decremented.
+
+    12 Cycles
+
+    Flags affected(znhc): z1h-
 */
 void CPU::DEC_HL_(const byte& opCode)
 {
@@ -1853,7 +1894,7 @@ void CPU::DEC_HL_(const byte& opCode)
         ClearFlag(ZeroFlag);
     }
 
-    ClearFlag(AddFlag);
+    SetFlag(AddFlag);
 
     if (!isBit4Before && isBit4After)
     {

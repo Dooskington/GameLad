@@ -107,6 +107,7 @@ private:
     void LDI_HL_A(const byte& opCode);        // 0x22
     void LDIA_HL_(const byte& opCode);        // 0x2A
     void LDD_HL_A(const byte& opCode);        // 0x32
+    void INC_HL_(const byte& opCode);         // 0x34
     void DEC_HL_(const byte& opCode);         // 0x35
     void LD_HL_n(const byte& opCode);         // 0x36
     void SCF(const byte& opCode);             // 0x37
