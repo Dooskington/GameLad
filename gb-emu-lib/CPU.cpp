@@ -2193,7 +2193,7 @@ void CPU::RLA(const byte& opCode)
     SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
     // Affects Z, clears N, clears H, affects C
-    (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
@@ -2300,7 +2300,7 @@ void CPU::RRA(const byte& opCode)
     SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 7) : CLEARBIT(GetHighByte(m_AF), 7));
 
     // Affects Z, clears N, clears H, affects C
-    (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
