@@ -2028,35 +2028,23 @@ void CPU::INC_HL_(const byte& opCode)
 }
 
 /*
-DEC (hl) - 0x35
+    DEC (hl) - 0x35
 
-The byte at the address (HL) is decremented.
+    The byte at the address (HL) is decremented.
 
-12 Cycles
+    12 Cycles
 
-Flags affected(znhc): z1h-
+    Flags affected(znhc): z1h-
 */
 void CPU::DEC_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
-    bool isBit4Before = ISBITSET(r, 4);
-    r -= 1;
-    bool isBit4After = ISBITSET(r, 4);
-
-    m_MMU->WriteByte(m_HL, r);
-
-    if (r == 0x00)
-    {
-        SetFlag(ZeroFlag);
-    }
-    else
-    {
-        ClearFlag(ZeroFlag);
-    }
+    byte val = m_MMU->ReadByte(m_HL);
+    byte calc = (val - 1);
 
     SetFlag(SubtractFlag);
+    (calc == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 
-    if (!isBit4Before && isBit4After)
+    if (((calc ^ 0x01 ^ val) & 0x10) == 0x10)
     {
         SetFlag(HalfCarryFlag);
     }
@@ -2064,6 +2052,8 @@ void CPU::DEC_HL_(const byte& opCode)
     {
         ClearFlag(HalfCarryFlag);
     }
+
+    m_MMU->WriteByte(m_HL, calc);
 
     m_cycles += 12;
 }
