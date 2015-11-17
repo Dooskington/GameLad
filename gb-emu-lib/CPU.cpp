@@ -1570,6 +1570,7 @@ void CPU::RSTn(const byte& opCode)
 {
     byte t = ((opCode >> 3) & 0x07);
 
+    PushUShortToSP(m_PC);
     m_PC = (ushort)(t * 0x08);
     m_cycles += 16;
 }
