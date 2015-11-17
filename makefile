@@ -83,5 +83,7 @@ $(BIN_PATH)/%.o: $(TEST_SRC_PATH)/%.cpp
 # Clean up all the raw binaries
 clean:
 	@echo "*** Cleaning Binaries ***"
-	@rm -f $(LIB_BIN_PATH)/*.o
-	@rm -f $(BIN_PATH)/$(BIN_NAME) $(BIN_PATH)/*.o
+	@rm -f -r $(LIB_BIN_PATH)
+	@rm -f -r $(BIN_PATH)
+	@mkdir $(BIN_PATH);
+	@mkdir $(LIB_BIN_PATH);
