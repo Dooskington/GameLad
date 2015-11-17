@@ -83,7 +83,7 @@ CPU::CPU() :
     m_operationMap[0x2C] = &CPU::INCr;
     m_operationMap[0x2D] = &CPU::DECr;
     m_operationMap[0x2E] = &CPU::LDrn;
-    //m_operationMap[0x2F] TODO
+    m_operationMap[0x2F] = &CPU::CPL;
 
     // 30
     m_operationMap[0x30] = &CPU::JRcce;
@@ -2150,6 +2150,27 @@ void CPU::LDIA_HL_(const byte& opCode)
     m_HL++;
 
     m_cycles += 8;
+}
+
+/*
+    CPL - 0x2F
+
+    The contents of the accumulator are inverted.
+
+    4 Cycles
+
+    Flags affected(znhc): -11-
+*/
+void CPU::CPL(const byte& opCode)
+{
+    byte A = GetHighByte(m_AF);
+    byte result = A ^ 0xFF;
+    SetHighByte(&m_AF, result);
+
+    SetFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
+
+    m_cycles += 4;
 }
 
 // 0x32 (LDD (HL), A)

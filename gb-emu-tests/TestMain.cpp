@@ -223,6 +223,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, JP_HL_Test);
     TEST_CALL(CPUTests, SCF_Test);
     TEST_CALL(CPUTests, CCF_Test);
+    TEST_CALL(CPUTests, CPL_Test);
     TEST_CALL(CPUTests, JPccnn_Test);
     TEST_CALL(CPUTests, JRCe_Test);
     TEST_CALL(CPUTests, LD_DE_A_Test);
