@@ -42,7 +42,7 @@ CPU::CPU() :
     m_operationMap[0x07] = &CPU::RLCA;
     m_operationMap[0x08] = &CPU::LD_nn_SP;
     m_operationMap[0x09] = &CPU::ADDHLss;
-    m_operationMap[0x0A] = &CPU::LDA_BC_;
+    //m_operationMap[0x0A] TODO
     m_operationMap[0x0B] = &CPU::DECrr;
     m_operationMap[0x0C] = &CPU::INCr;
     m_operationMap[0x0D] = &CPU::DECr;
@@ -862,7 +862,7 @@ void CPU::SetFlag(byte flag)
     // This shifts the bit to the left to where the flag is
     // Then ORs it with the Flag register.
     // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
-    SetLowByte(&m_AF, SETBIT(GetLowByte(m_AF), flag));
+    SetLowByte(&m_AF, SETBIT(GetLowByte(m_AF), flag) & 0xF0);
 }
 
 void CPU::ClearFlag(byte flag)
@@ -871,7 +871,7 @@ void CPU::ClearFlag(byte flag)
     // Then it inverts all of the bits
     // Then ANDs it with the Flag register.
     // Finally it filters out the lower 4 bits, as they aren't used on the Gameboy
-    SetLowByte(&m_AF, CLEARBIT(GetLowByte(m_AF), flag));
+    SetLowByte(&m_AF, CLEARBIT(GetLowByte(m_AF), flag) & 0xF0);
 }
 
 bool CPU::IsFlagSet(byte flag)
@@ -1829,6 +1829,11 @@ void CPU::POPrr(const byte& opCode)
     ushort* rr = GetUShortRegister(opCode >> 4, true);
     (*rr) = PopUShort();
 
+    if (((opCode >> 4) & 0x03) == 0x03)
+    {
+        (*rr) &= 0xFFF0;
+    }
+
     m_cycles += 12;
 }
 
@@ -2111,24 +2116,6 @@ void CPU::LDA_DE_(const byte& opCode)
     m_cycles += 8;
 
     // No flags affected
-}
-
-
-/*
-    LD A, (BC) - 0x0A
-
-    Loads the value stored at the address pointed to by BC into the accumulator.
-
-    8 Cycles
-
-    Flags affected(znhc): ----
-*/
-void CPU::LDA_BC_(const byte& opCode)
-{
-    byte val = m_MMU->ReadByte(m_BC);
-    SetHighByte(&m_AF, val);
-
-    m_cycles += 8;
 }
 
 // 0x17 (RR A)
