@@ -165,6 +165,32 @@ void ProcessInput(Emulator& emulator)
 
 int main(int argc, char** argv)
 {
+    int windowWidth = 160;
+    int windowHeight = 144;
+    int windowScale = 1;
+    if(argc > 1)
+    {
+        windowScale = atoi(argv[1]);
+    }
+
+    std::string romPath = "res/tests/cpu_instrs.gb";
+    //std::string romPath = "res/tests/01-special.gb";            // PASSED
+    //std::string romPath = "res/tests/02-interrupts.gb";         // PASSED
+    //std::string romPath = "res/tests/03-op sp,hl.gb";           // PASSED
+    //std::string romPath = "res/tests/04-op r,imm.gb";
+    //std::string romPath = "res/tests/05-op rp.gb";
+    //std::string romPath = "res/tests/06-ld r,r.gb";             // PASSED
+    //std::string romPath = "res/tests/07-jr,jp,call,ret,rst.gb";
+    //std::string romPath = "res/tests/08-misc instrs.gb";        // PASSED
+    //std::string romPath = "res/tests/09-op r,r.gb";
+    //std::string romPath = "res/tests/10-bit ops.gb";            // PASSED
+    //std::string romPath = "res/tests/11-op a,(hl).gb";
+    //std::string romPath = "F:\\Emulators\\Roms\\GBC\\Tetris 2 (U).gb";
+    if(argc > 2)
+    {
+        romPath = argv[2];
+    }
+
     bool isRunning = true;
     std::unique_ptr<SDL_Window, SDLWindowDeleter> spWindow;
 
@@ -183,8 +209,8 @@ int main(int argc, char** argv)
             "Gameboy",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
-            320, // Original = 160
-            288, // Original = 144
+            windowWidth * windowScale, // Original = 160
+            windowHeight * windowScale, // Original = 144
             SDL_WINDOW_SHOWN));
     if (spWindow == nullptr)
     {
@@ -204,19 +230,7 @@ int main(int argc, char** argv)
     spTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(
         SDL_CreateTexture(spRenderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144));
 
-    if (emulator.Initialize("res/tests/cpu_instrs.gb"))
-    //if (emulator.Initialize("res/tests/01-special.gb"))            // PASSED
-    //if (emulator.Initialize("res/tests/02-interrupts.gb"))         // PASSED
-    //if (emulator.Initialize("res/tests/03-op sp,hl.gb"))
-    //if (emulator.Initialize("res/tests/04-op r,imm.gb"))
-    //if (emulator.Initialize("res/tests/05-op rp.gb"))
-    //if (emulator.Initialize("res/tests/06-ld r,r.gb"))             // PASSED
-    //if (emulator.Initialize("res/tests/07-jr,jp,call,ret,rst.gb"))
-    //if (emulator.Initialize("res/tests/08-misc instrs.gb"))        // PASSED
-    //if (emulator.Initialize("res/tests/09-op r,r.gb"))
-    //if (emulator.Initialize("res/tests/10-bit ops.gb"))            // PASSED
-    //if (emulator.Initialize("res/tests/11-op a,(hl).gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tetris 2 (U).gb"))
+    if (emulator.Initialize(romPath.data()))
     {
         emulator.SetVSyncCallback(&VSyncCallback);
 
