@@ -71,6 +71,7 @@ private:
     // TODO: Organize the following...
     // Z80 Instruction Set
     void NOP(const byte& opCode);             // 0x00
+
     void LDrn(const byte& opCode);
     void LDrR(const byte& opCode);
     void LDrrnn(const byte& opCode);
@@ -107,7 +108,8 @@ private:
     void LDIA_HL_(const byte& opCode);        // 0x2A
     void LDD_HL_A(const byte& opCode);        // 0x32
     void DEC_HL_(const byte& opCode);         // 0x35
-    void SCF(const byte& opCode);             // 0x35
+    void SCF(const byte& opCode);             // 0x37
+    void LDDA_HL_(const byte& opCode);        // 0x3A
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
     void AND_HL_(const byte& opCode);         // 0xA6

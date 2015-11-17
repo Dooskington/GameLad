@@ -96,7 +96,7 @@ CPU::CPU() :
     m_operationMap[0x37] = &CPU::SCF;
     m_operationMap[0x38] = &CPU::JRcce;
     m_operationMap[0x39] = &CPU::ADDHLss;
-    //m_operationMap[0x3A] TODO
+    m_operationMap[0x3A] = &CPU::LDDA_HL_;
     m_operationMap[0x3B] = &CPU::DECrr;
     m_operationMap[0x3C] = &CPU::INCr;
     m_operationMap[0x3D] = &CPU::DECr;
@@ -2058,6 +2058,25 @@ void CPU::LDD_HL_A(const byte& opCode)
     m_cycles += 8;
 
     // No flags affected
+}
+
+/*
+    LDD A, (HL)
+    0x3A
+
+    Load the byte at the address specified in the HL register into A, and decrement HL.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
+void CPU::LDDA_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    SetHighByte(&m_AF, HL);
+
+    m_HL--;
+    m_cycles += 8;
 }
 
 // 0x76 (HALT)
