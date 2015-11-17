@@ -4285,7 +4285,7 @@ public:
 
         // Verify expectations after
         Assert::AreEqual(12, (int)spCPU->m_cycles);
-        Assert::AreEqual(0x1234, (int)(spCPU->m_AF));
+        Assert::AreEqual(0x1230, (int)(spCPU->m_AF));
         Assert::AreEqual(0xFFFE, (int)spCPU->m_SP);
 
         spCPU.reset();
@@ -6781,5 +6781,31 @@ public:
 
             spCPU.reset();
         }
+    }
+
+    TEST_METHOD(DAA_Test)
+    {
+        // ADD A, B
+        // DAA
+        byte m_Mem[] = { 0x80, 0x27 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_BC = 0x1500;
+        spCPU->m_AF = 0x2700;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 2 OpCodes
+        spCPU->Step();
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x42, (int)spCPU->GetHighByte(spCPU->m_AF));
+
+        spCPU.reset();
     }
 };

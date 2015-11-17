@@ -108,6 +108,7 @@ private:
     void LDA_DE_(const byte& opCode);         // 0x1A
     void RRA(const byte& opCode);             // 0x1F
     void LDI_HL_A(const byte& opCode);        // 0x22
+    void DAA(const byte& opCode);             // 0x27
     void LDIA_HL_(const byte& opCode);        // 0x2A
     void CPL(const byte& opCode);             // 0x2F
     void LDD_HL_A(const byte& opCode);        // 0x32

@@ -204,7 +204,9 @@ int main(int argc, char** argv)
     spTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(
         SDL_CreateTexture(spRenderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144));
 
-    if (emulator.Initialize("res/tests/cpu_instrs.gb"))
+    //if (emulator.Initialize("res/tests/cpu_instrs.gb"))
+    if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\01-special.gb"))
+    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tetris 2 (U).gb"))
     {
         emulator.SetVSyncCallback(&VSyncCallback);
 

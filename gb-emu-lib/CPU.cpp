@@ -75,7 +75,7 @@ CPU::CPU() :
     m_operationMap[0x24] = &CPU::INCr;
     m_operationMap[0x25] = &CPU::DECr;
     m_operationMap[0x26] = &CPU::LDrn;
-    //m_operationMap[0x27] TODO
+    m_operationMap[0x27] = &CPU::DAA;
     m_operationMap[0x28] = &CPU::JRcce;
     m_operationMap[0x29] = &CPU::ADDHLss;
     m_operationMap[0x2A] = &CPU::LDIA_HL_;
@@ -1009,7 +1009,7 @@ void CPU::NOP(const byte& opCode)
 }
 
 /*
-LD (bc), a 
+LD (bc), a
 00000010
 
 The contents of the accumulator are loaded to the memory location specified by
@@ -1417,8 +1417,8 @@ void CPU::ADDAr(const byte& opCode)
     ADC A, r
     10001rrr
 
-    The contents of the r register, and the contents of the carry flag, 
-    are added to the contents of the accumulator, and the result is stored 
+    The contents of the r register, and the contents of the carry flag,
+    are added to the contents of the accumulator, and the result is stored
     in the accumulator. The operand r identifies the registers A, B, C, D, E, H, or L.
 
     4 Cycles
@@ -1507,7 +1507,7 @@ Flags affected(znhc): ----
 void CPU::RSTn(const byte& opCode)
 {
     byte t = ((opCode >> 3) & 0x07);
-    
+
     m_PC = (ushort)(t * 0x08);
     m_cycles += 16;
 }
@@ -1829,6 +1829,11 @@ void CPU::POPrr(const byte& opCode)
     ushort* rr = GetUShortRegister(opCode >> 4, true);
     (*rr) = PopUShort();
 
+    if (((opCode >> 4) & 0x03) == 0x03)
+    {
+        (*rr) &= 0xFFF0;
+    }
+
     m_cycles += 12;
 }
 
@@ -2113,7 +2118,6 @@ void CPU::LDA_DE_(const byte& opCode)
     // No flags affected
 }
 
-
 /*
     LD A, (BC) - 0x0A
 
@@ -2170,8 +2174,77 @@ void CPU::LDI_HL_A(const byte& opCode)
 
     m_HL++;
 
-        m_cycles += 8;
+    m_cycles += 8;
+}
+
+/*
+DAA
+0x27
+
+This instruction conditionally adjust the accumulator for BCD addition and
+subtraction operations. For addition (ADD, ADC, INC) or subtraction (SUB, SBC, DEC, NEG),
+the following table indicates the operation performed:
+
+OP      C Before    U       H Before    L       Add     C After
+        0           9-0     0           0-9     00      0
+        0           0-8     0           A-F     06      0
+ADD     0           0-9     1           0-3     06      0
+ADC     0           A-F     0           0-9     60      1
+INC     0           9-F     0           A-F     66      1
+        0           A-F     1           0-3     66      1
+        1           0-2     0           0-9     60      1
+        1           0-2     0           A-F     66      1
+        1           0-3     1           0-3     66      1
+----------------------
+SUB     0           0-9     0           0-9     00      0
+SBC     0           0-8     1           6-F     FA      0
+DEC     1           7-F     0           0-9     A0      1
+NEG     1           6-7     1           6-F     9A      1
+
+4 Cycles
+
+Flags affected(znhc): z-0x
+Affected Z, Cleared H, Affected C
+*/
+void CPU::DAA(const byte& opCode)
+{
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
+
+    // Trust me
+    if (!IsFlagSet(AddFlag))
+    {
+        if (IsFlagSet(CarryFlag) || (GetHighByte(m_AF) > 0x99))
+        {
+            SetHighByte(&m_AF, GetHighByte(m_AF) + 0x60);
+            SetFlag(CarryFlag);
+        }
+
+        if (IsFlagSet(HalfCarryFlag) || ((GetHighByte(m_AF) & 0x0F) > 0x09))
+        {
+            SetHighByte(&m_AF, GetHighByte(m_AF) + 0x06);
+            ClearFlag(HalfCarryFlag);
+        }
     }
+    else if (IsFlagSet(CarryFlag) && IsFlagSet(HalfCarryFlag))
+    {
+        SetHighByte(&m_AF, GetHighByte(m_AF) + 0x9A);
+        ClearFlag(HalfCarryFlag);
+    }
+    else if (IsFlagSet(CarryFlag))
+    {
+        SetHighByte(&m_AF, GetHighByte(m_AF) + 0xA0);
+    }
+    else if (IsFlagSet(HalfCarryFlag))
+    {
+        SetHighByte(&m_AF, GetHighByte(m_AF) + 0xFA);
+        ClearFlag(HalfCarryFlag);
+    }
+
+
+    (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+
+    m_cycles += 4;
+}
 
 /*
     LDI A, (HL)
@@ -2383,7 +2456,7 @@ void CPU::ADDAn(const byte& opCode)
     byte result = A + n;
 
     SetHighByte(&m_AF, result);
-    
+
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(AddFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
@@ -2538,7 +2611,7 @@ void CPU::LD_nn_A(const byte& opCode)
     XOR n
     0xEE
 
-    The logical exclusive-OR operation is performed between the 8-bit operand and 
+    The logical exclusive-OR operation is performed between the 8-bit operand and
     the byte contained in the accumulator. The result is stored in the accumulator.
 
     8 Cycles
@@ -3100,7 +3173,7 @@ void CPU::SRA_HL_(const byte& opCode)
 SRL r
 11001011 00011rrr
 
-The contents of the operand "r" are shifted right 1 -bit.  The content of 
+The contents of the operand "r" are shifted right 1 -bit.  The content of
 bit 0 is copied to the carry flag and bit 7 is reset.
 
 8 Cycles
