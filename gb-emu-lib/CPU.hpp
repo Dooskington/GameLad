@@ -66,6 +66,9 @@ private:
     byte ReadBytePC();
     ushort ReadUShortPC();
 
+    byte AddByte(byte b1, byte b2);
+    ushort AddUShort(ushort u1, ushort u2);
+
     void HandleInterrupts();
 
     // TODO: Organize the following...
