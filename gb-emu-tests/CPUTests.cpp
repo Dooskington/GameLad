@@ -5846,7 +5846,7 @@ public:
         {
             if (reg == 0x06) continue;
 
-            byte m_Mem[] = { 0xCB, (byte)(0x38 | reg) };
+            byte m_Mem[] = { 0xCB, (byte)(0x30 | reg) };
             std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
             spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -5917,7 +5917,7 @@ public:
 
     TEST_METHOD(SWAP_HL_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x3E, 0xAB };
+        byte m_Mem[] = { 0xCB, 0x36, 0xAB };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6469,7 +6469,7 @@ public:
 
     TEST_METHOD(SRLB_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x30, 0xCB, 0x30 };
+        byte m_Mem[] = { 0xCB, 0x38, 0xCB, 0x38 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6502,7 +6502,7 @@ public:
 
     TEST_METHOD(SRLC_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x31, 0xCB, 0x31 };
+        byte m_Mem[] = { 0xCB, 0x39, 0xCB, 0x39 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6535,7 +6535,7 @@ public:
 
     TEST_METHOD(SRLD_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x32, 0xCB, 0x32 };
+        byte m_Mem[] = { 0xCB, 0x3A, 0xCB, 0x3A };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6568,7 +6568,7 @@ public:
 
     TEST_METHOD(SRLE_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x33, 0xCB, 0x33 };
+        byte m_Mem[] = { 0xCB, 0x3B, 0xCB, 0x3B };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6601,7 +6601,7 @@ public:
 
     TEST_METHOD(SRLH_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x34, 0xCB, 0x34 };
+        byte m_Mem[] = { 0xCB, 0x3C, 0xCB, 0x3C };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6634,7 +6634,7 @@ public:
 
     TEST_METHOD(SRLL_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x35, 0xCB, 0x35 };
+        byte m_Mem[] = { 0xCB, 0x3D, 0xCB, 0x3D };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6667,7 +6667,7 @@ public:
 
     TEST_METHOD(SRL_HL_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x36, 0xCB, 0x36, 0xFD };
+        byte m_Mem[] = { 0xCB, 0x3E, 0xCB, 0x3E, 0xFD };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6700,7 +6700,7 @@ public:
 
     TEST_METHOD(SRLA_Test)
     {
-        byte m_Mem[] = { 0xCB, 0x37, 0xCB, 0x37 };
+        byte m_Mem[] = { 0xCB, 0x3F, 0xCB, 0x3F };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -6905,6 +6905,31 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x42, (int)spCPU->GetHighByte(spCPU->m_AF));
+
+        spCPU.reset();
+    }
+
+    TEST_METHOD(RRCA2_Test)
+    {
+        // RRCA
+        byte m_Mem[] = { 0x0F };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_AF = 0x2700;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+        Assert::AreEqual(0x93, (int)spCPU->GetHighByte(spCPU->m_AF));
+        Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
     }

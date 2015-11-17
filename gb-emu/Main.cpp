@@ -205,17 +205,17 @@ int main(int argc, char** argv)
         SDL_CreateTexture(spRenderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144));
 
     if (emulator.Initialize("res/tests/cpu_instrs.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\01-special.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\02-interrupts.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\03-op sp,hl.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\04-op r,imm.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\05-op rp.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\06-ld r,r.gb"))  // PASSED
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\07-jr,jp,call,ret,rst.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\08-misc instrs.gb"))  // PASSED
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\09-op r,r.gb"))
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\10-bit ops.gb"))  // PASSED
-    //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tests\\cpu_instrs\\cpu_instrs\\individual\\11-op a,(hl).gb"))
+    //if (emulator.Initialize("res/tests/01-special.gb"))            // PASSED
+    //if (emulator.Initialize("res/tests/02-interrupts.gb"))         // PASSED
+    //if (emulator.Initialize("res/tests/03-op sp,hl.gb"))
+    //if (emulator.Initialize("res/tests/04-op r,imm.gb"))
+    //if (emulator.Initialize("res/tests/05-op rp.gb"))
+    //if (emulator.Initialize("res/tests/06-ld r,r.gb"))             // PASSED
+    //if (emulator.Initialize("res/tests/07-jr,jp,call,ret,rst.gb"))
+    //if (emulator.Initialize("res/tests/08-misc instrs.gb"))        // PASSED
+    //if (emulator.Initialize("res/tests/09-op r,r.gb"))
+    //if (emulator.Initialize("res/tests/10-bit ops.gb"))            // PASSED
+    //if (emulator.Initialize("res/tests/11-op a,(hl).gb"))
     //if (emulator.Initialize("F:\\Emulators\\Roms\\GBC\\Tetris 2 (U).gb"))
     {
         emulator.SetVSyncCallback(&VSyncCallback);
