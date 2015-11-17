@@ -992,6 +992,37 @@ ushort CPU::AddUShort(ushort u1, ushort u2)
     return result;
 }
 
+void CPU::ADC(byte val)
+{
+    byte A = GetHighByte(m_AF);
+    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
+
+    ClearFlag(SubtractFlag);
+
+    if (((int)(A & 0x0F) + (int)(val & 0x0F) + (int)C) > 0x0F)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
+
+    if (((int)(A & 0xFF) + (int)(val & 0xFF) + (int)C) > 0xFF)
+    {
+        SetFlag(CarryFlag);
+    }
+    else
+    {
+        ClearFlag(CarryFlag);
+    }
+
+    byte result = A + val + C;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+}
+
 void CPU::HandleInterrupts()
 {
     // If the IME is enabled, some interrupts are enabled in IE, and
@@ -1490,16 +1521,7 @@ void CPU::ADDAr(const byte& opCode)
 void CPU::ADCAr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
-    byte A = GetHighByte(m_AF);
-    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
-    byte result = A + (*r) + C;
-    SetHighByte(&m_AF, result);
-
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    ClearFlag(SubtractFlag);
-    (ISBITSET(A, 3) && !ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    (ISBITSET(A, 7) && !ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-
+    ADC(*r);
     m_cycles += 4;
 }
 
@@ -2699,35 +2721,7 @@ void CPU::CALLnn(const byte& opCode)
 */
 void CPU::ADCAn(const byte& opCode)
 {
-    byte n = ReadBytePC();
-    byte A = GetHighByte(m_AF);
-    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
-
-    ClearFlag(SubtractFlag);
-
-    if (((int)(A & 0x0F) + (int)(n & 0x0F) + (int)C) > 0x0F)
-    {
-        SetFlag(HalfCarryFlag);
-    }
-    else
-    {
-        ClearFlag(HalfCarryFlag);
-    }
-
-    if (((int)(A & 0xFF) + (int)(n & 0xFF) + (int)C) > 0xFF)
-    {
-        SetFlag(CarryFlag);
-    }
-    else
-    {
-        ClearFlag(CarryFlag);
-    }
-
-    byte result = A + n + C;
-    SetHighByte(&m_AF, result);
-
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-
+    ADC(ReadBytePC());
     m_cycles += 8;
 }
 
