@@ -3560,7 +3560,7 @@ void CPU::SETb_HL_(const byte& opCode)
 
     Exchange the low and hi nibble (a nibble is 4 bits)
 
-    No flags affected.
+    Flags affected(znhc): z000
 */
 void CPU::SWAPr(const byte& opCode)
 {
@@ -3571,8 +3571,16 @@ void CPU::SWAPr(const byte& opCode)
     byte highNibble = (*r & 0xF0);
 
     *r = (lowNibble << 4) | (highNibble >> 4);
+
+    ((*r) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(SubtractFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
 }
 
+/*
+    Flags affected(znhc) : z000
+*/
 void CPU::SWAP_HL_(const byte& opCode)
 {
     m_cycles += 16;
@@ -3582,4 +3590,9 @@ void CPU::SWAP_HL_(const byte& opCode)
     byte highNibble = (r & 0xF0);
 
     m_MMU->WriteByte(m_HL, (lowNibble << 4) | (highNibble >> 4));
+
+    (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    ClearFlag(SubtractFlag);
+    ClearFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
 }

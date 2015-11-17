@@ -222,7 +222,6 @@ private:
 
     // Interrupts
     byte m_IME; // Interrupt master enable
-    // TODO: Implement interrupts
 
     // OpCode Function Map
     typedef void(CPU::*opCodeFunction)(const byte& opCode);
