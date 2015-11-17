@@ -977,14 +977,14 @@ byte CPU::AddByte(byte b1, byte b2)
     (val == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     (((val ^ b2 ^ b1) & 0x10) == 0x10) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     (val < b1) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-    
+
     return val;
 }
 
 ushort CPU::AddUShort(ushort u1, ushort u2)
 {
     ushort result = u1 + u2;
-    
+
     ClearFlag(SubtractFlag);
     (result < u1) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
     ((result ^ u1 ^ u2) & 0x1000) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
@@ -2207,7 +2207,7 @@ void CPU::RLA(const byte& opCode)
     // Set bit 0 of A to the old CarryFlag
     SetHighByte(&m_AF, carry ? SETBIT(GetHighByte(m_AF), 0) : CLEARBIT(GetHighByte(m_AF), 0));
 
-    // Affects Z, clears N, clears H, affects C
+    // Clears Z, clears N, clears H, affects C
     ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
@@ -2515,8 +2515,8 @@ void CPU::ADDA_HL_(const byte& opCode)
 /*
     ADC A, (HL) - 0xE8
 
-    The contents specified by the address of the HL register pair and the contents of 
-    the carry flag are added to the contents of the accumulator, and the result is 
+    The contents specified by the address of the HL register pair and the contents of
+    the carry flag are added to the contents of the accumulator, and the result is
     stored in the accumulator.
 
     8 Cycles
@@ -2570,7 +2570,7 @@ void CPU::SUB_HL_(const byte& opCode)
     SBC A, (HL) - 0x9E
 
     The byte at the memory address specified by the contents of the HL register pair
-    and the accumulator is subtracted from the contents of the accumulator, and 
+    and the accumulator is subtracted from the contents of the accumulator, and
     the result is stored in the accumulator.
 
     8 Cycles
@@ -3098,7 +3098,7 @@ void CPU::RLCr(const byte& opCode)
     (*r) = IsFlagSet(CarryFlag) ? SETBIT((*r), 0) : CLEARBIT((*r), 0);
 
     // Affects Z, clears N, clears H, affects C
-    SetFlag(ZeroFlag);
+    (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
@@ -3377,7 +3377,7 @@ void CPU::SRAr(const byte& opCode)
     ISBITSET(*r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r right
-    (*r) = *r >> 1;
+    (*r) = (*r >> 1) | (*r & 0x80);
 
     // Affects Z, clears N, clears H, affects C
     (*r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);

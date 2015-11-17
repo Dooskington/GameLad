@@ -5124,7 +5124,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x9D90, (int)spCPU->m_AF);
+        Assert::AreEqual(0x9D00, (int)spCPU->m_AF & 0xFF00);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU->Step();
@@ -5132,7 +5132,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x3B90, (int)spCPU->m_AF);
+        Assert::AreEqual(0x3B00, (int)spCPU->m_AF & 0xFF00);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6396,7 +6396,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x7E00, (int)spCPU->m_BC);
+        Assert::AreEqual(0xFE00, (int)spCPU->m_BC);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6405,7 +6405,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x3F00, (int)spCPU->m_BC);
+        Assert::AreEqual(0xFF00, (int)spCPU->m_BC);
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6429,7 +6429,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x007E, (int)spCPU->m_BC);
+        Assert::AreEqual(0x00FE, (int)spCPU->m_BC);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6438,7 +6438,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x003F, (int)spCPU->m_BC);
+        Assert::AreEqual(0x00FF, (int)spCPU->m_BC);
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6462,7 +6462,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x7E00, (int)spCPU->m_DE);
+        Assert::AreEqual(0xFE00, (int)spCPU->m_DE);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6471,7 +6471,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x3F00, (int)spCPU->m_DE);
+        Assert::AreEqual(0xFF00, (int)spCPU->m_DE);
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6495,7 +6495,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x007E, (int)spCPU->m_DE);
+        Assert::AreEqual(0x00FE, (int)spCPU->m_DE);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6504,7 +6504,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x003F, (int)spCPU->m_DE);
+        Assert::AreEqual(0x00FF, (int)spCPU->m_DE);
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6528,7 +6528,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x7E00, (int)spCPU->m_HL);
+        Assert::AreEqual(0xFE00, (int)spCPU->m_HL);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6537,7 +6537,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x3F00, (int)spCPU->m_HL);
+        Assert::AreEqual(0xFF00, (int)spCPU->m_HL);
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6561,7 +6561,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x007E, (int)spCPU->m_HL);
+        Assert::AreEqual(0x00FE, (int)spCPU->m_HL);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6570,7 +6570,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x003F, (int)spCPU->m_HL);
+        Assert::AreEqual(0x00FF, (int)spCPU->m_HL);
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6627,7 +6627,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x7E10, (int)spCPU->m_AF);
+        Assert::AreEqual(0xFE00, (int)spCPU->m_AF & 0xFF00);
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6636,7 +6636,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x3F00, (int)spCPU->m_AF);
+        Assert::AreEqual(0xFF00, (int)spCPU->m_AF & 0xFF00);
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
