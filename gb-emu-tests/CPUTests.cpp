@@ -4312,6 +4312,83 @@ public:
         spCPU.reset();
     }
 
+    TEST_METHOD(CPr_Test)
+    {
+        // Test for each register (Except F, of course)
+        for (byte reg = 0x00; reg <= 0x07; reg++)
+        {
+            if (reg == 0x06) continue;
+
+            byte m_Mem[] = { (byte)((0xB0 | reg) + 8), (byte)((0xB0 | reg) + 8) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            spCPU->m_AF = 0x0200;
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0, (int)spCPU->m_PC);
+
+            switch (reg)
+            {
+            case 0x00:  // B
+                spCPU->m_BC = 0x0200;
+                break;
+            case 0x01:  // C
+                spCPU->m_BC = 0x0002;
+                break;
+            case 0x02:  // D
+                spCPU->m_DE = 0x0200;
+                break;
+            case 0x03:  // E
+                spCPU->m_DE = 0x0002;
+                break;
+            case 0x04:  // H
+                spCPU->m_HL = 0x0200;
+                break;
+            case 0x05:  // L
+                spCPU->m_HL = 0x0002;
+                break;
+            case 0x07:  // A
+                spCPU->m_AF = 0x0200;
+                break;
+            }
+
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(4, (int)spCPU->m_cycles);
+            Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+            Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+            Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+
+            spCPU->m_AF = 0x0100;
+
+            spCPU->Step();
+
+            if (reg == 0x07)
+            {
+                Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
+                Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+                Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+            }
+            else
+            {
+                Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+                Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
+                Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
+            }
+
+            // Verify expectations after
+            Assert::AreEqual(8, (int)spCPU->m_cycles);
+            Assert::AreEqual(2, (int)spCPU->m_PC);
+
+            spCPU.reset();
+        }
+    }
+
     // 0xCB 0x00
     TEST_METHOD(RLCB_Test)
     {

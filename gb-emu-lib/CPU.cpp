@@ -238,14 +238,14 @@ CPU::CPU() :
     m_operationMap[0xB5] = &CPU::ORr;
     m_operationMap[0xB6] = &CPU::OR_HL_;
     m_operationMap[0xB7] = &CPU::ORr;
-    //m_operationMap[0xB8] TODO
-    //m_operationMap[0xB9] TODO
-    //m_operationMap[0xBA] TODO
-    //m_operationMap[0xBB] TODO
-    //m_operationMap[0xBC] TODO
-    //m_operationMap[0xBD] TODO
+    m_operationMap[0xB8] = &CPU::CPr;
+    m_operationMap[0xB9] = &CPU::CPr;
+    m_operationMap[0xBA] = &CPU::CPr;
+    m_operationMap[0xBB] = &CPU::CPr;
+    m_operationMap[0xBC] = &CPU::CPr;
+    m_operationMap[0xBD] = &CPU::CPr;
     m_operationMap[0xBE] = &CPU::CP_HL_;
-    //m_operationMap[0xBF] TODO
+    m_operationMap[0xBF] = &CPU::CPr;
 
     // C0
     m_operationMap[0xC0] = &CPU::RETcc;
@@ -1496,6 +1496,32 @@ void CPU::ANDr(const byte& opCode)
     ClearFlag(AddFlag);
     SetFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
+/*
+    CP r
+    10111rrr
+
+    The contents of 8-bit register r are compared with the contents of the accumulator.
+    If there is a true compare, the Z flag is set. The execution of this instruction
+    does not affect the contents of the accumulator.
+
+    4 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::CPr(const byte& opCode)
+{
+    byte* r = GetByteRegister(opCode);
+    byte A = GetHighByte(m_AF);
+    byte result = A - (*r);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(AddFlag);
+    ((A & 0xFF) < ((*r) & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((A & 0x0F) < ((*r) & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
 
     m_cycles += 4;
 }

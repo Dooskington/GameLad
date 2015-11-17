@@ -115,6 +115,7 @@ int main(int arg, char** argv)
 
     TEST_CALL(CPUTests, RET_Test);
     TEST_CALL(CPUTests, CPn_Test);
+    TEST_CALL(CPUTests, CPr_Test);
     TEST_CALL(CPUTests, CP_HL__Test);
     TEST_CALL(CPUTests, SUBB_Test);
     TEST_CALL(CPUTests, SUBC_Test);
