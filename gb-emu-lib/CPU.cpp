@@ -7,6 +7,7 @@ const unsigned int CyclesPerFrame = 70224;
 CPU::CPU() :
     m_cycles(0),
     m_isHalted(false),
+    m_IFWhenHalted(0x00),
     m_AF(0x0000),
     m_BC(0x0000),
     m_DE(0x0000),
@@ -764,6 +765,12 @@ void CPU::Step()
     if (m_isHalted)
     {
         NOP(0x00);
+
+        if (m_IFWhenHalted != m_MMU->ReadByte(0xFF0F))
+        {
+            // We received an interrupt, resume
+            m_isHalted = false;
+        }
     }
     else
     {
@@ -2356,16 +2363,8 @@ void CPU::LDDA_HL_(const byte& opCode)
 void CPU::HALT(const byte& opCode)
 {
     m_isHalted = true;
+    m_IFWhenHalted = m_MMU->ReadByte(0xFF0F);
     m_cycles += 4;
-
-    if (opCode == 0x76)
-    {
-        Logger::Log("!!!! HALTED !!!!");
-    }
-    else
-    {
-        Logger::Log("!!!! STOPPED !!!!");
-    }
 }
 
 /*
