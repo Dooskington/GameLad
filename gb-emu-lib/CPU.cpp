@@ -101,7 +101,7 @@ CPU::CPU() :
     m_operationMap[0x3C] = &CPU::INCr;
     m_operationMap[0x3D] = &CPU::DECr;
     m_operationMap[0x3E] = &CPU::LDrn;
-    //m_operationMap[0x3F] TODO
+    m_operationMap[0x3F] = &CPU::CCF;
 
     // 40
     m_operationMap[0x40] = &CPU::LDrR;
@@ -1887,20 +1887,38 @@ void CPU::LD_HL_n(const byte& opCode)
 }
 
 /*
-SCF - 0x37
+    SCF - 0x37
 
-Sets the carry flag.
+    Sets the carry flag.
 
-4 Cycles
+    4 Cycles
 
-Flags affected(znhc): -001
-Clears N, Clears h, Sets c
+    Flags affected(znhc): -001
+    Clears N, Clears h, Sets c
 */
 void CPU::SCF(const byte& opCode)
 {
     ClearFlag(AddFlag);
     ClearFlag(HalfCarryFlag);
     SetFlag(CarryFlag);
+
+    m_cycles += 4;
+}
+
+/*
+    CCF - 0x3F
+
+    Toggle the carry flag.
+
+    4 Cycles
+
+    Flags affected(znhc): -00c
+*/
+void CPU::CCF(const byte& opCode)
+{
+    ClearFlag(AddFlag);
+    ClearFlag(HalfCarryFlag);
+    IsFlagSet(CarryFlag) ? ClearFlag(CarryFlag) : SetFlag(CarryFlag);
 
     m_cycles += 4;
 }

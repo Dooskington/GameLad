@@ -111,6 +111,7 @@ private:
     void LD_HL_n(const byte& opCode);         // 0x36
     void SCF(const byte& opCode);             // 0x37
     void LDDA_HL_(const byte& opCode);        // 0x3A
+    void CCF(const byte& opCode);             // 0x3F
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
     void AND_HL_(const byte& opCode);         // 0xA6
