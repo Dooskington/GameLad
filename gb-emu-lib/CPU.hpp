@@ -109,6 +109,7 @@ private:
     void SCF(const byte& opCode);             // 0x35
     void HALT(const byte& opCode);            // 0x76
     void ADDA_HL_(const byte& opCode);        // 0x86
+    void AND_HL_(const byte& opCode);         // 0xA6
     void XOR_HL_(const byte& opCode);         // 0xAE
     void OR_HL_(const byte& opCode);          // 0xB6
     void CP_HL_(const byte& opCode);          // 0xBE

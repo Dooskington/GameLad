@@ -218,7 +218,7 @@ CPU::CPU() :
     m_operationMap[0xA3] = &CPU::ANDr;
     m_operationMap[0xA4] = &CPU::ANDr;
     m_operationMap[0xA5] = &CPU::ANDr;
-    //m_operationMap[0xA6] TODO
+    m_operationMap[0xA6] = &CPU::AND_HL_;
     m_operationMap[0xA7] = &CPU::ANDr;
     m_operationMap[0xA8] = &CPU::XORr;
     m_operationMap[0xA9] = &CPU::XORr;
@@ -1500,7 +1500,6 @@ void CPU::ANDr(const byte& opCode)
     m_cycles += 4;
 }
 
-
 /*
     INC rr
     00rr0011
@@ -2074,6 +2073,40 @@ void CPU::ADDA_HL_(const byte& opCode)
     ClearFlag(AddFlag);
     ((ISBITSET(A, 3))) && (!ISBITSET(result, 3)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((ISBITSET(A, 7))) && (!ISBITSET(result, 7)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    AND (HL)
+    0xA6
+
+    The logical AND operation is performed between the byte contained at
+    the memory address specified by the HL register  and the byte contained
+    in the accumulator. The result is stored in the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z010
+*/
+void CPU::AND_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte result = HL & GetHighByte(m_AF);
+    SetHighByte(&m_AF, result);
+
+    if (result == 0x00)
+    {
+        SetFlag(ZeroFlag);
+    }
+    else
+    {
+        ClearFlag(ZeroFlag);
+    }
+
+    ClearFlag(AddFlag);
+    SetFlag(HalfCarryFlag);
+    ClearFlag(CarryFlag);
 
     m_cycles += 8;
 }

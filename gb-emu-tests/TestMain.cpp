@@ -99,6 +99,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, XOR_HL_Test);
     TEST_CALL(CPUTests, ADDHLss_Test);
     TEST_CALL(CPUTests, ANDr_Test);
+    TEST_CALL(CPUTests, AND_HL__Test);
 
     TEST_CALL(CPUTests, ORA_Test);
     TEST_CALL(CPUTests, ORB_Test);
