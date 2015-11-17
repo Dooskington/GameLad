@@ -69,6 +69,7 @@ private:
     byte AddByte(byte b1, byte b2);
     ushort AddUShort(ushort u1, ushort u2);
     void ADC(byte val);
+    void SBC(byte val);
 
     void HandleInterrupts();
 

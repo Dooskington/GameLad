@@ -1023,6 +1023,38 @@ void CPU::ADC(byte val)
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
 }
 
+void CPU::SBC(byte val)
+{
+    int un = (int)val & 0xFF;
+    int tmpa = (int)GetHighByte(m_AF) & 0xFF;
+    int ua = tmpa;
+
+    ua -= un;
+
+    if (IsFlagSet(CarryFlag))
+    {
+        ua -= 1;
+    }
+
+    SetFlag(SubtractFlag);
+    (ua < 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    ua &= 0xFF;
+
+    (ua == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+
+    if (((ua ^ un ^ tmpa) & 0x10) == 0x10)
+    {
+        SetFlag(HalfCarryFlag);
+    }
+    else
+    {
+        ClearFlag(HalfCarryFlag);
+    }
+
+    SetHighByte(&m_AF, (byte)ua);
+}
+
 void CPU::HandleInterrupts()
 {
     // If the IME is enabled, some interrupts are enabled in IE, and
@@ -2140,16 +2172,7 @@ void CPU::SUBr(const byte& opCode)
 void CPU::SBCAr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
-    byte A = GetHighByte(m_AF);
-    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
-    byte result = A - (*r) - C;
-    SetHighByte(&m_AF, result);
-
-    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-    SetFlag(SubtractFlag);
-    ((A & 0x0F) < (result & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((A & 0xFF) < (result & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-
+    SBC(*r);
     m_cycles += 4;
 }
 
@@ -2781,36 +2804,7 @@ void CPU::RETI(const byte& opCode)
 void CPU::SBCAn(const byte& opCode)
 {
     byte n = ReadBytePC();
-
-    int un = (int)n & 0xFF;
-    int tmpa = (int)GetHighByte(m_AF) & 0xFF;
-    int ua = tmpa;
-    
-    ua -= un;
-
-    if (IsFlagSet(CarryFlag))
-    {
-        ua -= 1;
-    }
-
-    SetFlag(SubtractFlag);
-    (ua < 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-
-    ua &= 0xFF;
-
-    (ua == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
-
-    if (((ua ^ un ^ tmpa) & 0x10) == 0x10)
-    {
-        SetFlag(HalfCarryFlag);
-    }
-    else
-    {
-        ClearFlag(HalfCarryFlag);
-    }
-    
-    SetHighByte(&m_AF, (byte)ua);
-
+    SBC(n);
     m_cycles += 8;
 }
 
