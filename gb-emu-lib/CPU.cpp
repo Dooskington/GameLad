@@ -2209,62 +2209,76 @@ subtraction operations. For addition (ADD, ADC, INC) or subtraction (SUB, SBC, D
 the following table indicates the operation performed:
 
 OP      C Before    U       H Before    L       Add     C After
-        0           9-0     0           0-9     00      0
-        0           0-8     0           A-F     06      0
-ADD     0           0-9     1           0-3     06      0
+        0           0-9     0           0-9     00      0
+ADD     0           0-8     0           A-F     06      0
 ADC     0           A-F     0           0-9     60      1
 INC     0           9-F     0           A-F     66      1
-        0           A-F     1           0-3     66      1
-        1           0-2     0           0-9     60      1
-        1           0-2     0           A-F     66      1
-        1           0-3     1           0-3     66      1
+        0           0-9     1           0-3     06      0*
+        0           A-F     1           0-3     66      1*
+        1           0-2     0           0-9     60      1*
+        1           0-2     0           A-F     66      1*
+        1           0-3     1           0-3     66      1*
 ----------------------
-SUB     0           0-9     0           0-9     00      0
-SBC     0           0-8     1           6-F     FA      0
-DEC     1           7-F     0           0-9     A0      1
-NEG     1           6-7     1           6-F     9A      1
+SUB     0           0-9     0           0-9     00      0*
+SBC     0           0-8     1           6-F     FA      0*
+DEC     1           7-F     0           0-9     A0      1*
+NEG     1           6-7     1           6-F     9A      1*
 
 4 Cycles
 
 Flags affected(znhc): z-0x
 Affected Z, Cleared H, Affected C
 */
+byte GetUpperNibble(byte val)
+{
+    return (byte)(val >> 4);
+}
+
+byte GetLowerNibble(byte val)
+{
+    return (byte)(val & 0x0F);
+}
+
 void CPU::DAA(const byte& opCode)
 {
-    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
+    int aVal = GetHighByte(m_AF);
 
-    // Trust me
     if (!IsFlagSet(SubtractFlag))
     {
-        if (IsFlagSet(CarryFlag) || (GetHighByte(m_AF) > 0x99))
+        if (IsFlagSet(HalfCarryFlag) || (aVal & 0xF) > 9)
         {
-            SetHighByte(&m_AF, GetHighByte(m_AF) + 0x60);
-            SetFlag(CarryFlag);
+            aVal += 0x06;
         }
 
-        if (IsFlagSet(HalfCarryFlag) || ((GetHighByte(m_AF) & 0x0F) > 0x09))
+        if (IsFlagSet(CarryFlag) || (aVal > 0x9F))
         {
-            SetHighByte(&m_AF, GetHighByte(m_AF) + 0x06);
-            ClearFlag(HalfCarryFlag);
+            aVal += 0x60;
         }
     }
-    else if (IsFlagSet(CarryFlag) && IsFlagSet(HalfCarryFlag))
+    else
     {
-        SetHighByte(&m_AF, GetHighByte(m_AF) + 0x9A);
-        ClearFlag(HalfCarryFlag);
-    }
-    else if (IsFlagSet(CarryFlag))
-    {
-        SetHighByte(&m_AF, GetHighByte(m_AF) + 0xA0);
-    }
-    else if (IsFlagSet(HalfCarryFlag))
-    {
-        SetHighByte(&m_AF, GetHighByte(m_AF) + 0xFA);
-        ClearFlag(HalfCarryFlag);
+        if (IsFlagSet(HalfCarryFlag))
+        {
+            aVal = (aVal - 0x06) & 0xFF;
+        }
+
+        if (IsFlagSet(CarryFlag))
+        {
+            aVal -= 0x60;
+        }
     }
 
+    ClearFlag(HalfCarryFlag);
 
-    (GetHighByte(m_AF) == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    if ((aVal & 0x100) == 0x100)
+    {
+        SetFlag(CarryFlag);
+    }
+
+    aVal &= 0xFF;
+
+    (aVal == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetHighByte(&m_AF, (byte)aVal);
 
     m_cycles += 4;
 }
