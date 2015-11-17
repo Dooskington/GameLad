@@ -102,7 +102,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, ADDHLss_Test);
     TEST_CALL(CPUTests, ANDr_Test);
     TEST_CALL(CPUTests, AND_HL__Test);
-    TEST_CALL(CPUTests, LDSPHL);
+    TEST_CALL(CPUTests, LDSPHL_Test);
     TEST_CALL(CPUTests, LD_HL_n_Test);
 
     TEST_CALL(CPUTests, ORA_Test);
@@ -226,6 +226,8 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, JPccnn_Test);
     TEST_CALL(CPUTests, JRCe_Test);
     TEST_CALL(CPUTests, LD_DE_A_Test);
+    TEST_CALL(CPUTests, LDHLSPe_Test);
+    TEST_CALL(CPUTests, RSTn_Test);
 
     TEST_CLEANUP();
 

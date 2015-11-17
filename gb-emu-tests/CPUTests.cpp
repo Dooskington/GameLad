@@ -4538,8 +4538,8 @@ public:
             Assert::AreEqual(8, (int)spCPU->m_cycles);
             Assert::AreEqual(2, (int)spCPU->m_PC);
 
-            spCPU.reset();
-        }
+        spCPU.reset();
+    }
     }
 
     // 0xCB 0x00
@@ -6658,5 +6658,56 @@ public:
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
+    }
+
+    TEST_METHOD(LDHLSPe_Test)
+    {
+        byte m_Mem[] = { 0xF8, 0xFE };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->m_SP = 0x1234;
+
+        // Verify expectations before we run
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x1232, (int)spCPU->m_HL);
+        Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(AddFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
+        Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
+
+        spCPU.reset();
+    }
+
+    TEST_METHOD(RSTn_Test)
+    {
+        for (byte rst = 0x00; rst <= 0x07; rst++)
+        {
+            byte opCode = (byte)(0xC7 | (rst << 3));
+            byte m_Mem[] = { opCode };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            // Verify expectations before we run
+            Assert::AreEqual(0, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x0000, (int)spCPU->m_PC);
+
+            // Step the CPU 1 OpCode
+            spCPU->Step();
+
+            // Verify expectations after
+            Assert::AreEqual(16, (int)spCPU->m_cycles);
+            Assert::AreEqual(0x08 * rst, (int)spCPU->m_PC);
+
+            spCPU.reset();
+        }
     }
 };
