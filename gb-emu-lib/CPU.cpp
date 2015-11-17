@@ -223,7 +223,7 @@ CPU::CPU() :
     //m_operationMap[0x9B] TODO
     //m_operationMap[0x9C] TODO
     //m_operationMap[0x9D] TODO
-    //m_operationMap[0x9E] TODO
+    m_operationMap[0x9E] = &CPU::SBCA_HL_;
     //m_operationMap[0x9F] TODO
 
     // A0
@@ -2489,8 +2489,35 @@ void CPU::SUB_HL_(const byte& opCode)
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     SetFlag(SubtractFlag);
-    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((A & 0x0F) < (result & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (result & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    m_cycles += 8;
+}
+
+/*
+    SBC A, (HL) - 0x9E
+
+    The byte at the memory address specified by the contents of the HL register pair
+    and the accumulator is subtracted from the contents of the accumulator, and 
+    the result is stored in the accumulator.
+
+    8 Cycles
+
+    Flags affected(znhc): z1hc
+*/
+void CPU::SBCA_HL_(const byte& opCode)
+{
+    byte HL = m_MMU->ReadByte(m_HL);
+    byte A = GetHighByte(m_AF);
+    byte C = (IsFlagSet(CarryFlag)) ? 0x01 : 0x00;
+    byte result = A - HL - C;
+    SetHighByte(&m_AF, result);
+
+    (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
+    SetFlag(SubtractFlag);
+    ((A & 0x0F) < (result & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    ((A & 0xFF) < (result & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_cycles += 8;
 }
