@@ -36,8 +36,8 @@ Bit 1-0 - Mode Flag       (Mode 0-3, see below) (Read Only)
 */
 #define LYCoincidenceInterrupt ISBITSET(m_LCDControllerStatus , 6)
 #define OAMInterrupt ISBITSET(m_LCDControllerStatus , 5)
-#define VBlankInterrupt ISBITSET(m_LCDControllerStatus , 4)
-#define HBlankInterrupt ISBITSET(m_LCDControllerStatus , 3)
+//#define VBlankInterrupt ISBITSET(m_LCDControllerStatus , 4)
+//#define HBlankInterrupt ISBITSET(m_LCDControllerStatus , 3)
 #define SETMODE(mode) m_LCDControllerStatus = ((m_LCDControllerStatus & ~0x03) | mode)
 #define GETMODE (m_LCDControllerStatus & 0x03)
 
@@ -119,7 +119,8 @@ void GPU::Step(unsigned long cycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
             SETMODE(ModeHBlank);
-            if (HBlankInterrupt && (m_CPU != nullptr))
+            // TODO: Why not use HBlankInterrupt 
+            if (m_CPU != nullptr)
             {
                 m_CPU->TriggerInterrupt(INT48);
             }
@@ -141,7 +142,8 @@ void GPU::Step(unsigned long cycles)
                 // Enter VBlank and render framebuffer
                 SETMODE(ModeVBlank);
                 RenderImage();
-                if (VBlankInterrupt && (m_CPU != nullptr))
+                // TODO: Why not use VBlankInterrupt
+                if (m_CPU != nullptr)
                 {
                     m_CPU->TriggerInterrupt(INT40);
                 }
@@ -317,9 +319,9 @@ void GPU::LaunchDMATransfer(const byte address)
     */
 
     ushort source = (static_cast<ushort>(address) * 0x0100);
-    for (byte offset = 0x00; offset < 0x9F; offset++)
+    for (byte offset = 0x00; offset <= 0x9F; offset++)
     {
-        WriteByte(0xFE00 | offset, m_MMU->ReadByte(source | offset));
+        m_MMU->WriteByte(0xFE00 | offset, m_MMU->ReadByte(source | offset));
     }
 }
 

@@ -183,7 +183,6 @@ byte MMU::ReadByteInternal(const ushort& address)
     }
     else
     {
-        Logger::Log("MMU::ReadByteInternal isn't ready to support reading from 0x%04X", address);
         return 0x00;
     }
 }
@@ -229,11 +228,6 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
     else if (address == 0xFF4D)
     {
         m_Key1 = val;
-    }
-    else
-    {
-        Logger::Log("MMU::WriteByteInternal isn't ready to support writing to 0x%04X", address);
-        return false;
     }
 
     return true;
