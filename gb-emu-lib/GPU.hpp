@@ -56,6 +56,7 @@ private:
     void RenderScanline();
     void RenderImage();
     void RenderBackgroundScanline();
+    void RenderOBJScanline();
 
 private:
     IMMU* m_MMU;

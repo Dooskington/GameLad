@@ -167,13 +167,13 @@ int main(int argc, char** argv)
 {
     int windowWidth = 160;
     int windowHeight = 144;
-    int windowScale = 1;
+    int windowScale = 2;
     if(argc > 1)
     {
         windowScale = atoi(argv[1]);
     }
 
-    //std::string romPath = "res/tests/cpu_instrs.gb";
+    //std::string romPath = "res/tests/cpu_instrs.gb";            // PASSED
     //std::string romPath = "res/tests/01-special.gb";            // PASSED
     //std::string romPath = "res/tests/02-interrupts.gb";         // PASSED
     //std::string romPath = "res/tests/03-op sp,hl.gb";           // PASSED
@@ -184,7 +184,12 @@ int main(int argc, char** argv)
     //std::string romPath = "res/tests/08-misc instrs.gb";        // PASSED
     //std::string romPath = "res/tests/09-op r,r.gb";             // PASSED
     //std::string romPath = "res/tests/10-bit ops.gb";            // PASSED
-    std::string romPath = "res/tests/11-op a,(hl).gb";
+    //std::string romPath = "res/tests/11-op a,(hl).gb";          // PASSED
+    //std::string romPath = "res/games/Pokemon - Blue Version.gb";
+    //std::string romPath = "res/games/Tetris (World).gb";
+    std::string romPath = "res/games/Super Mario Land (World).gb";
+    //std::string romPath = "res/games/Tamagotchi.gb";
+    //std::string romPath = "res/games/Battletoads.gb";
     //std::string romPath = "F:\\Emulators\\Roms\\GBC\\Tetris 2 (U).gb";
     if(argc > 2)
     {
