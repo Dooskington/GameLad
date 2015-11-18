@@ -92,7 +92,7 @@ every 70224 clks.)
 */
 void GPU::Step(unsigned long cycles)
 {
-    // If the LCD screen is of, then reset all values and exit early
+    // If the LCD screen is off, then reset all values and exit early
     if (!IsLCDDisplayEnabled)
     {
         m_LCDControllerYCoordinate = 0x00;
@@ -105,20 +105,8 @@ void GPU::Step(unsigned long cycles)
 
     switch (GETMODE)
     {
-    case ModeVBlank:
-        if (m_ModeClock >= VBlankCycles)
-        {
-            m_ModeClock -= VBlankCycles;
-            m_LCDControllerYCoordinate++;
-
-            if (m_LCDControllerYCoordinate == 154)
-            {
-                SETMODE(ModeReadingOAM);
-                m_LCDControllerYCoordinate = 0x00;
-            }
-        }
-        break;
     case ModeReadingOAM:
+        // OAM Read mode. Scanline active.
         if (m_ModeClock >= ReadingOAMCycles)
         {
             m_ModeClock -= ReadingOAMCycles;
@@ -126,6 +114,7 @@ void GPU::Step(unsigned long cycles)
         }
         break;
     case ModeReadingOAMVRAM:
+        // VRAM Read mode. Scanline active.
         if (m_ModeClock >= ReadingOAMVRAMCycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
@@ -137,15 +126,19 @@ void GPU::Step(unsigned long cycles)
         }
         break;
     case ModeHBlank:
+        // End of scan line.
         if (m_ModeClock >= HBlankCycles)
         {
             m_ModeClock -= HBlankCycles;
 
+            // Write a scanline to the framebuffer
             RenderScanline();
 
+            // After the last HBlank, push the framebuffer to the window
             m_LCDControllerYCoordinate++;
             if (m_LCDControllerYCoordinate == 144)
             {
+                // Enter VBlank and render framebuffer
                 SETMODE(ModeVBlank);
                 RenderImage();
                 if (VBlankInterrupt && (m_CPU != nullptr))
@@ -155,7 +148,23 @@ void GPU::Step(unsigned long cycles)
             }
             else
             {
+                // Move onto next line
                 SETMODE(ModeReadingOAM);
+            }
+        }
+        break;
+    case ModeVBlank:
+        if (m_ModeClock >= VBlankCycles)
+        {
+            m_ModeClock -= VBlankCycles;
+
+            // VBlank for 10 lines
+            m_LCDControllerYCoordinate++;
+            if (m_LCDControllerYCoordinate == 154)
+            {
+                // Go back to the top left
+                SETMODE(ModeReadingOAM);
+                m_LCDControllerYCoordinate = 0x00;
             }
         }
         break;
@@ -241,6 +250,7 @@ bool GPU::WriteByte(const ushort& address, const byte val)
     {
         // CONSIDER: Test mode to see if available
         m_OAM[address - 0xFE00] = val;
+        //Logger::Log("0x%02X", val);
         return true;
     }
 
@@ -327,7 +337,7 @@ void GPU::RenderScanline()
 
     if (OBJDisplayEnable)
     {
-        //RenderOBJScanline();
+        RenderOBJScanline();
     }
 }
 
@@ -372,5 +382,59 @@ void GPU::RenderBackgroundScanline()
 
         int index = (m_LCDControllerYCoordinate * 160) + x;
         m_DisplayPixels[index] = color;
+    }
+}
+
+void GPU::RenderOBJScanline()
+{
+    // Loop through each sprite
+    for (byte i = 0; i < 160; i += 4)
+    {
+        // Grab the sprite data
+        byte spriteY = m_OAM[i];                // The sprite Y position, minus 16 (apparently)
+        byte spriteX = m_OAM[i + 1];            // The sprite X position, minus 8 (apparently)
+        byte spriteTileNumber = m_OAM[i + 2];   // The tile or pattern number of the sprite
+        byte spriteFlags = m_OAM[i + 3];        // The sprites render flags (priority, flip, palette)
+
+        byte paletteNumber = ISBITSET(spriteFlags, 4) ? 0x01 : 0x00;
+
+        // Check if the sprite is on the current scanline
+        if (spriteY <= m_LCDControllerYCoordinate && (spriteY + 16) > m_LCDControllerYCoordinate)
+        {
+            const ushort tileNumberMap = 0x9800;
+            const ushort tileData = 0x8000;
+
+            // Create the palette to use for this sprite
+            byte palette[]
+            {
+                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data) & 0x03],
+                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data >> 2) & 0x03],
+                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data >> 4) & 0x03],
+                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data >> 6) & 0x03],
+            };
+
+            // The memory location of this sprites tile can be found by adding the sprites tile
+            // number to the location of the tile data.
+            ushort tilePointer = (ushort)tileData + spriteTileNumber;
+
+            // The data for this line of the sprite, 8 pixels
+            byte b1 = ReadByte(tilePointer);
+            byte b2 = ReadByte(tilePointer + 1);
+            ushort line = (ushort)(b2 << 8) | b1;
+            
+            // TODO: FLIP
+
+            // Loop through all 8 pixels of this line
+            for (int x = 0; x < 8; x++)
+            {
+                // Check if the pixel is still on screen
+                if ((spriteX + x) >= 0 && (spriteX + x) < 160)
+                {
+                    // Check if the pixel is transparent
+                    //if()
+                    // TODO: FINISH THIS
+                }
+            }
+        }
     }
 }

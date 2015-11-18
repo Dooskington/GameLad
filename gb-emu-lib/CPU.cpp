@@ -735,6 +735,7 @@ void CPU::StepFrame()
     while (m_cycles < CyclesPerFrame)
     {
         Step(); // Execute the current instruction
+        //Logger::Log("0x%04X", m_PC);
     }
 
     // Reset the cycles. If we went over our max cycles, the next frame will start a

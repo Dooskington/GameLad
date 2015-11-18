@@ -156,6 +156,11 @@ byte MMU::ReadByteInternal(const ushort& address)
     {
         return m_bank1[address - 0xF000];
     }
+    else if (address >= 0xFEA0 && address <= 0xFEFF)
+    {
+        // Unusable memory
+        return 0x00;
+    }
     else if (address >= 0xFF80 && address <= 0xFFFE)
     {
         return m_HRAM[address - 0xFF80];
@@ -200,6 +205,10 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
     else if (address >= 0xF000 && address <= 0xFDFF)
     {
         m_bank1[address - 0xF000] = val;
+    }
+    else if (address >= 0xFEA0 && address <= 0xFEFF)
+    {
+        // Unusable memory
     }
     else if (address >= 0xFF80 && address <= 0xFFFE)
     {
