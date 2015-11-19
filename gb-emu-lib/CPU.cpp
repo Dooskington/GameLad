@@ -39,9 +39,6 @@ CPU::CPU() :
         m_operationMapCB[index] = nullptr;
     }
 
-    // TODO: Do something with the hundreds of lines below. All this should probably
-    // be in its own file. I apologize in advance for this large monstrosity. But it works.
-
     /*
         Z80 Command Set
     */
@@ -626,19 +623,20 @@ CPU::CPU() :
     m_operationMapCB[0xFE] = &CPU::SETb_HL_;
     m_operationMapCB[0xFF] = &CPU::SETbr;
 
-    // Initialize the register map
     /*
-    I'm not 100% sure about this, so ensure the lookup is right for each opcode before using
-    GetByteRegister.
+        Initialize the register map.
 
-    000 B
-    001 C
-    010 D
-    011 E
-    100 H
-    101 L
-    110 ? (F?)
-    111 A
+        I'm not 100% sure about this, so ensure the lookup is right for each opcode before using
+        GetByteRegister.
+
+        000 B
+        001 C
+        010 D
+        011 E
+        100 H
+        101 L
+        110 ? (F?)
+        111 A
     */
     m_ByteRegisterMap[0x00] = reinterpret_cast<byte*>(&m_BC) + 1;   // ushort memory is [C][B]
     m_ByteRegisterMap[0x01] = reinterpret_cast<byte*>(&m_BC);
@@ -650,13 +648,13 @@ CPU::CPU() :
     m_ByteRegisterMap[0x07] = reinterpret_cast<byte*>(&m_AF) + 1;
 
     /*
-    I'm not 100% sure about this, so ensure the lookup is right for each opcode before using
-    GetUShortRegister.
+        I'm not 100% sure about this, so ensure the lookup is right for each opcode before using
+        GetUShortRegister.
 
-    00 = BC
-    01 = DE
-    10 = HL
-    11 = SP
+        00 = BC
+        01 = DE
+        10 = HL
+        11 = SP
     */
     m_UShortRegisterMap[0x00] = &m_BC;
     m_UShortRegisterMap[0x01] = &m_DE;
@@ -735,7 +733,6 @@ void CPU::StepFrame()
     while (m_cycles < CyclesPerFrame)
     {
         Step(); // Execute the current instruction
-        //Logger::Log("0x%04X", m_PC);
     }
 
     // Reset the cycles. If we went over our max cycles, the next frame will start a
@@ -903,29 +900,6 @@ void CPU::ClearFlag(byte flag)
 bool CPU::IsFlagSet(byte flag)
 {
     return ISBITSET(GetLowByte(m_AF), flag);
-}
-
-bool CPU::LookupAndCheckFlag(byte value)
-{
-    /*
-    000 NZ
-    001 Z
-    010 NC
-    011 C
-    */
-    switch (value)
-    {
-    case 0x00:
-        return !IsFlagSet(ZeroFlag);
-    case 0x01:
-        return IsFlagSet(ZeroFlag);
-    case 0x02:
-        return !IsFlagSet(CarryFlag);
-    case 0x03:
-        return IsFlagSet(CarryFlag);
-    }
-
-    return false;
 }
 
 void CPU::PushByteToSP(byte val)
@@ -1120,15 +1094,15 @@ unsigned long CPU::NOP(const byte& opCode)
 }
 
 /*
-LD (bc), a
-00000010
+    LD (bc), a
+    00000010
 
-The contents of the accumulator are loaded to the memory location specified by
-the contents of the register pair BC.
+    The contents of the accumulator are loaded to the memory location specified by
+    the contents of the register pair BC.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::LD_BC_A(const byte& opCode)
 {
@@ -1137,15 +1111,15 @@ unsigned long CPU::LD_BC_A(const byte& opCode)
 }
 
 /*
-RLCA
-00000111
+    RLCA
+    00000111
 
-The contents of the accumulator are rotated left 1-bit position. Bit 7
-is copied to the carry flag and also to bit 0.
+    The contents of the accumulator are rotated left 1-bit position. Bit 7
+    is copied to the carry flag and also to bit 0.
 
-4 Cycles
+    4 Cycles
 
-Flags affected(znhc): 000c
+    Flags affected(znhc): 000c
 */
 unsigned long CPU::RLCA(const byte& opCode)
 {
@@ -1280,7 +1254,6 @@ unsigned long CPU::LDrrnn(const byte& opCode)
     4 Cycles
 
     Flags affected(znhc): z0h-
-    Affects Z, Clears N, affects H
 */
 unsigned long CPU::INCr(const byte& opCode)
 {
@@ -1313,18 +1286,18 @@ unsigned long CPU::INCr(const byte& opCode)
 }
 
 /*
-CALL cc, nn
-11ccc100
+    CALL cc, nn
+    11ccc100
 
-000 NZ
-001 Z
-010 NC
-011 C
+    000 NZ
+    001 Z
+    010 NC
+    011 C
 
-24 Cycles if taken
-12 Cycles if not taken
+    24 Cycles if taken
+    12 Cycles if not taken
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::CALLccnn(const byte& opCode)
 {
@@ -1360,18 +1333,18 @@ unsigned long CPU::CALLccnn(const byte& opCode)
 }
 
 /*
-RET cc
-11ccc000
+    RET cc
+    11ccc000
 
-000 NZ
-001 Z
-010 NC
-011 C
+    000 NZ
+    001 Z
+    010 NC
+    011 C
 
-20 Cycles if taken
-8 Cycles if not taken
+    20 Cycles if taken
+    8 Cycles if not taken
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::RETcc(const byte& opCode)
 {
@@ -1425,16 +1398,15 @@ unsigned long CPU::LD_nn_SP(const byte& opCode)
 }
 
 /*
-ADD HL, ss
-00ss1001
+    ADD HL, ss
+    00ss1001
 
-The contents of the register pair ss (BC, DE, HL, SP) are added to the contents
-of the register pair HL and the result is stored in HL.
+    The contents of the register pair ss (BC, DE, HL, SP) are added to the contents
+    of the register pair HL and the result is stored in HL.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): -0hc
-Clears N, affects H, affects C
+    Flags affected(znhc): -0hc
 */
 unsigned long CPU::ADDHLss(const byte& opCode)
 {
@@ -1469,18 +1441,18 @@ unsigned long CPU::ADDSPdd(const byte& opCode)
 }
 
 /*
-JP cc, nn
-11ccc010
+    JP cc, nn
+    11ccc010
 
-000 NZ
-001 Z
-010 NC
-011 C
+    000 NZ
+    001 Z
+    010 NC
+    011 C
 
-16 Cycles if taken
-12 Cycles if not taken
+    16 Cycles if taken
+    12 Cycles if not taken
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::JPccnn(const byte& opCode)
 {
@@ -1602,21 +1574,21 @@ unsigned long CPU::JRcce(const byte& opCode)
 }
 
 /*
-RST
-11ttt111
+    RST
+    11ttt111
 
-000 0x00
-001 0x08
-010 0x10
-011 0x18
-100 0x20
-101 0x28
-110 0x30
-111 0x38
+    000 0x00
+    001 0x08
+    010 0x10
+    011 0x18
+    100 0x20
+    101 0x28
+    110 0x30
+    111 0x38
 
-16 Cycles if taken
+    16 Cycles if taken
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::RSTn(const byte& opCode)
 {
@@ -1706,14 +1678,14 @@ unsigned long CPU::INCrr(const byte& opCode)
 }
 
 /*
-DEC rr
-00rr1011
+    DEC rr
+    00rr1011
 
-16-bit register rr is decremented, where rr identifies register pairs BC, DE, HL, or SP.
+    16-bit register rr is decremented, where rr identifies register pairs BC, DE, HL, or SP.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::DECrr(const byte& opCode)
 {
@@ -1734,7 +1706,6 @@ unsigned long CPU::DECrr(const byte& opCode)
     4 Cycles
 
     Flags affected(znhc): z000
-    Affects Z, clears n, clears h, clears c
 */
 unsigned long CPU::XORr(const byte& opCode)
 {
@@ -1759,15 +1730,14 @@ unsigned long CPU::XORr(const byte& opCode)
 }
 
 /*
-XOR (HL) - 0xAE
+    XOR (HL) - 0xAE
 
-The logical exclusive-OR operation is performed between the byte pointed to by the HL register
-and the byte contained in the accumulator. The result is stored in the accumulator.
+    The logical exclusive-OR operation is performed between the byte pointed to by the HL register
+    and the byte contained in the accumulator. The result is stored in the accumulator.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z000
-Affects Z, clears n, clears h, clears c
+    Flags affected(znhc): z000
 */
 unsigned long CPU::XOR_HL_(const byte& opCode)
 {
@@ -1792,17 +1762,16 @@ unsigned long CPU::XOR_HL_(const byte& opCode)
 }
 
 /*
-OR r
-10110rrr
+    OR r
+    10110rrr
 
-The logical OR operation is performed between the register specified in the r
-operand and the byte contained in the accumulator. The result is stored in the accumulator.
-Register r can be A, B, C, D, E, H, or L.
+    The logical OR operation is performed between the register specified in the r
+    operand and the byte contained in the accumulator. The result is stored in the accumulator.
+    Register r can be A, B, C, D, E, H, or L.
 
-4 Cycles
+    4 Cycles
 
-Flags affected(znhc): z000
-Affects Z, clears n, clears h, clears c
+    Flags affected(znhc): z000
 */
 unsigned long CPU::ORr(const byte& opCode)
 {
@@ -1827,15 +1796,14 @@ unsigned long CPU::ORr(const byte& opCode)
 }
 
 /*
-OR (HL) - 0xB6
+    OR (HL) - 0xB6
 
-The logical OR operation is performed between the value at memory location (HL)
-and the byte contained in the accumulator. The result is stored in the accumulator.
+    The logical OR operation is performed between the value at memory location (HL)
+    and the byte contained in the accumulator. The result is stored in the accumulator.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z000
-Affects Z, clears n, clears h, clears c
+    Flags affected(znhc): z000
 */
 unsigned long CPU::OR_HL_(const byte& opCode)
 {
@@ -1883,16 +1851,15 @@ unsigned long CPU::PUSHrr(const byte& opCode)
 }
 
 /*
-AND n
-11100110 (0xE6)
+    AND n
+    11100110 (0xE6)
 
-The logical AND operation is performed between the byte specified in n and the byte contained
-in the accumulator. The resutl is stored in the accumulator.
+    The logical AND operation is performed between the byte specified in n and the byte contained
+    in the accumulator. The resutl is stored in the accumulator.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z010
-Affects Z, clears n, sets h, clears c
+    Flags affected(znhc): z010
 */
 unsigned long CPU::ANDn(const byte& opCode)
 {
@@ -1910,13 +1877,13 @@ unsigned long CPU::ANDn(const byte& opCode)
 }
 
 /*
-JP HL - 0xE9
+    JP HL - 0xE9
 
-The PC is loaded with the value of HL.
+    The PC is loaded with the value of HL.
 
-4 Cycles
+    4 Cycles
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::JP_HL_(const byte& opCode)
 {
@@ -2057,8 +2024,7 @@ unsigned long CPU::DEC_HL_(const byte& opCode)
 }
 
 /*
-    LD (HL), n
-    0x36
+    LD (HL), n - 0x36
 
     The contents of n are loaded into the memory location specifed by the
     contents of the HL register pair.
@@ -2076,14 +2042,13 @@ unsigned long CPU::LD_HL_n(const byte& opCode)
 }
 
 /*
-SCF - 0x37
+    SCF - 0x37
 
-Sets the carry flag.
+    Sets the carry flag.
 
-4 Cycles
+    4 Cycles
 
-Flags affected(znhc): -001
-Clears N, Clears h, Sets c
+    Flags affected(znhc): -001
 */
 unsigned long CPU::SCF(const byte& opCode)
 {
@@ -2156,23 +2121,30 @@ unsigned long CPU::SBCAr(const byte& opCode)
     return 4;
 }
 
-// 0x10 (STOP)
+/*
+    STOP - 0x10
+
+    For the purposes of this emulator, this is identical to HALT.
+
+    0 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::STOP(const byte& opCode)
 {
-    // For the emulator, these are effectively the same thing
     return HALT(opCode);
 }
 
 /*
-LD (de), a
-00010010
+    LD (de), a
+    00010010
 
-The contents of the accumulator are loaded to the memory location specified by
-the contents of the register pair DE.
+    The contents of the accumulator are loaded to the memory location specified by
+    the contents of the register pair DE.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::LD_DE_A(const byte& opCode)
 {
@@ -2180,7 +2152,9 @@ unsigned long CPU::LD_DE_A(const byte& opCode)
     return 8;
 }
 
-// 0x17 (RL A)
+/*
+    RL A - 0x17
+*/
 unsigned long CPU::RLA(const byte& opCode)
 {
     // Grab the current CarryFlag val
@@ -2204,12 +2178,11 @@ unsigned long CPU::RLA(const byte& opCode)
 }
 
 /*
-    JR Z, e
-    0x18
+    JR Z, e - 0x18
 
     Jump relative, to the offset e.
 
-    12 cycles.
+    12 cycles
 
     Flags affected(znhc): ----
 */
@@ -2221,16 +2194,20 @@ unsigned long CPU::JRe(const byte& opCode)
     return 12;
 }
 
-// 0x1A (LD A, (DE))
+/*
+    LD A, (DE) - 0x1A
+
+    Loads the value stored at the address pointed to by DE and stores in the A register.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::LDA_DE_(const byte& opCode)
 {
-    // loads the value stored at the address pointed to by DE
-    // (currently 0x0104) and stores in the A register
     byte val = m_MMU->ReadByte(m_DE);
     SetHighByte(&m_AF, val);
     return 8;
-
-    // No flags affected
 }
 
 /*
@@ -2251,14 +2228,14 @@ unsigned long CPU::LDA_BC_(const byte& opCode)
 }
 
 /*
-RRCA - 0x0F
+    RRCA - 0x0F
 
-The contents off the accumulator are roated right 1-bit. Bit 0 is copied to the carry
-flag and also to bit 7.
+    The contents off the accumulator are roated right 1-bit. Bit 0 is copied to the carry
+    flag and also to bit 7.
 
-4 Cycles
+    4 Cycles
 
-Flags affected(znhc): 000c
+    Flags affected(znhc): 000c
 */
 unsigned long CPU::RRCA(const byte& opCode)
 {
@@ -2287,7 +2264,13 @@ unsigned long CPU::RRCA(const byte& opCode)
     return 4;
 }
 
-// 0x17 (RR A)
+/*
+    RR A - 0x17
+
+    4 Cycles
+
+    Flags affected(znhc): 000c
+*/
 unsigned long CPU::RRA(const byte& opCode)
 {
     // Grab the current CarryFlag val
@@ -2311,8 +2294,7 @@ unsigned long CPU::RRA(const byte& opCode)
 }
 
 /*
-    LDI (HL), A
-    0x22
+    LDI (HL), A - 0x22
 
     Loads A into the address pointed at by HL, then increment HL.
 
@@ -2330,33 +2312,31 @@ unsigned long CPU::LDI_HL_A(const byte& opCode)
 }
 
 /*
-DAA
-0x27
+    DAA - 0x27
 
-This instruction conditionally adjust the accumulator for BCD addition and
-subtraction operations. For addition (ADD, ADC, INC) or subtraction (SUB, SBC, DEC, NEG),
-the following table indicates the operation performed:
+    This instruction conditionally adjust the accumulator for BCD addition and
+    subtraction operations. For addition (ADD, ADC, INC) or subtraction (SUB, SBC, DEC, NEG),
+    the following table indicates the operation performed:
 
-OP      C Before    U       H Before    L       Add     C After
-        0           0-9     0           0-9     00      0
-ADD     0           0-8     0           A-F     06      0
-ADC     0           A-F     0           0-9     60      1
-INC     0           9-F     0           A-F     66      1
-        0           0-9     1           0-3     06      0*
-        0           A-F     1           0-3     66      1*
-        1           0-2     0           0-9     60      1*
-        1           0-2     0           A-F     66      1*
-        1           0-3     1           0-3     66      1*
-----------------------
-SUB     0           0-9     0           0-9     00      0*
-SBC     0           0-8     1           6-F     FA      0*
-DEC     1           7-F     0           0-9     A0      1*
-NEG     1           6-7     1           6-F     9A      1*
+    OP      C Before    U       H Before    L       Add     C After
+            0           0-9     0           0-9     00      0
+    ADD     0           0-8     0           A-F     06      0
+    ADC     0           A-F     0           0-9     60      1
+    INC     0           9-F     0           A-F     66      1
+            0           0-9     1           0-3     06      0*
+            0           A-F     1           0-3     66      1*
+            1           0-2     0           0-9     60      1*
+            1           0-2     0           A-F     66      1*
+            1           0-3     1           0-3     66      1*
+    ----------------------
+    SUB     0           0-9     0           0-9     00      0*
+    SBC     0           0-8     1           6-F     FA      0*
+    DEC     1           7-F     0           0-9     A0      1*
+    NEG     1           6-7     1           6-F     9A      1*
 
-4 Cycles
+    4 Cycles
 
-Flags affected(znhc): z-0x
-Affected Z, Cleared H, Affected C
+    Flags affected(znhc): z-0x
 */
 unsigned long CPU::DAA(const byte& opCode)
 {
@@ -2403,8 +2383,7 @@ unsigned long CPU::DAA(const byte& opCode)
 }
 
 /*
-    LDI A, (HL)
-    0x2A
+    LDI A, (HL) - 0x2A
 
     Loads the address pointed at by HL into A, then increment HL.
 
@@ -2441,20 +2420,25 @@ unsigned long CPU::CPL(const byte& opCode)
     return 4;
 }
 
-// 0x32 (LDD (HL), A)
+/*
+    LDD (HL), A - 0x32
+
+    Load A into the address pointed at by HL.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::LDD_HL_A(const byte& opCode)
 {
-    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
+    m_MMU->WriteByte(m_HL, GetHighByte(m_AF));
 
     m_HL--;
     return 8;
-
-    // No flags affected
 }
 
 /*
-    LDD A, (HL)
-    0x3A
+    LDD A, (HL) - 0x3A
 
     Load the byte at the address specified in the HL register into A, and decrement HL.
 
@@ -2471,7 +2455,13 @@ unsigned long CPU::LDDA_HL_(const byte& opCode)
     return 8;
 }
 
-// 0x76 (HALT)
+/*
+    HALT - 0x76
+
+    0 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::HALT(const byte& opCode)
 {
     m_isHalted = true;
@@ -2480,8 +2470,7 @@ unsigned long CPU::HALT(const byte& opCode)
 }
 
 /*
-    ADD A, (HL)
-    0x86
+    ADD A, (HL) - 0x86
 
     The byte at the memory address specified by the contents of the HL register pair
     is added to the contents of the accumulator, and the result is stored in the
@@ -2519,8 +2508,7 @@ unsigned long CPU::ADCA_HL_(const byte& opCode)
 }
 
 /*
-    SUB (HL)
-    0x96
+    SUB (HL) - 0x96
 
     The byte at the memory address specified by the contents of the HL register pair
     is subtracted to the contents of the accumulator, and the result is stored in the
@@ -2564,8 +2552,7 @@ unsigned long CPU::SBCA_HL_(const byte& opCode)
 }
 
 /*
-    AND (HL)
-    0xA6
+    AND (HL) - 0xA6
 
     The logical AND operation is performed between the byte contained at
     the memory address specified by the HL register  and the byte contained
@@ -2598,8 +2585,7 @@ unsigned long CPU::AND_HL_(const byte& opCode)
 }
 
 /*
-    CP (HL)
-    0xBE
+    CP (HL) - 0xBE
 
     The contents of 8-bit register HL are compared with the contents of the accumulator.
     If there is a true compare, the Z flag is set. The execution of this instruction
@@ -2624,8 +2610,7 @@ unsigned long CPU::CP_HL_(const byte& opCode)
 }
 
 /*
-    JP nn
-    0xC3
+    JP nn - 0xC3
 
     Jump to nn
 
@@ -2642,16 +2627,15 @@ unsigned long CPU::JPnn(const byte& opCode)
 }
 
 /*
-ADD A, n
-0xC6
+    ADD A, n - 0xC6
 
-The integer n is added to the contents of the accumulator, and the reults are
-stored in the accumulator.
+    The integer n is added to the contents of the accumulator, and the reults are
+    stored in the accumulator.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z0hc
-Affects Z, clears n, affects h, affects c
+    Flags affected(znhc): z0hc
+    Affects Z, clears n, affects h, affects c
 */
 unsigned long CPU::ADDAn(const byte& opCode)
 {
@@ -2664,8 +2648,7 @@ unsigned long CPU::ADDAn(const byte& opCode)
 }
 
 /*
-    RET
-    0xC9
+    RET - 0xC9
 
     return, PC=(SP), SP=SP+2
 
@@ -2680,22 +2663,26 @@ unsigned long CPU::RET(const byte& opCode)
     return 16;
 }
 
-// 0xCD (CALL nn)
+/*
+    CALL nn - 0xCD
+
+    Pushes the PC to the SP, then sets the PC to the target address(nn).
+
+    24 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::CALLnn(const byte& opCode)
 {
-    // This instruction pushes the PC to the SP, then sets the PC to the target address(nn).
     ushort nn = ReadUShortPC(); // Read nn
     PushUShortToSP(m_PC); // Push PC to SP
     m_PC = nn; // Set the PC to the target address
 
     return 24;
-
-    // No flags affected
 }
 
 /*
-    ADC A, n
-    0xCE
+    ADC A, n - 0xCE
 
     The 8-bit n operand, along with the carry flag, is added to the contents of the
     accumulator, and the result is stored in the accumulator.
@@ -2711,7 +2698,7 @@ unsigned long CPU::ADCAn(const byte& opCode)
 }
 
 /*
-    SUB n (0xD6)
+    SUB n - 0xD6
 
     The 8-bit value n is subtracted from the contents of the Accumulator, and the
     result is stored in the accumulator.
@@ -2736,8 +2723,7 @@ unsigned long CPU::SUBn(const byte& opCode)
 }
 
 /*
-    RETI
-    0xD9
+    RETI - 0xD9
 
     Return and enable interrupts.
 
@@ -2754,7 +2740,7 @@ unsigned long CPU::RETI(const byte& opCode)
 }
 
 /*
-    SBC A, n (0xDE)
+    SBC A, n - 0xDE
 
     The 8-bit value n, along with the carry flag, is subtracted from the contents
     of the Accumulator, and the result is stored in the accumulator.
@@ -2770,7 +2756,15 @@ unsigned long CPU::SBCAn(const byte& opCode)
     return 8;
 }
 
-// 0xE0 (LD(0xFF00 + n), A)
+/*
+    LD (0xFF00 + n), A - 0xE0
+
+    Loads the contents of the A register into 0xFF00 + n.
+
+    12 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::LD_0xFF00n_A(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
@@ -2778,23 +2772,26 @@ unsigned long CPU::LD_0xFF00n_A(const byte& opCode)
     m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
 
     return 12;
-
-    // No flags affected
 }
 
-// 0xE2 (LD(0xFF00 + C), A)
+/*
+    LD (0xFF00 + C), A - 0xE2
+
+    Loads the contents of the A register into 0xFF00 + C.
+
+    8 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::LD_0xFF00C_A(const byte& opCode)
 {
     m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
 
     return 8;
-
-    // No flags affected
 }
 
 /*
-    LD (nn), A
-    0xEA
+    LD (nn), A - 0xEA
 
     The contents of the accumulator are loaded into the address specified by the
     operand nn.
@@ -2813,8 +2810,7 @@ unsigned long CPU::LD_nn_A(const byte& opCode)
 }
 
 /*
-    XOR n
-    0xEE
+    XOR n - 0xEE
 
     The logical exclusive-OR operation is performed between the 8-bit operand and
     the byte contained in the accumulator. The result is stored in the accumulator.
@@ -2822,7 +2818,6 @@ unsigned long CPU::LD_nn_A(const byte& opCode)
     8 Cycles
 
     Flags affected(znhc): z000
-    Affects Z, clears n, clears h, clears c
 */
 unsigned long CPU::XORn(const byte& opCode)
 {
@@ -2847,8 +2842,7 @@ unsigned long CPU::XORn(const byte& opCode)
 }
 
 /*
-    LD A, (0xFF00 + n)
-    0xF0
+    LD A, (0xFF00 + n) - 0xF0
 
     Read from io-port n
 
@@ -2865,8 +2859,7 @@ unsigned long CPU::LDA_0xFF00n_(const byte& opCode)
 }
 
 /*
-    LD A, (0xFF00 + C)
-    0xF2
+    LD A, (0xFF00 + C) - 0xF2
 
     Read from io-port C
 
@@ -2882,8 +2875,7 @@ unsigned long CPU::LDA_0xFF00C_(const byte& opCode)
 }
 
 /*
-    DI
-    0xF3
+    DI - 0xF3
 
     Disable interrupts
 
@@ -2899,15 +2891,14 @@ unsigned long CPU::DI(const byte& opCode)
 }
 
 /*
-OR n - 0xF6
+    OR n - 0xF6
 
-The logical OR operation is performed between the byte in n and the byte contained in the
-accumulator. The result is stored in the accumulator.
+    The logical OR operation is performed between the byte in n and the byte contained in the
+    accumulator. The result is stored in the accumulator.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z000
-Affects Z, clears n, clears h, clears c
+    Flags affected(znhc): z000
 */
 unsigned long CPU::ORn(const byte& opCode)
 {
@@ -2932,8 +2923,7 @@ unsigned long CPU::ORn(const byte& opCode)
 }
 
 /*
-    LD SP, HL
-    0xF9
+    LD SP, HL - 0xF9
 
     Load HL into SP.
 
@@ -2949,14 +2939,13 @@ unsigned long CPU::LDSPHL(const byte& opCode)
 }
 
 /*
-LD HL, SP+e - 0xF8
+    LD HL, SP+e - 0xF8
 
-ld   HL,SP+dd  F8          12 00hc HL = SP +/- dd ;dd is 8bit signed number
+    ld   HL,SP+dd  F8          12 00hc HL = SP +/- dd ;dd is 8bit signed number
 
-12 Cycles
+    12 Cycles
 
-Flags affected(znhc): 00hc
-Clears Z, clears n, affects h, affects c
+    Flags affected(znhc): 00hc
 */
 unsigned long CPU::LDHLSPe(const byte& opCode)
 {
@@ -2978,14 +2967,13 @@ unsigned long CPU::LDHLSPe(const byte& opCode)
 }
 
 /*
-LD A, (nn)
-0xFA
+    LD A, (nn) - 0xFA
 
-The contents of the address specified by the operand nn are loaded into the accumulator.
+    The contents of the address specified by the operand nn are loaded into the accumulator.
 
-16 Cycles
+    16 Cycles
 
-Flags affected(znhc): ----
+    Flags affected(znhc): ----
 */
 unsigned long CPU::LDA_nn_(const byte& opCode)
 {
@@ -2996,8 +2984,7 @@ unsigned long CPU::LDA_nn_(const byte& opCode)
 }
 
 /*
-    EI
-    0xFB
+    EI - 0xFB
 
     Enable interrupts
 
@@ -3013,8 +3000,7 @@ unsigned long CPU::EI(const byte& opCode)
 }
 
 /*
-    CP n
-    0xFE
+    CP n - 0xFE
 
     The contents of 8-bit operand n are compared with the contents of the accumulator.
     If there is a true compare, the Z flag is set. The execution of this instruction
@@ -3075,6 +3061,13 @@ unsigned long CPU::RLCr(const byte& opCode)
     return 8;
 }
 
+/*
+    RLC (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): z00c
+*/
 unsigned long CPU::RLC_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
@@ -3131,6 +3124,13 @@ unsigned long CPU::RRCr(const byte& opCode)
     return 8;
 }
 
+/*
+    RRC (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): z00c
+*/
 unsigned long CPU::RRC_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
@@ -3190,6 +3190,13 @@ unsigned long CPU::RLr(const byte& opCode)
     return 8;
 }
 
+/*
+    RL (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): z00c
+*/
 unsigned long CPU::RL_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
@@ -3252,6 +3259,13 @@ unsigned long CPU::RRr(const byte& opCode)
     return 8;
 }
 
+/*
+    RR (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): z00c
+*/
 unsigned long CPU::RR_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
@@ -3288,7 +3302,6 @@ unsigned long CPU::RR_HL_(const byte& opCode)
     8 Cycles
 
     Flags affected(znhc): z00c
-    Affects Z, clears n, clears h, affects c
 */
 unsigned long CPU::SLAr(const byte& opCode)
 {
@@ -3308,6 +3321,13 @@ unsigned long CPU::SLAr(const byte& opCode)
     return 8;
 }
 
+/*
+    SLA (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): z00c
+*/
 unsigned long CPU::SLA_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
@@ -3337,7 +3357,6 @@ unsigned long CPU::SLA_HL_(const byte& opCode)
     8 Cycles
 
     Flags affected(znhc): z00c
-    Affects Z, clears n, clears h, affects c
 */
 unsigned long CPU::SRAr(const byte& opCode)
 {
@@ -3357,6 +3376,13 @@ unsigned long CPU::SRAr(const byte& opCode)
     return 8;
 }
 
+/*
+    SRA (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): z00c
+*/
 unsigned long CPU::SRA_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
@@ -3377,16 +3403,15 @@ unsigned long CPU::SRA_HL_(const byte& opCode)
 }
 
 /*
-SRL r
-11001011 00011rrr
+    SRL r
+    11001011 00011rrr
 
-The contents of the operand "r" are shifted right 1 -bit.  The content of
-bit 0 is copied to the carry flag and bit 7 is reset.
+    The contents of the operand "r" are shifted right 1 -bit.  The content of
+    bit 0 is copied to the carry flag and bit 7 is reset.
 
-8 Cycles
+    8 Cycles
 
-Flags affected(znhc): z00c
-Affects Z, clears n, clears h, affects c
+    Flags affected(znhc): z00c
 */
 unsigned long CPU::SRLr(const byte& opCode)
 {
@@ -3407,6 +3432,13 @@ unsigned long CPU::SRLr(const byte& opCode)
     return 8;
 }
 
+/*
+    SRL (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): z00c
+*/
 unsigned long CPU::SRL_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
@@ -3436,7 +3468,6 @@ unsigned long CPU::SRL_HL_(const byte& opCode)
     8 Cycles
 
     Flags affected(znhc): z01-
-    Affects Z, clears n, sets h
 */
 unsigned long CPU::BITbr(const byte& opCode)
 {
@@ -3452,6 +3483,13 @@ unsigned long CPU::BITbr(const byte& opCode)
     return 8;
 }
 
+/*
+    BIT b, (HL)
+
+    12 Cycles
+
+    Flags affected(znhc): z01-
+*/
 unsigned long CPU::BITb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
@@ -3474,7 +3512,7 @@ unsigned long CPU::BITb_HL_(const byte& opCode)
 
     8 Cycles
 
-    No flags affected.
+    Flags affected(znhc): ----
 */
 unsigned long CPU::RESbr(const byte& opCode)
 {
@@ -3485,6 +3523,13 @@ unsigned long CPU::RESbr(const byte& opCode)
     return 8;
 }
 
+/*
+    RES b, (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::RESb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
@@ -3513,6 +3558,13 @@ unsigned long CPU::SETbr(const byte& opCode)
     return 8;
 }
 
+/*
+    SET b, (HL)
+
+    16 Cycles
+
+    Flags affected(znhc): ----
+*/
 unsigned long CPU::SETb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
@@ -3529,6 +3581,8 @@ unsigned long CPU::SETb_HL_(const byte& opCode)
     swap (HL)      CB 36       16 z000 exchange low/hi-nibble
 
     Exchange the low and hi nibble (a nibble is 4 bits)
+
+    8 Cycles
 
     Flags affected(znhc): z000
 */
@@ -3549,6 +3603,10 @@ unsigned long CPU::SWAPr(const byte& opCode)
 }
 
 /*
+    SWAP (HL)
+
+    16 Cycles
+
     Flags affected(znhc) : z000
 */
 unsigned long CPU::SWAP_HL_(const byte& opCode)

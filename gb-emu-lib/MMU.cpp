@@ -2,40 +2,40 @@
 #include "MMU.hpp"
 
 /*
-General Memory Map
-==================
-When m_isBooting = 0x00, override with:
--MMU:
-0x0000-0x00FF   Boot ROM (256 bytes) [DONE]
+    General Memory Map
+    ==================
+    When m_isBooting = 0x00, override with:
+    -MMU:
+    0x0000-0x00FF   Boot ROM (256 bytes) [DONE]
 
-When m_isBooting != 0x00:
--Cartridge:
-0x0000-0x3FFF   16KB ROM Bank 00     (in cartridge, fixed at bank 00)
-0x4000-0x7FFF   16KB ROM Bank 01..NN (in cartridge, switchable bank number)
+    When m_isBooting != 0x00:
+    -Cartridge:
+    0x0000-0x3FFF   16KB ROM Bank 00     (in cartridge, fixed at bank 00)
+    0x4000-0x7FFF   16KB ROM Bank 01..NN (in cartridge, switchable bank number)
 
--GPU:
-0x8000-0x9FFF   8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+    -GPU:
+    0x8000-0x9FFF   8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
 
--Cartridge:
-0xA000-0xBFFF   8KB External RAM     (in cartridge, switchable bank, if any)
+    -Cartridge:
+    0xA000-0xBFFF   8KB External RAM     (in cartridge, switchable bank, if any)
 
--MMU:
-0xC000-0xCFFF   4KB Work RAM Bank 0 (WRAM)
-0xD000-0xDFFF   4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
-0xE000-0xFDFF   Same as C000-DDFF (ECHO)    (typically not used)
+    -MMU:
+    0xC000-0xCFFF   4KB Work RAM Bank 0 (WRAM)
+    0xD000-0xDFFF   4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
+    0xE000-0xFDFF   Same as C000-DDFF (ECHO)    (typically not used)
 
--GPU:
-0xFE00-0xFE9F   Sprite Attribute Table (OAM)
+    -GPU:
+    0xFE00-0xFE9F   Sprite Attribute Table (OAM)
 
--N/A:
-0xFEA0-0xFEFF   Not Usable
+    -N/A:
+    0xFEA0-0xFEFF   Not Usable
 
--GamePad/SerialData/Timer/Audio/GPU:
-0xFF00-0xFF7F   I/O Ports
+    -GamePad/SerialData/Timer/Audio/GPU:
+    0xFF00-0xFF7F   I/O Ports
 
--MMU:
-0xFF80-0xFFFE   High RAM (HRAM)
-0xFFFF          Interrupt Enable Register
+    -MMU:
+    0xFF80-0xFFFE   High RAM (HRAM)
+    0xFFFF          Interrupt Enable Register
 */
 
 // This is small enough to just embed directly into the source.  This is the boot ROM of the Gameboy

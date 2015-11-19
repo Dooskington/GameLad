@@ -2,15 +2,15 @@
 #include "GPU.hpp"
 
 /*
-FF40 - LCDC - LCD Control (R/W)
-Bit 7 - LCD Display Enable             (0=Off, 1=On)
-Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
-Bit 5 - Window Display Enable          (0=Off, 1=On)
-Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
-Bit 2 - OBJ (Sprite) Size              (0=8x8, 1=8x16)
-Bit 1 - OBJ (Sprite) Display Enable    (0=Off, 1=On)
-Bit 0 - BG Display (for CGB see below) (0=Off, 1=On)
+    FF40 - LCDC - LCD Control (R/W)
+    Bit 7 - LCD Display Enable             (0=Off, 1=On)
+    Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+    Bit 5 - Window Display Enable          (0=Off, 1=On)
+    Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+    Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
+    Bit 2 - OBJ (Sprite) Size              (0=8x8, 1=8x16)
+    Bit 1 - OBJ (Sprite) Display Enable    (0=Off, 1=On)
+    Bit 0 - BG Display (for CGB see below) (0=Off, 1=On)
 */
 #define IsLCDDisplayEnabled ISBITSET(m_LCDControl, 7)
 #define WindowTileMapDisplaySelect ISBITSET(m_LCDControl, 6)
@@ -22,17 +22,17 @@ Bit 0 - BG Display (for CGB see below) (0=Off, 1=On)
 #define BGDisplayEnable ISBITSET(m_LCDControl, 0)
 
 /*
-FF41 - STAT - LCDC Status (R/W)
-Bit 6 - LYC=LY Coincidence Interrupt (1=Enable) (Read/Write)
-Bit 5 - Mode 2 OAM Interrupt         (1=Enable) (Read/Write)
-Bit 4 - Mode 1 V-Blank Interrupt     (1=Enable) (Read/Write)
-Bit 3 - Mode 0 H-Blank Interrupt     (1=Enable) (Read/Write)
-Bit 2 - Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
-Bit 1-0 - Mode Flag       (Mode 0-3, see below) (Read Only)
-    0: During H-Blank
-    1: During V-Blank
-    2: During Searching OAM-RAM
-    3: During Transfering Data to LCD Driver
+    FF41 - STAT - LCDC Status (R/W)
+    Bit 6 - LYC=LY Coincidence Interrupt (1=Enable) (Read/Write)
+    Bit 5 - Mode 2 OAM Interrupt         (1=Enable) (Read/Write)
+    Bit 4 - Mode 1 V-Blank Interrupt     (1=Enable) (Read/Write)
+    Bit 3 - Mode 0 H-Blank Interrupt     (1=Enable) (Read/Write)
+    Bit 2 - Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
+    Bit 1-0 - Mode Flag       (Mode 0-3, see below) (Read Only)
+        0: During H-Blank
+        1: During V-Blank
+        2: During Searching OAM-RAM
+        3: During Transfering Data to LCD Driver
 */
 #define LYCoincidenceInterrupt ISBITSET(m_LCDControllerStatus , 6)
 #define OAMInterrupt ISBITSET(m_LCDControllerStatus , 5)
@@ -71,24 +71,24 @@ GPU::~GPU()
 }
 
 /*
-This method is called after the CPU executes an operation.  It tallies the number of cycles spent
-and ensures that the GPU switches between the various states listed below.  Essentially it loops
-through states 2, 3, and 0 until all 144 lines have been drawn. Then, it moves to state 1 where it
-cycles for 4560 cycles (10 lines @ 456 cycles per line). Finally, it starts over.
+    This method is called after the CPU executes an operation.  It tallies the number of cycles spent
+    and ensures that the GPU switches between the various states listed below.  Essentially it loops
+    through states 2, 3, and 0 until all 144 lines have been drawn. Then, it moves to state 1 where it
+    cycles for 4560 cycles (10 lines @ 456 cycles per line). Finally, it starts over.
 
-The following are typical when the display is enabled:
-Mode 2  2_____2_____2_____2_____2_____2___________________2____
-Mode 3  _33____33____33____33____33____33__________________3___
-Mode 0  ___000___000___000___000___000___000________________000
-Mode 1  ____________________________________11111111111111_____
+    The following are typical when the display is enabled:
+    Mode 2  2_____2_____2_____2_____2_____2___________________2____
+    Mode 3  _33____33____33____33____33____33__________________3___
+    Mode 0  ___000___000___000___000___000___000________________000
+    Mode 1  ____________________________________11111111111111_____
 
-The Mode Flag goes through the values 0, 2, and 3 at a cycle of about 109uS. 0 is present about
-48.6uS, 2 about 19uS, and 3 about 41uS. This is interrupted every 16.6ms by the VBlank (1).
-The mode flag stays set at 1 for about 1.08 ms.
+    The Mode Flag goes through the values 0, 2, and 3 at a cycle of about 109uS. 0 is present about
+    48.6uS, 2 about 19uS, and 3 about 41uS. This is interrupted every 16.6ms by the VBlank (1).
+    The mode flag stays set at 1 for about 1.08 ms.
 
-Mode 0 is present between 201-207 clks, 2 about 77-83 clks, and 3 about 169-175 clks. A complete
-cycle through these states takes 456 clks. VBlank lasts 4560 clks. A complete screen refresh occurs
-every 70224 clks.)
+    Mode 0 is present between 201-207 clks, 2 about 77-83 clks, and 3 about 169-175 clks. A complete
+    cycle through these states takes 456 clks. VBlank lasts 4560 clks. A complete screen refresh occurs
+    every 70224 clks.)
 */
 void GPU::Step(unsigned long cycles)
 {

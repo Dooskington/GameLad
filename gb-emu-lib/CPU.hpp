@@ -9,13 +9,13 @@
 #include "Timer.hpp"
 
 /*
-The Flag Register (lower 8bit of AF register)
-Bit  Name  Set Clr  Expl.
-7    zf    Z   NZ   Zero Flag
-6    n     -   -    Add/Sub-Flag (BCD)
-5    h     -   -    Half Carry Flag (BCD)
-4    cy    C   NC   Carry Flag
-3-0  -     -   -    Not used (always zero)
+    The Flag Register (lower 8bit of AF register)
+    Bit  Name  Set Clr  Expl.
+    7    zf    Z   NZ   Zero Flag
+    6    n     -   -    Add/Sub-Flag (BCD)
+    5    h     -   -    Half Carry Flag (BCD)
+    4    cy    C   NC   Carry Flag
+    3-0  -     -   -    Not used (always zero)
 */
 #define ZeroFlag        7
 #define SubtractFlag    6
@@ -57,7 +57,6 @@ private:
     void SetFlag(byte flag);
     void ClearFlag(byte flag);
     bool IsFlagSet(byte flag);
-    bool LookupAndCheckFlag(byte val);
 
     void PushByteToSP(byte val);
     void PushUShortToSP(ushort val);
