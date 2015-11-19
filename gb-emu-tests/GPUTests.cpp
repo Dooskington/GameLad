@@ -63,14 +63,14 @@ public:
         std::unique_ptr<GPU> spGPU = std::unique_ptr<GPU>(new GPU(spMMU.get(), nullptr));
 
         Assert::AreEqual(0, (int)spGPU->m_ModeClock);
-        Assert::AreEqual(ModeReadingOAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
+        Assert::AreEqual(ModeVBlank, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
         Assert::IsFalse(ISBITSET(spGPU->m_LCDControl, 7));
         spGPU->Step(4);
 
-        // LCD Is off, nothing happens:
+        // LCD is off, nothing happens:
         spGPU->Step(4);
-        Assert::AreEqual(0, (int)spGPU->m_ModeClock);
-        Assert::AreEqual(ModeReadingOAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
+        Assert::AreEqual(VBlankCycles, (int)spGPU->m_ModeClock);
+        Assert::AreEqual(ModeVBlank, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
         Assert::IsFalse(ISBITSET(spGPU->m_LCDControl, 7));
 
         // Endable LCD
