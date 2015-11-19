@@ -773,7 +773,7 @@ void CPU::Step()
 
     if (m_isHalted)
     {
-        NOP(0x00);
+        cycles = NOP(0x00);
 
         if (m_IFWhenHalted != m_MMU->ReadByte(0xFF0F))
         {
@@ -801,7 +801,6 @@ void CPU::Step()
         if (instruction != nullptr)
         {
             cycles = (this->*instruction)(opCode);
-            m_cycles += cycles;
             Trace t = { opCode, m_AF, m_BC, m_DE, m_HL, m_SP, m_PC };
             trace.push_back(t);
             if (trace.size() > 10)
@@ -815,6 +814,8 @@ void CPU::Step()
             HALT(0x76);
         }
     }
+
+    m_cycles += cycles;
 
     if (m_timer != nullptr)
     {

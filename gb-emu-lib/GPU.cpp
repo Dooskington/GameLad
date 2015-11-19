@@ -36,8 +36,8 @@
 */
 #define LYCoincidenceInterrupt ISBITSET(m_LCDControllerStatus , 6)
 #define OAMInterrupt ISBITSET(m_LCDControllerStatus , 5)
-//#define VBlankInterrupt ISBITSET(m_LCDControllerStatus , 4)
-//#define HBlankInterrupt ISBITSET(m_LCDControllerStatus , 3)
+#define VBlankInterrupt ISBITSET(m_LCDControllerStatus , 4)
+#define HBlankInterrupt ISBITSET(m_LCDControllerStatus , 3)
 #define SETMODE(mode) m_LCDControllerStatus = ((m_LCDControllerStatus & ~0x03) | mode)
 #define GETMODE (m_LCDControllerStatus & 0x03)
 
@@ -119,8 +119,7 @@ void GPU::Step(unsigned long cycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
             SETMODE(ModeHBlank);
-            // TODO: Why not use HBlankInterrupt
-            if (m_CPU != nullptr)
+            if (HBlankInterrupt && (m_CPU != nullptr))
             {
                 m_CPU->TriggerInterrupt(INT48);
             }
@@ -142,10 +141,14 @@ void GPU::Step(unsigned long cycles)
                 // Enter VBlank and render framebuffer
                 SETMODE(ModeVBlank);
                 RenderImage();
-                // TODO: Why not use VBlankInterrupt
+
                 if (m_CPU != nullptr)
                 {
                     m_CPU->TriggerInterrupt(INT40);
+                    if (VBlankInterrupt)
+                    {
+                        m_CPU->TriggerInterrupt(INT48);
+                    }
                 }
             }
             else
@@ -406,7 +409,7 @@ void GPU::RenderOBJScanline()
         int y = objY - 16;
 
         // Check if the sprite is on the current scanline
-        if ((y <= m_LCDControllerYCoordinate) && ((y + height) >= m_LCDControllerYCoordinate))
+        if ((y <= m_LCDControllerYCoordinate) && ((y + height) > m_LCDControllerYCoordinate))
         {
             byte objX = m_OAM[i + 1];               // The sprite X position, minus 8 (apparently)
             byte spriteTileNumber = m_OAM[i + 2];   // The tile or pattern number of the sprite
@@ -453,7 +456,10 @@ void GPU::RenderOBJScanline()
                 if (pixelX >= 0 && pixelX < 160)
                 {
                     byte bit = ISBITSET(spriteFlags, 5) ? indexX : 7 - indexX;
-                    byte pixelVal = ((high >> (bit - 1)) & 0x02) | ((low >> bit) & 0x01);
+                    //byte pixelVal = ((high >> (bit - 1)) & 0x02) | ((low >> bit) & 0x01);
+                    byte pixelVal = 0x00;
+                    if (ISBITSET(high, bit)) pixelVal |= 0x02;
+                    if (ISBITSET(low, bit)) pixelVal |= 0x01;
                     byte color = palette[pixelVal];
 
                     // Check if the pixel is transparent

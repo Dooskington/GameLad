@@ -22,8 +22,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\res\tests\01-read_timing.gb" />
     <None Include="..\res\tests\01-special.gb" />
     <None Include="..\res\tests\02-interrupts.gb" />
+    <None Include="..\res\tests\02-write_timing.gb" />
+    <None Include="..\res\tests\03-modify_timing.gb" />
     <None Include="..\res\tests\03-op sp,hl.gb" />
     <None Include="..\res\tests\04-op r,imm.gb" />
     <None Include="..\res\tests\05-op rp.gb" />
@@ -33,6 +36,8 @@
     <None Include="..\res\tests\09-op r,r.gb" />
     <None Include="..\res\tests\10-bit ops.gb" />
     <None Include="..\res\tests\11-op a,(hl).gb" />
+    <None Include="..\res\tests\mem_timing.gb" />
+    <None Include="..\res\tests\oam_bug.gb" />
     <None Include="packages.config" />
     <None Include="res\tests\cpu_instrs.gb" />
     <None Include="res\tests\instr_timing.gb" />

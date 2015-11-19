@@ -41,6 +41,21 @@
     <None Include="..\res\tests\11-op a,(hl).gb">
       <Filter>res\tests</Filter>
     </None>
+    <None Include="..\res\tests\01-read_timing.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\02-write_timing.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\03-modify_timing.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\mem_timing.gb">
+      <Filter>res\tests</Filter>
+    </None>
+    <None Include="..\res\tests\oam_bug.gb">
+      <Filter>res\tests</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="res">
