@@ -406,7 +406,7 @@ void GPU::RenderOBJScanline()
         int y = objY - 16;
 
         // Check if the sprite is on the current scanline
-        if ((y <= m_LCDControllerYCoordinate) && ((y + height) >= m_LCDControllerYCoordinate))
+        if ((y <= m_LCDControllerYCoordinate) && ((y + height) > m_LCDControllerYCoordinate))
         {
             byte objX = m_OAM[i + 1];               // The sprite X position, minus 8 (apparently)
             byte spriteTileNumber = m_OAM[i + 2];   // The tile or pattern number of the sprite
@@ -453,7 +453,10 @@ void GPU::RenderOBJScanline()
                 if (pixelX >= 0 && pixelX < 160)
                 {
                     byte bit = ISBITSET(spriteFlags, 5) ? indexX : 7 - indexX;
-                    byte pixelVal = ((high >> (bit - 1)) & 0x02) | ((low >> bit) & 0x01);
+                    //byte pixelVal = ((high >> (bit - 1)) & 0x02) | ((low >> bit) & 0x01);
+                    byte pixelVal = 0x00;
+                    if (ISBITSET(high, bit)) pixelVal |= 0x02;
+                    if (ISBITSET(low, bit)) pixelVal |= 0x01;
                     byte color = palette[pixelVal];
 
                     // Check if the pixel is transparent
