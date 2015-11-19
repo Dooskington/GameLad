@@ -119,7 +119,7 @@ void GPU::Step(unsigned long cycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
             SETMODE(ModeHBlank);
-            // TODO: Why not use HBlankInterrupt 
+            // TODO: Why not use HBlankInterrupt
             if (m_CPU != nullptr)
             {
                 m_CPU->TriggerInterrupt(INT48);
@@ -412,7 +412,7 @@ void GPU::RenderOBJScanline()
             byte spriteTileNumber = m_OAM[i + 2];   // The tile or pattern number of the sprite
             byte spriteFlags = m_OAM[i + 3];        // The sprites render flags (priority, flip, palette)
             byte spriteBytes = 16;
-            
+
             if (spriteSize == 0x10)
             {
                 spriteTileNumber &= 0xFE;
@@ -438,7 +438,7 @@ void GPU::RenderOBJScanline()
             // number to the location of the tile data.
             // If the spriteSize == 0x00, ignore the lower bit of the tile number.
             ushort tilePointer = tileData + (spriteTileNumber * spriteBytes);
-            byte tileYOffset = m_LCDControllerYCoordinate - y;
+            byte tileYOffset = ISBITSET(spriteFlags, 6) ? (7 - (m_LCDControllerYCoordinate - y)) : (m_LCDControllerYCoordinate - y);
             tilePointer += (tileYOffset * 2);
 
             // The data for this line of the sprite, 8 pixels
