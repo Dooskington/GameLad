@@ -445,12 +445,6 @@ void GPU::RenderOBJScanline()
             byte low = ReadByte(tilePointer);
             byte high = ReadByte((ushort)(tilePointer + 1));
 
-            if (ISBITSET(spriteFlags, 6))
-            {
-                // TODO: Y AXIS FLIP
-                Logger::Log("Sprite is vertically flipped!");
-            }
-
             // Loop through all 8 pixels of this line
             for (int indexX = 0; indexX < 8; indexX++)
             {
