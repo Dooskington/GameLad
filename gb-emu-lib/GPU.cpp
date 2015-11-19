@@ -445,7 +445,11 @@ void GPU::RenderOBJScanline()
             byte low = ReadByte(tilePointer);
             byte high = ReadByte((ushort)(tilePointer + 1));
 
-            // TODO: If flipped on y axis, use opposite side of tile
+            if (ISBITSET(spriteFlags, 6))
+            {
+                // TODO: Y AXIS FLIP
+                Logger::Log("Sprite is vertically flipped!");
+            }
 
             // Loop through all 8 pixels of this line
             for (int indexX = 0; indexX < 8; indexX++)
@@ -454,8 +458,7 @@ void GPU::RenderOBJScanline()
                 // Check if the pixel is still on screen
                 if (pixelX >= 0 && pixelX < 160)
                 {
-                    // TODO: If flipped on x axis, read pixels in reverse
-                    byte bit = 7 - indexX;
+                    byte bit = ISBITSET(spriteFlags, 5) ? indexX : 7 - indexX;
                     byte pixelVal = ((high >> (bit - 1)) & 0x02) | ((low >> bit) & 0x01);
                     byte color = palette[pixelVal];
 
