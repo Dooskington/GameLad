@@ -63,6 +63,7 @@ private:
     ICPU* m_CPU;
     byte m_VRAM[0x1FFF + 1];
     byte m_OAM[0x009F + 1];
+    byte m_testOAM[0x009F + 1];
     byte m_DisplayPixels[160 * 144];
 
     unsigned long m_ModeClock;

@@ -398,10 +398,11 @@ void GPU::RenderOBJScanline()
         byte spriteTileNumber = m_OAM[i + 2];   // The tile or pattern number of the sprite
         byte spriteFlags = m_OAM[i + 3];        // The sprites render flags (priority, flip, palette)
 
+        byte spriteSize = ISBITSET(LCDControl, 2) ? 0x01 : 0x00; // 0x00 = 8x8, 0x01 = 8x16
         byte paletteNumber = ISBITSET(spriteFlags, 4) ? 0x01 : 0x00;
 
         // Check if the sprite is on the current scanline
-        if (spriteY <= m_LCDControllerYCoordinate && (spriteY + 16) > m_LCDControllerYCoordinate)
+        if ((spriteY - 16) <= m_LCDControllerYCoordinate && (spriteY) > m_LCDControllerYCoordinate)
         {
             const ushort tileNumberMap = 0x9800;
             const ushort tileData = 0x8000;
@@ -409,22 +410,25 @@ void GPU::RenderOBJScanline()
             // Create the palette to use for this sprite
             byte palette[]
             {
-                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data) & 0x03],
-                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data >> 2) & 0x03],
-                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data >> 4) & 0x03],
-                GBColors[((paletteNumber == 0x00) ? m_ObjectPalette0Data : m_ObjectPalette1Data >> 6) & 0x03],
+                GBColors[paletteNumber ? (m_ObjectPalette0Data & 0x03) : (m_ObjectPalette1Data & 0x03)],
+                GBColors[paletteNumber ? (m_ObjectPalette0Data >> 2 & 0x03) : (m_ObjectPalette1Data >> 2 & 0x03)],
+                GBColors[paletteNumber ? (m_ObjectPalette0Data >> 4 & 0x03) : (m_ObjectPalette1Data >> 4 & 0x03)],
+                GBColors[paletteNumber ? (m_ObjectPalette0Data >> 6 & 0x03) : (m_ObjectPalette1Data >> 6 & 0x03)]
             };
 
             // The memory location of this sprites tile can be found by adding the sprites tile
             // number to the location of the tile data.
-            ushort tilePointer = (ushort)tileData + spriteTileNumber;
+            // If the spriteSize == 0x00, ignore the lower bit of the tile number.
+            ushort tilePointer = (ushort)tileData + ((spriteSize == 0x01) ? spriteTileNumber : (spriteTileNumber >> 4));
+            byte tileYOffset = m_LCDControllerYCoordinate - spriteY;
+            tilePointer += (tileYOffset * 2);
 
             // The data for this line of the sprite, 8 pixels
-            byte b1 = ReadByte(tilePointer);
-            byte b2 = ReadByte(tilePointer + 1);
-            ushort line = (ushort)(b2 << 8) | b1;
-            
-            // TODO: FLIP
+            byte high = ReadByte(tilePointer);
+            byte low = ReadByte((ushort)(tilePointer + 1));
+            ushort line = (ushort)((high << 8) | low);
+
+            // TODO: If flipped on y axis, use opposite side of tile
 
             // Loop through all 8 pixels of this line
             for (int x = 0; x < 8; x++)
@@ -432,9 +436,17 @@ void GPU::RenderOBJScanline()
                 // Check if the pixel is still on screen
                 if ((spriteX + x) >= 0 && (spriteX + x) < 160)
                 {
+                    // TODO: If flipped on x axis, read pixels in reverse
+                    byte bit = 7 - x;
+                    byte pixelVal = ((high >> (bit - 1)) & 0x02) | ((low >> bit) & 0x01);
+                    byte color = palette[pixelVal];
+
                     // Check if the pixel is transparent
-                    //if()
-                    // TODO: FINISH THIS
+                    if (color != 0x00)
+                    {
+                        int index = (m_LCDControllerYCoordinate * 160) + ((spriteX - 8) + x);
+                        m_DisplayPixels[index] = color;
+                    }
                 }
             }
         }
