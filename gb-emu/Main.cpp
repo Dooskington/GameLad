@@ -186,8 +186,8 @@ int main(int argc, char** argv)
     //std::string romPath = "res/tests/10-bit ops.gb";            // PASSED
     //std::string romPath = "res/tests/11-op a,(hl).gb";          // PASSED
     //std::string romPath = "res/games/Pokemon - Blue Version.gb";
-    //std::string romPath = "res/games/Tetris (World).gb";
-    std::string romPath = "res/games/Super Mario Land (World).gb";
+    std::string romPath = "res/games/Tetris (World).gb";
+    //std::string romPath = "res/games/Super Mario Land (World).gb";
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
     //std::string romPath = "F:\\Emulators\\Roms\\GBC\\Tetris 2 (U).gb";
