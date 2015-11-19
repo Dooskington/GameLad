@@ -133,8 +133,6 @@ public:
 
             if (opTimes[opCode] == condOpTimes[opCode])
             {
-                if ((int)opTimes[opCode] * 4 != (int)spCPU->m_cycles)
-                    __debugbreak();
                 Assert::AreEqual((int)opTimes[opCode] * 4, (int)spCPU->m_cycles);
             }
             else
@@ -160,8 +158,6 @@ public:
 
             if (opTimes[opCode] == condOpTimes[opCode])
             {
-                if ((int)opTimes[opCode] * 4 != (int)spCPU->m_cycles)
-                    __debugbreak();
                 Assert::AreEqual((int)opTimes[opCode] * 4, (int)spCPU->m_cycles);
             }
             else
