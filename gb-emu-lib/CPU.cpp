@@ -817,16 +817,16 @@ void CPU::Step()
 
     m_cycles += cycles;
 
-    if (m_timer != nullptr)
-    {
-        // Step the timer by the # of elapsed cycles
-        m_timer->Step(cycles);
-    }
-
     if (m_GPU != nullptr)
     {
         // Step GPU by # of elapsed cycles
         m_GPU->Step(cycles);
+    }
+
+    if (m_timer != nullptr)
+    {
+        // Step the timer by the # of elapsed cycles
+        m_timer->Step(cycles);
     }
 
     if (m_APU != nullptr)

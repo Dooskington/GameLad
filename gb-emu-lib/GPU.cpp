@@ -62,7 +62,7 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     m_ObjectPalette0Data(0x00),
     m_ObjectPalette1Data(0x00)
 {
-    SETMODE(ModeReadingOAM);
+    SETMODE(ModeVBlank);
     memset(m_DisplayPixels, 0x00, ARRAYSIZE(m_DisplayPixels));
 }
 
@@ -95,9 +95,9 @@ void GPU::Step(unsigned long cycles)
     // If the LCD screen is off, then reset all values and exit early
     if (!IsLCDDisplayEnabled)
     {
-        m_LCDControllerYCoordinate = 0x00;
-        m_ModeClock = 0;
-        SETMODE(ModeReadingOAM);
+        m_LCDControllerYCoordinate = 153;
+        m_ModeClock = VBlankCycles;
+        SETMODE(ModeVBlank);
         return;
     }
 
@@ -180,7 +180,7 @@ void GPU::Step(unsigned long cycles)
     {
         m_LCDControllerStatus = SETBIT(m_LCDControllerStatus, 2);
 
-        if (m_CPU != nullptr)
+        if (LYCoincidenceInterrupt && (m_CPU != nullptr))
         {
             m_CPU->TriggerInterrupt(INT48);
         }
@@ -202,11 +202,23 @@ byte GPU::ReadByte(const ushort& address)
     if (address >= 0x8000 && address <= 0x9FFF)
     {
         // CONSIDER: Test mode to see if available
+        if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAMVRAM))
+        {
+            //Logger::Log("GPU:ReadByte cannot access VRAM.");
+            return 0x00;
+        }
+
         return m_VRAM[address - 0x8000];
     }
     else if (address >= 0xFE00 && address <= 0xFE9F)
     {
         // CONSIDER: Test mode to see if available
+        if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAM || GETMODE == ModeReadingOAMVRAM))
+        {
+            //Logger::Log("GPU:ReadByte cannot access OAM.");
+            return 0x00;
+        }
+
         return m_OAM[address - 0xFE00];
     }
 
@@ -247,15 +259,24 @@ bool GPU::WriteByte(const ushort& address, const byte val)
 {
     if (address >= 0x8000 && address <= 0x9FFF)
     {
-        // CONSIDER: Test mode to see if available
+        if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAMVRAM))
+        {
+            //Logger::Log("GPU:WriteByte cannot access VRAM.");
+            return false;
+        }
+
         m_VRAM[address - 0x8000] = val;
         return true;
     }
     else if (address >= 0xFE00 && address <= 0xFE9F)
     {
-        // CONSIDER: Test mode to see if available
+        if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAM || GETMODE == ModeReadingOAMVRAM))
+        {
+            //Logger::Log("GPU:WriteByte cannot access OAM.");
+            return false;
+        }
+
         m_OAM[address - 0xFE00] = val;
-        //Logger::Log("0x%02X", val);
         return true;
     }
 
@@ -324,7 +345,7 @@ void GPU::LaunchDMATransfer(const byte address)
     ushort source = (static_cast<ushort>(address) * 0x0100);
     for (byte offset = 0x00; offset <= 0x9F; offset++)
     {
-        m_MMU->WriteByte(0xFE00 | offset, m_MMU->ReadByte(source | offset));
+        m_OAM[offset] = m_MMU->ReadByte(source | offset);
     }
 }
 
