@@ -17,7 +17,7 @@
 11 : 16384 Hz(~16780 Hz SGB)    (256 cycles)
 */
 
-const ushort FrequencyCounts[]
+const int FrequencyCounts[]
 {
     1024, 16, 64, 256
 };
@@ -31,7 +31,7 @@ Timer::Counter::Counter(byte frequency) :
     m_IsRunning(true),
     m_Value(0x00),
     m_Frequency(frequency),
-    m_Cycles(0x00)
+    m_Cycles(FrequencyCounts[frequency])
 {
 }
 
@@ -43,11 +43,11 @@ bool Timer::Counter::Step(unsigned int cycles)
     }
 
     // Count cycles until we reach the correct number for this timer frequency
-    m_Cycles += cycles;
-    if (m_Cycles >= FrequencyCounts[m_Frequency])
+    m_Cycles -= cycles;
+    while (m_Cycles <= 0)
     {
         // Subtract cycles and increment value
-        m_Cycles -= FrequencyCounts[m_Frequency];
+        m_Cycles += FrequencyCounts[m_Frequency];
         m_Value++;
         if (m_Value == 0x00)
         {
@@ -72,7 +72,7 @@ void Timer::Counter::SetValue(byte value)
 void Timer::Counter::SetFrequency(byte frequency)
 {
     m_Frequency = frequency;
-    m_Cycles = 0x00;
+    m_Cycles = FrequencyCounts[frequency];
 }
 
 void Timer::Counter::Start()

@@ -19,7 +19,7 @@ private:
         bool m_IsRunning;
         byte m_Value;
         byte m_Frequency;
-        ushort m_Cycles;
+        int m_Cycles;
     };
 
 public:

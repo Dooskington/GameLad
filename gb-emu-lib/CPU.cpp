@@ -772,10 +772,7 @@ void CPU::SetVSyncCallback(void(*pCallback)())
 
 void CPU::Step()
 {
-    unsigned long preCycles = m_cycles;
-
-    // Let's handle interrupts before we do anything
-    HandleInterrupts();
+    unsigned long cycles = 0x00;
 
     if (m_isHalted)
     {
@@ -806,7 +803,8 @@ void CPU::Step()
 
         if (instruction != nullptr)
         {
-            (this->*instruction)(opCode);
+            cycles = (this->*instruction)(opCode);
+            m_cycles += cycles;
             Trace t = { opCode, m_AF, m_BC, m_DE, m_HL, m_SP, m_PC };
             trace.push_back(t);
             if (trace.size() > 10)
@@ -821,25 +819,25 @@ void CPU::Step()
         }
     }
 
-    unsigned long elapsedCycles = m_cycles - preCycles;
+    if (m_timer != nullptr)
+    {
+        // Step the timer by the # of elapsed cycles
+        m_timer->Step(cycles);
+    }
 
     if (m_GPU != nullptr)
     {
         // Step GPU by # of elapsed cycles
-        m_GPU->Step(elapsedCycles);
-    }
-
-    if (m_timer != nullptr)
-    {
-        // Step the timer by the # of elapsed cycles
-        m_timer->Step(elapsedCycles);
+        m_GPU->Step(cycles);
     }
 
     if (m_APU != nullptr)
     {
         // Step the audio processing unit by the # of elapsed cycles
-        m_APU->Step(elapsedCycles);
+        m_APU->Step(cycles);
     }
+
+    HandleInterrupts();
 }
 
 byte CPU::GetHighByte(ushort dest)
@@ -1115,11 +1113,10 @@ void CPU::HandleInterrupts()
 */
 
 // 0x00 (NOP)
-void CPU::NOP(const byte& opCode)
+unsigned long CPU::NOP(const byte& opCode)
 {
-    m_cycles += 4;
-
     // No flags affected
+    return 4;
 }
 
 /*
@@ -1133,10 +1130,10 @@ the contents of the register pair BC.
 
 Flags affected(znhc): ----
 */
-void CPU::LD_BC_A(const byte& opCode)
+unsigned long CPU::LD_BC_A(const byte& opCode)
 {
     m_MMU->WriteByte(m_BC, GetHighByte(m_AF));
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1150,7 +1147,7 @@ is copied to the carry flag and also to bit 0.
 
 Flags affected(znhc): 000c
 */
-void CPU::RLCA(const byte& opCode)
+unsigned long CPU::RLCA(const byte& opCode)
 {
     byte r = GetHighByte(m_AF);
 
@@ -1170,7 +1167,7 @@ void CPU::RLCA(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1184,13 +1181,13 @@ void CPU::RLCA(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDrn(const byte& opCode)
+unsigned long CPU::LDrn(const byte& opCode)
 {
     byte n = ReadBytePC();
     byte* r = GetByteRegister(opCode >> 3);
     (*r) = n;
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1204,13 +1201,13 @@ void CPU::LDrn(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDrR(const byte& opCode)
+unsigned long CPU::LDrR(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode >> 3);
     byte* R = GetByteRegister(opCode);
     (*r) = *R;
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1224,13 +1221,13 @@ void CPU::LDrR(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDr_HL_(const byte& opCode)
+unsigned long CPU::LDr_HL_(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode >> 3);
 
     (*r) = m_MMU->ReadByte(m_HL);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1245,12 +1242,12 @@ void CPU::LDr_HL_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LD_HL_r(const byte& opCode)
+unsigned long CPU::LD_HL_r(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     m_MMU->WriteByte(m_HL, (*r)); // Load r into the address pointed at by HL.
 
-    m_cycles += 8;
+    return 8;
 }
 
 
@@ -1265,13 +1262,13 @@ void CPU::LD_HL_r(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDrrnn(const byte& opCode)
+unsigned long CPU::LDrrnn(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, false);
     ushort nn = ReadUShortPC(); // Read nn
     (*rr) = nn;
 
-    m_cycles += 12;
+    return 12;
 }
 
 /*
@@ -1285,7 +1282,7 @@ void CPU::LDrrnn(const byte& opCode)
     Flags affected(znhc): z0h-
     Affects Z, Clears N, affects H
 */
-void CPU::INCr(const byte& opCode)
+unsigned long CPU::INCr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode >> 3);
     bool isBit3Before = ISBITSET(*r, 3);
@@ -1312,7 +1309,7 @@ void CPU::INCr(const byte& opCode)
         ClearFlag(HalfCarryFlag);
     }
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1329,7 +1326,7 @@ CALL cc, nn
 
 Flags affected(znhc): ----
 */
-void CPU::CALLccnn(const byte& opCode)
+unsigned long CPU::CALLccnn(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
@@ -1352,13 +1349,13 @@ void CPU::CALLccnn(const byte& opCode)
 
     if (check)
     {
-        m_cycles += 24;
         PushUShortToSP(m_PC);
         m_PC = nn;
+        return 24;
     }
     else
     {
-        m_cycles += 12;
+        return 12;
     }
 }
 
@@ -1376,7 +1373,7 @@ RET cc
 
 Flags affected(znhc): ----
 */
-void CPU::RETcc(const byte& opCode)
+unsigned long CPU::RETcc(const byte& opCode)
 {
     bool check = false;
     switch ((opCode >> 3) & 0x03)
@@ -1397,12 +1394,12 @@ void CPU::RETcc(const byte& opCode)
 
     if (check)
     {
-        m_cycles += 20;
         m_PC = PopUShort();
+        return 20;
     }
     else
     {
-        m_cycles += 8;
+        return 8;
     }
 }
 
@@ -1416,7 +1413,7 @@ void CPU::RETcc(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LD_nn_SP(const byte& opCode)
+unsigned long CPU::LD_nn_SP(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
@@ -1424,7 +1421,7 @@ void CPU::LD_nn_SP(const byte& opCode)
     m_MMU->WriteByte(nn + 1, GetHighByte(m_SP));
     m_MMU->WriteByte(nn, GetLowByte(m_SP));
 
-    m_cycles += 20;
+    return 20;
 }
 
 /*
@@ -1439,13 +1436,13 @@ of the register pair HL and the result is stored in HL.
 Flags affected(znhc): -0hc
 Clears N, affects H, affects C
 */
-void CPU::ADDHLss(const byte& opCode)
+unsigned long CPU::ADDHLss(const byte& opCode)
 {
     ushort* ss = GetUShortRegister(opCode >> 4, false);
 
     m_HL = AddUShort(m_HL, *ss);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1456,7 +1453,7 @@ void CPU::ADDHLss(const byte& opCode)
 
     Flags affected(znhc): 00hc
 */
-void CPU::ADDSPdd(const byte& opCode)
+unsigned long CPU::ADDSPdd(const byte& opCode)
 {
     sbyte arg = static_cast<sbyte>(ReadBytePC());
     ushort result = (m_SP + arg);
@@ -1468,7 +1465,7 @@ void CPU::ADDSPdd(const byte& opCode)
 
     m_SP = result;
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -1485,7 +1482,7 @@ JP cc, nn
 
 Flags affected(znhc): ----
 */
-void CPU::JPccnn(const byte& opCode)
+unsigned long CPU::JPccnn(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
@@ -1508,12 +1505,12 @@ void CPU::JPccnn(const byte& opCode)
 
     if (check)
     {
-        m_cycles += 16;
         m_PC = nn;
+        return 16;
     }
     else
     {
-        m_cycles += 12;
+        return 12;
     }
 }
 
@@ -1529,14 +1526,14 @@ void CPU::JPccnn(const byte& opCode)
 
     Flags affected(znhc): z0hc
 */
-void CPU::ADDAr(const byte& opCode)
+unsigned long CPU::ADDAr(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
     byte* r = GetByteRegister(opCode);
 
     SetHighByte(&m_AF, AddByte(A, *r));
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1551,11 +1548,11 @@ void CPU::ADDAr(const byte& opCode)
 
     Flags affected(znhc): z0hc
 */
-void CPU::ADCAr(const byte& opCode)
+unsigned long CPU::ADCAr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     ADC(*r);
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1572,7 +1569,7 @@ void CPU::ADCAr(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::JRcce(const byte& opCode)
+unsigned long CPU::JRcce(const byte& opCode)
 {
     sbyte arg = static_cast<sbyte>(ReadBytePC());
 
@@ -1596,11 +1593,11 @@ void CPU::JRcce(const byte& opCode)
     if (check)
     {
         m_PC += arg;
-        m_cycles += 12;
+        return 12;
     }
     else
     {
-        m_cycles += 8;
+        return 8;
     }
 }
 
@@ -1621,13 +1618,13 @@ RST
 
 Flags affected(znhc): ----
 */
-void CPU::RSTn(const byte& opCode)
+unsigned long CPU::RSTn(const byte& opCode)
 {
     byte t = ((opCode >> 3) & 0x07);
 
     PushUShortToSP(m_PC);
     m_PC = (ushort)(t * 0x08);
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -1642,7 +1639,7 @@ void CPU::RSTn(const byte& opCode)
 
     Flags affected(znhc): z010
 */
-void CPU::ANDr(const byte& opCode)
+unsigned long CPU::ANDr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     byte result = (*r) & GetHighByte(m_AF);
@@ -1661,7 +1658,7 @@ void CPU::ANDr(const byte& opCode)
     SetFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1676,7 +1673,7 @@ void CPU::ANDr(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::CPr(const byte& opCode)
+unsigned long CPU::CPr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     byte A = GetHighByte(m_AF);
@@ -1687,7 +1684,7 @@ void CPU::CPr(const byte& opCode)
     ((A & 0xFF) < ((*r) & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
     ((A & 0x0F) < ((*r) & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1700,12 +1697,12 @@ void CPU::CPr(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::INCrr(const byte& opCode)
+unsigned long CPU::INCrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, false);
     *rr += 1;
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1718,12 +1715,12 @@ DEC rr
 
 Flags affected(znhc): ----
 */
-void CPU::DECrr(const byte& opCode)
+unsigned long CPU::DECrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, false);
     *rr -= 1;
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1739,7 +1736,7 @@ void CPU::DECrr(const byte& opCode)
     Flags affected(znhc): z000
     Affects Z, clears n, clears h, clears c
 */
-void CPU::XORr(const byte& opCode)
+unsigned long CPU::XORr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     SetHighByte(&m_AF, *r ^ GetHighByte(m_AF));
@@ -1758,7 +1755,7 @@ void CPU::XORr(const byte& opCode)
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1772,7 +1769,7 @@ and the byte contained in the accumulator. The result is stored in the accumulat
 Flags affected(znhc): z000
 Affects Z, clears n, clears h, clears c
 */
-void CPU::XOR_HL_(const byte& opCode)
+unsigned long CPU::XOR_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
     SetHighByte(&m_AF, r ^ GetHighByte(m_AF));
@@ -1791,7 +1788,7 @@ void CPU::XOR_HL_(const byte& opCode)
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1807,7 +1804,7 @@ Register r can be A, B, C, D, E, H, or L.
 Flags affected(znhc): z000
 Affects Z, clears n, clears h, clears c
 */
-void CPU::ORr(const byte& opCode)
+unsigned long CPU::ORr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     SetHighByte(&m_AF, *r | GetHighByte(m_AF));
@@ -1826,7 +1823,7 @@ void CPU::ORr(const byte& opCode)
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1840,7 +1837,7 @@ and the byte contained in the accumulator. The result is stored in the accumulat
 Flags affected(znhc): z000
 Affects Z, clears n, clears h, clears c
 */
-void CPU::OR_HL_(const byte& opCode)
+unsigned long CPU::OR_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
     SetHighByte(&m_AF, r | GetHighByte(m_AF));
@@ -1859,7 +1856,7 @@ void CPU::OR_HL_(const byte& opCode)
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1877,12 +1874,12 @@ void CPU::OR_HL_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::PUSHrr(const byte& opCode)
+unsigned long CPU::PUSHrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, true);
     PushUShortToSP(*rr);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -1897,7 +1894,7 @@ in the accumulator. The resutl is stored in the accumulator.
 Flags affected(znhc): z010
 Affects Z, clears n, sets h, clears c
 */
-void CPU::ANDn(const byte& opCode)
+unsigned long CPU::ANDn(const byte& opCode)
 {
     byte n = ReadBytePC();
 
@@ -1909,7 +1906,7 @@ void CPU::ANDn(const byte& opCode)
     SetFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -1921,10 +1918,10 @@ The PC is loaded with the value of HL.
 
 Flags affected(znhc): ----
 */
-void CPU::JP_HL_(const byte& opCode)
+unsigned long CPU::JP_HL_(const byte& opCode)
 {
     m_PC = m_HL;
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1942,7 +1939,7 @@ void CPU::JP_HL_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::POPrr(const byte& opCode)
+unsigned long CPU::POPrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, true);
     (*rr) = PopUShort();
@@ -1952,7 +1949,7 @@ void CPU::POPrr(const byte& opCode)
         (*rr) &= 0xFFF0;
     }
 
-    m_cycles += 12;
+    return 12;
 }
 
 /*
@@ -1965,7 +1962,7 @@ void CPU::POPrr(const byte& opCode)
 
     Flags affected(znhc): z1h-
 */
-void CPU::DECr(const byte& opCode)
+unsigned long CPU::DECr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode >> 3);
     byte calc = (*r - 1);
@@ -1984,7 +1981,7 @@ void CPU::DECr(const byte& opCode)
 
     *r = calc;
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -1996,7 +1993,7 @@ void CPU::DECr(const byte& opCode)
 
     Flags affected(znhc): z0h-
 */
-void CPU::INC_HL_(const byte& opCode)
+unsigned long CPU::INC_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
     bool isBit3Before = ISBITSET(HL, 3);
@@ -2025,7 +2022,7 @@ void CPU::INC_HL_(const byte& opCode)
         ClearFlag(HalfCarryFlag);
     }
 
-    m_cycles += 12;
+    return 12;
 }
 
 /*
@@ -2037,7 +2034,7 @@ void CPU::INC_HL_(const byte& opCode)
 
     Flags affected(znhc): z1h-
 */
-void CPU::DEC_HL_(const byte& opCode)
+unsigned long CPU::DEC_HL_(const byte& opCode)
 {
     byte val = m_MMU->ReadByte(m_HL);
     byte calc = (val - 1);
@@ -2056,7 +2053,7 @@ void CPU::DEC_HL_(const byte& opCode)
 
     m_MMU->WriteByte(m_HL, calc);
 
-    m_cycles += 12;
+    return 12;
 }
 
 /*
@@ -2070,12 +2067,12 @@ void CPU::DEC_HL_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LD_HL_n(const byte& opCode)
+unsigned long CPU::LD_HL_n(const byte& opCode)
 {
     byte n = ReadBytePC();
     m_MMU->WriteByte(m_HL, n); // Load n into the address pointed at by HL.
 
-    m_cycles += 12;
+    return 12;
 }
 
 /*
@@ -2088,13 +2085,13 @@ Sets the carry flag.
 Flags affected(znhc): -001
 Clears N, Clears h, Sets c
 */
-void CPU::SCF(const byte& opCode)
+unsigned long CPU::SCF(const byte& opCode)
 {
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     SetFlag(CarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -2106,13 +2103,13 @@ void CPU::SCF(const byte& opCode)
 
     Flags affected(znhc): -00c
 */
-void CPU::CCF(const byte& opCode)
+unsigned long CPU::CCF(const byte& opCode)
 {
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     IsFlagSet(CarryFlag) ? ClearFlag(CarryFlag) : SetFlag(CarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -2126,7 +2123,7 @@ void CPU::CCF(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::SUBr(const byte& opCode)
+unsigned long CPU::SUBr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     byte A = GetHighByte(m_AF);
@@ -2138,7 +2135,7 @@ void CPU::SUBr(const byte& opCode)
     ((A & 0x0F) < ((*r) & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((A & 0xFF) < ((*r) & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -2152,18 +2149,18 @@ void CPU::SUBr(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::SBCAr(const byte& opCode)
+unsigned long CPU::SBCAr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
     SBC(*r);
-    m_cycles += 4;
+    return 4;
 }
 
 // 0x10 (STOP)
-void CPU::STOP(const byte& opCode)
+unsigned long CPU::STOP(const byte& opCode)
 {
     // For the emulator, these are effectively the same thing
-    HALT(opCode);
+    return HALT(opCode);
 }
 
 /*
@@ -2177,14 +2174,14 @@ the contents of the register pair DE.
 
 Flags affected(znhc): ----
 */
-void CPU::LD_DE_A(const byte& opCode)
+unsigned long CPU::LD_DE_A(const byte& opCode)
 {
     m_MMU->WriteByte(m_DE, GetHighByte(m_AF));
-    m_cycles += 8;
+    return 8;
 }
 
 // 0x17 (RL A)
-void CPU::RLA(const byte& opCode)
+unsigned long CPU::RLA(const byte& opCode)
 {
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
@@ -2203,7 +2200,7 @@ void CPU::RLA(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -2216,22 +2213,22 @@ void CPU::RLA(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::JRe(const byte& opCode)
+unsigned long CPU::JRe(const byte& opCode)
 {
     sbyte e = static_cast<sbyte>(ReadBytePC());
 
     m_PC += e;
-    m_cycles += 12;
+    return 12;
 }
 
 // 0x1A (LD A, (DE))
-void CPU::LDA_DE_(const byte& opCode)
+unsigned long CPU::LDA_DE_(const byte& opCode)
 {
     // loads the value stored at the address pointed to by DE
     // (currently 0x0104) and stores in the A register
     byte val = m_MMU->ReadByte(m_DE);
     SetHighByte(&m_AF, val);
-    m_cycles += 8;
+    return 8;
 
     // No flags affected
 }
@@ -2245,12 +2242,12 @@ void CPU::LDA_DE_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDA_BC_(const byte& opCode)
+unsigned long CPU::LDA_BC_(const byte& opCode)
 {
     byte val = m_MMU->ReadByte(m_BC);
     SetHighByte(&m_AF, val);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2263,7 +2260,7 @@ flag and also to bit 7.
 
 Flags affected(znhc): 000c
 */
-void CPU::RRCA(const byte& opCode)
+unsigned long CPU::RRCA(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
     bool carry = ISBITSET(A, 0);
@@ -2287,11 +2284,11 @@ void CPU::RRCA(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 // 0x17 (RR A)
-void CPU::RRA(const byte& opCode)
+unsigned long CPU::RRA(const byte& opCode)
 {
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
@@ -2310,7 +2307,7 @@ void CPU::RRA(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -2323,13 +2320,13 @@ void CPU::RRA(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDI_HL_A(const byte& opCode)
+unsigned long CPU::LDI_HL_A(const byte& opCode)
 {
     m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL++;
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2361,7 +2358,7 @@ NEG     1           6-7     1           6-F     9A      1*
 Flags affected(znhc): z-0x
 Affected Z, Cleared H, Affected C
 */
-void CPU::DAA(const byte& opCode)
+unsigned long CPU::DAA(const byte& opCode)
 {
     int aVal = GetHighByte(m_AF);
 
@@ -2402,7 +2399,7 @@ void CPU::DAA(const byte& opCode)
     (aVal == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     SetHighByte(&m_AF, (byte)aVal);
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -2415,12 +2412,12 @@ void CPU::DAA(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDIA_HL_(const byte& opCode)
+unsigned long CPU::LDIA_HL_(const byte& opCode)
 {
     SetHighByte(&m_AF, m_MMU->ReadByte(m_HL));
     m_HL++;
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2432,7 +2429,7 @@ void CPU::LDIA_HL_(const byte& opCode)
 
     Flags affected(znhc): -11-
 */
-void CPU::CPL(const byte& opCode)
+unsigned long CPU::CPL(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
     byte result = A ^ 0xFF;
@@ -2441,16 +2438,16 @@ void CPU::CPL(const byte& opCode)
     SetFlag(SubtractFlag);
     SetFlag(HalfCarryFlag);
 
-    m_cycles += 4;
+    return 4;
 }
 
 // 0x32 (LDD (HL), A)
-void CPU::LDD_HL_A(const byte& opCode)
+unsigned long CPU::LDD_HL_A(const byte& opCode)
 {
     m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL--;
-    m_cycles += 8;
+    return 8;
 
     // No flags affected
 }
@@ -2465,21 +2462,21 @@ void CPU::LDD_HL_A(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDDA_HL_(const byte& opCode)
+unsigned long CPU::LDDA_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
     SetHighByte(&m_AF, HL);
 
     m_HL--;
-    m_cycles += 8;
+    return 8;
 }
 
 // 0x76 (HALT)
-void CPU::HALT(const byte& opCode)
+unsigned long CPU::HALT(const byte& opCode)
 {
     m_isHalted = true;
     m_IFWhenHalted = m_MMU->ReadByte(0xFF0F);
-    m_cycles += 4;
+    return 0;
 }
 
 /*
@@ -2494,13 +2491,13 @@ void CPU::HALT(const byte& opCode)
 
     Flags affected(znhc): z0hc
 */
-void CPU::ADDA_HL_(const byte& opCode)
+unsigned long CPU::ADDA_HL_(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
     byte HL = m_MMU->ReadByte(m_HL);
     SetHighByte(&m_AF, AddByte(A, HL));
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2514,11 +2511,11 @@ void CPU::ADDA_HL_(const byte& opCode)
 
     Flags affected(znhc): z0hc
 */
-void CPU::ADCA_HL_(const byte& opCode)
+unsigned long CPU::ADCA_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
     ADC(HL);
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2533,7 +2530,7 @@ void CPU::ADCA_HL_(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::SUB_HL_(const byte& opCode)
+unsigned long CPU::SUB_HL_(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
     byte HL = m_MMU->ReadByte(m_HL);
@@ -2545,7 +2542,7 @@ void CPU::SUB_HL_(const byte& opCode)
     ((A & 0x0F) < (result & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((A & 0xFF) < (result & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2559,11 +2556,11 @@ void CPU::SUB_HL_(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::SBCA_HL_(const byte& opCode)
+unsigned long CPU::SBCA_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
     SBC(HL);
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2578,7 +2575,7 @@ void CPU::SBCA_HL_(const byte& opCode)
 
     Flags affected(znhc): z010
 */
-void CPU::AND_HL_(const byte& opCode)
+unsigned long CPU::AND_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
     byte result = HL & GetHighByte(m_AF);
@@ -2597,7 +2594,7 @@ void CPU::AND_HL_(const byte& opCode)
     SetFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2612,7 +2609,7 @@ void CPU::AND_HL_(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::CP_HL_(const byte& opCode)
+unsigned long CPU::CP_HL_(const byte& opCode)
 {
     byte HL = m_MMU->ReadByte(m_HL);
     byte A = GetHighByte(m_AF);
@@ -2623,7 +2620,7 @@ void CPU::CP_HL_(const byte& opCode)
     ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((A & 0xFF) < (HL & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2636,12 +2633,12 @@ void CPU::CP_HL_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::JPnn(const byte& opCode)
+unsigned long CPU::JPnn(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
     m_PC = nn;
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -2656,14 +2653,14 @@ stored in the accumulator.
 Flags affected(znhc): z0hc
 Affects Z, clears n, affects h, affects c
 */
-void CPU::ADDAn(const byte& opCode)
+unsigned long CPU::ADDAn(const byte& opCode)
 {
     byte n = ReadBytePC();
     byte A = GetHighByte(m_AF);
 
     SetHighByte(&m_AF, AddByte(A, n));
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2676,22 +2673,22 @@ void CPU::ADDAn(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::RET(const byte& opCode)
+unsigned long CPU::RET(const byte& opCode)
 {
     m_PC = PopUShort();
 
-    m_cycles += 16;
+    return 16;
 }
 
 // 0xCD (CALL nn)
-void CPU::CALLnn(const byte& opCode)
+unsigned long CPU::CALLnn(const byte& opCode)
 {
     // This instruction pushes the PC to the SP, then sets the PC to the target address(nn).
     ushort nn = ReadUShortPC(); // Read nn
     PushUShortToSP(m_PC); // Push PC to SP
     m_PC = nn; // Set the PC to the target address
 
-    m_cycles += 24;
+    return 24;
 
     // No flags affected
 }
@@ -2707,10 +2704,10 @@ void CPU::CALLnn(const byte& opCode)
 
     Flags affected(znhc): z0hc
 */
-void CPU::ADCAn(const byte& opCode)
+unsigned long CPU::ADCAn(const byte& opCode)
 {
     ADC(ReadBytePC());
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2723,7 +2720,7 @@ void CPU::ADCAn(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::SUBn(const byte& opCode)
+unsigned long CPU::SUBn(const byte& opCode)
 {
     byte n = ReadBytePC();
     byte A = GetHighByte(m_AF);
@@ -2735,7 +2732,7 @@ void CPU::SUBn(const byte& opCode)
     ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     ((A & 0xFF) < (n & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
-    m_cycles += 4;
+    return 8;
 }
 
 /*
@@ -2748,12 +2745,12 @@ void CPU::SUBn(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::RETI(const byte& opCode)
+unsigned long CPU::RETI(const byte& opCode)
 {
     m_IME = 0x01; // Restore interrupts
     m_PC = PopUShort(); // Return
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -2766,31 +2763,31 @@ void CPU::RETI(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::SBCAn(const byte& opCode)
+unsigned long CPU::SBCAn(const byte& opCode)
 {
     byte n = ReadBytePC();
     SBC(n);
-    m_cycles += 8;
+    return 8;
 }
 
 // 0xE0 (LD(0xFF00 + n), A)
-void CPU::LD_0xFF00n_A(const byte& opCode)
+unsigned long CPU::LD_0xFF00n_A(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
 
     m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
 
-    m_cycles += 8;
+    return 12;
 
     // No flags affected
 }
 
 // 0xE2 (LD(0xFF00 + C), A)
-void CPU::LD_0xFF00C_A(const byte& opCode)
+unsigned long CPU::LD_0xFF00C_A(const byte& opCode)
 {
     m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
 
-    m_cycles += 8;
+    return 8;
 
     // No flags affected
 }
@@ -2806,13 +2803,13 @@ void CPU::LD_0xFF00C_A(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LD_nn_A(const byte& opCode)
+unsigned long CPU::LD_nn_A(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
     m_MMU->WriteByte(nn, GetHighByte(m_AF)); // Load A into (nn)
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -2827,7 +2824,7 @@ void CPU::LD_nn_A(const byte& opCode)
     Flags affected(znhc): z000
     Affects Z, clears n, clears h, clears c
 */
-void CPU::XORn(const byte& opCode)
+unsigned long CPU::XORn(const byte& opCode)
 {
     byte n = ReadBytePC();
     SetHighByte(&m_AF, n ^ GetHighByte(m_AF));
@@ -2846,7 +2843,7 @@ void CPU::XORn(const byte& opCode)
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2859,12 +2856,12 @@ void CPU::XORn(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDA_0xFF00n_(const byte& opCode)
+unsigned long CPU::LDA_0xFF00n_(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
     SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + n));
 
-    m_cycles += 12;
+    return 12;
 }
 
 /*
@@ -2877,11 +2874,11 @@ void CPU::LDA_0xFF00n_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDA_0xFF00C_(const byte& opCode)
+unsigned long CPU::LDA_0xFF00C_(const byte& opCode)
 {
     SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + GetLowByte(m_BC)));
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2894,11 +2891,11 @@ void CPU::LDA_0xFF00C_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::DI(const byte& opCode)
+unsigned long CPU::DI(const byte& opCode)
 {
     m_IME = 0x00;
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -2912,7 +2909,7 @@ accumulator. The result is stored in the accumulator.
 Flags affected(znhc): z000
 Affects Z, clears n, clears h, clears c
 */
-void CPU::ORn(const byte& opCode)
+unsigned long CPU::ORn(const byte& opCode)
 {
     byte n = ReadBytePC();
     SetHighByte(&m_AF, n | GetHighByte(m_AF));
@@ -2931,7 +2928,7 @@ void CPU::ORn(const byte& opCode)
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2944,11 +2941,11 @@ void CPU::ORn(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::LDSPHL(const byte& opCode)
+unsigned long CPU::LDSPHL(const byte& opCode)
 {
     m_SP = m_HL;
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -2961,7 +2958,7 @@ ld   HL,SP+dd  F8          12 00hc HL = SP +/- dd ;dd is 8bit signed number
 Flags affected(znhc): 00hc
 Clears Z, clears n, affects h, affects c
 */
-void CPU::LDHLSPe(const byte& opCode)
+unsigned long CPU::LDHLSPe(const byte& opCode)
 {
     sbyte e = static_cast<sbyte>(ReadBytePC());
 
@@ -2977,7 +2974,7 @@ void CPU::LDHLSPe(const byte& opCode)
 
     m_HL = result;
 
-    m_cycles += 12;
+    return 12;
 }
 
 /*
@@ -2990,12 +2987,12 @@ The contents of the address specified by the operand nn are loaded into the accu
 
 Flags affected(znhc): ----
 */
-void CPU::LDA_nn_(const byte& opCode)
+unsigned long CPU::LDA_nn_(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
     SetHighByte(&m_AF, m_MMU->ReadByte(nn));
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3008,11 +3005,11 @@ void CPU::LDA_nn_(const byte& opCode)
 
     Flags affected(znhc): ----
 */
-void CPU::EI(const byte& opCode)
+unsigned long CPU::EI(const byte& opCode)
 {
     m_IME = 0x01;
 
-    m_cycles += 4;
+    return 4;
 }
 
 /*
@@ -3027,7 +3024,7 @@ void CPU::EI(const byte& opCode)
 
     Flags affected(znhc): z1hc
 */
-void CPU::CPn(const byte& opCode)
+unsigned long CPU::CPn(const byte& opCode)
 {
     byte n = ReadBytePC();
     byte A = GetHighByte(m_AF);
@@ -3038,7 +3035,7 @@ void CPU::CPn(const byte& opCode)
     ((A & 0x0F) < (n & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
     SetFlag(SubtractFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
 /*
@@ -3057,7 +3054,7 @@ void CPU::CPn(const byte& opCode)
 
     Flags affected(znhc): z00c
 */
-void CPU::RLCr(const byte& opCode)
+unsigned long CPU::RLCr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
@@ -3075,10 +3072,10 @@ void CPU::RLCr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
-void CPU::RLC_HL_(const byte& opCode)
+unsigned long CPU::RLC_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3098,7 +3095,7 @@ void CPU::RLC_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3113,7 +3110,7 @@ void CPU::RLC_HL_(const byte& opCode)
 
     Flags affected(znhc): z00c
 */
-void CPU::RRCr(const byte& opCode)
+unsigned long CPU::RRCr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
@@ -3131,10 +3128,10 @@ void CPU::RRCr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
-void CPU::RRC_HL_(const byte& opCode)
+unsigned long CPU::RRC_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3154,7 +3151,7 @@ void CPU::RRC_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3169,7 +3166,7 @@ void CPU::RRC_HL_(const byte& opCode)
 
     Flags affected(znhc): z00c
 */
-void CPU::RLr(const byte& opCode)
+unsigned long CPU::RLr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
@@ -3190,10 +3187,10 @@ void CPU::RLr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
-void CPU::RL_HL_(const byte& opCode)
+unsigned long CPU::RL_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3216,7 +3213,7 @@ void CPU::RL_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3231,7 +3228,7 @@ void CPU::RL_HL_(const byte& opCode)
 
     Flags affected(znhc): z00c
 */
-void CPU::RRr(const byte& opCode)
+unsigned long CPU::RRr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
@@ -3252,10 +3249,10 @@ void CPU::RRr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
-void CPU::RR_HL_(const byte& opCode)
+unsigned long CPU::RR_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3278,7 +3275,7 @@ void CPU::RR_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3293,7 +3290,7 @@ void CPU::RR_HL_(const byte& opCode)
     Flags affected(znhc): z00c
     Affects Z, clears n, clears h, affects c
 */
-void CPU::SLAr(const byte& opCode)
+unsigned long CPU::SLAr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
@@ -3308,10 +3305,10 @@ void CPU::SLAr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
-void CPU::SLA_HL_(const byte& opCode)
+unsigned long CPU::SLA_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3327,7 +3324,7 @@ void CPU::SLA_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3342,7 +3339,7 @@ void CPU::SLA_HL_(const byte& opCode)
     Flags affected(znhc): z00c
     Affects Z, clears n, clears h, affects c
 */
-void CPU::SRAr(const byte& opCode)
+unsigned long CPU::SRAr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
@@ -3357,10 +3354,10 @@ void CPU::SRAr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
-void CPU::SRA_HL_(const byte& opCode)
+unsigned long CPU::SRA_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3376,7 +3373,7 @@ void CPU::SRA_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3391,7 +3388,7 @@ bit 0 is copied to the carry flag and bit 7 is reset.
 Flags affected(znhc): z00c
 Affects Z, clears n, clears h, affects c
 */
-void CPU::SRLr(const byte& opCode)
+unsigned long CPU::SRLr(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
 
@@ -3407,10 +3404,10 @@ void CPU::SRLr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 8;
+    return 8;
 }
 
-void CPU::SRL_HL_(const byte& opCode)
+unsigned long CPU::SRL_HL_(const byte& opCode)
 {
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3427,7 +3424,7 @@ void CPU::SRL_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
 
-    m_cycles += 16;
+    return 16;
 }
 
 /*
@@ -3441,10 +3438,8 @@ void CPU::SRL_HL_(const byte& opCode)
     Flags affected(znhc): z01-
     Affects Z, clears n, sets h
 */
-void CPU::BITbr(const byte& opCode)
+unsigned long CPU::BITbr(const byte& opCode)
 {
-    m_cycles += 8;
-
     byte bit = (opCode >> 3) & 0x07;
     byte* r = GetByteRegister(opCode);
 
@@ -3453,12 +3448,12 @@ void CPU::BITbr(const byte& opCode)
 
     SetFlag(HalfCarryFlag); // H is set
     ClearFlag(SubtractFlag); // N is reset
+
+    return 8;
 }
 
-void CPU::BITb_HL_(const byte& opCode)
+unsigned long CPU::BITb_HL_(const byte& opCode)
 {
-    m_cycles += 12;
-
     byte bit = (opCode >> 3) & 0x07;
     byte r = m_MMU->ReadByte(m_HL);
 
@@ -3467,6 +3462,8 @@ void CPU::BITb_HL_(const byte& opCode)
 
     SetFlag(HalfCarryFlag); // H is set
     ClearFlag(SubtractFlag); // N is reset
+
+    return 12;
 }
 
 /*
@@ -3479,22 +3476,22 @@ void CPU::BITb_HL_(const byte& opCode)
 
     No flags affected.
 */
-void CPU::RESbr(const byte& opCode)
+unsigned long CPU::RESbr(const byte& opCode)
 {
-    m_cycles += 8;
-
     byte bit = (opCode >> 3) & 0x07;
     byte* r = GetByteRegister(opCode);
     *r = CLEARBIT(*r, bit);
+
+    return 8;
 }
 
-void CPU::RESb_HL_(const byte& opCode)
+unsigned long CPU::RESb_HL_(const byte& opCode)
 {
-    m_cycles += 16;
-
     byte bit = (opCode >> 3) & 0x07;
     byte r = m_MMU->ReadByte(m_HL);
     m_MMU->WriteByte(m_HL, CLEARBIT(r, bit));
+
+    return 16;
 }
 
 /*
@@ -3507,22 +3504,22 @@ void CPU::RESb_HL_(const byte& opCode)
 
     No flags affected.
 */
-void CPU::SETbr(const byte& opCode)
+unsigned long CPU::SETbr(const byte& opCode)
 {
-    m_cycles += 8;
-
     byte bit = (opCode >> 3) & 0x07;
     byte* r = GetByteRegister(opCode);
     *r = SETBIT(*r, bit);
+
+    return 8;
 }
 
-void CPU::SETb_HL_(const byte& opCode)
+unsigned long CPU::SETb_HL_(const byte& opCode)
 {
-    m_cycles += 16;
-
     byte bit = (opCode >> 3) & 0x07;
     byte r = m_MMU->ReadByte(m_HL);
     m_MMU->WriteByte(m_HL, SETBIT(r, bit));
+
+    return 16;
 }
 
 /*
@@ -3535,10 +3532,8 @@ void CPU::SETb_HL_(const byte& opCode)
 
     Flags affected(znhc): z000
 */
-void CPU::SWAPr(const byte& opCode)
+unsigned long CPU::SWAPr(const byte& opCode)
 {
-    m_cycles += 8;
-
     byte* r = GetByteRegister(opCode);
     byte lowNibble = (*r & 0x0F);
     byte highNibble = (*r & 0xF0);
@@ -3549,15 +3544,15 @@ void CPU::SWAPr(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+
+    return 8;
 }
 
 /*
     Flags affected(znhc) : z000
 */
-void CPU::SWAP_HL_(const byte& opCode)
+unsigned long CPU::SWAP_HL_(const byte& opCode)
 {
-    m_cycles += 16;
-
     byte r = m_MMU->ReadByte(m_HL);
     byte lowNibble = (r & 0x0F);
     byte highNibble = (r & 0xF0);
@@ -3568,4 +3563,6 @@ void CPU::SWAP_HL_(const byte& opCode)
     ClearFlag(SubtractFlag);
     ClearFlag(HalfCarryFlag);
     ClearFlag(CarryFlag);
+
+    return 16;
 }
