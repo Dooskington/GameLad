@@ -36,8 +36,8 @@
 */
 #define LYCoincidenceInterrupt ISBITSET(m_LCDControllerStatus , 6)
 #define OAMInterrupt ISBITSET(m_LCDControllerStatus , 5)
-//#define VBlankInterrupt ISBITSET(m_LCDControllerStatus , 4)
-//#define HBlankInterrupt ISBITSET(m_LCDControllerStatus , 3)
+#define VBlankInterrupt ISBITSET(m_LCDControllerStatus , 4)
+#define HBlankInterrupt ISBITSET(m_LCDControllerStatus , 3)
 #define SETMODE(mode) m_LCDControllerStatus = ((m_LCDControllerStatus & ~0x03) | mode)
 #define GETMODE (m_LCDControllerStatus & 0x03)
 
@@ -119,8 +119,7 @@ void GPU::Step(unsigned long cycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
             SETMODE(ModeHBlank);
-            // TODO: Why not use HBlankInterrupt
-            if (m_CPU != nullptr)
+            if (HBlankInterrupt && (m_CPU != nullptr))
             {
                 m_CPU->TriggerInterrupt(INT48);
             }
@@ -142,10 +141,14 @@ void GPU::Step(unsigned long cycles)
                 // Enter VBlank and render framebuffer
                 SETMODE(ModeVBlank);
                 RenderImage();
-                // TODO: Why not use VBlankInterrupt
+
                 if (m_CPU != nullptr)
                 {
                     m_CPU->TriggerInterrupt(INT40);
+                    if (VBlankInterrupt)
+                    {
+                        m_CPU->TriggerInterrupt(INT48);
+                    }
                 }
             }
             else
