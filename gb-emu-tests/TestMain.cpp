@@ -16,6 +16,7 @@ int main(int arg, char** argv)
     TEST_SETUP(CPUTests);
 
     // Misc Tests
+    TEST_CALL(CPUTests, Timing_Test);
     TEST_CALL(CPUTests, Endian_Test);
     TEST_CALL(CPUTests, GetHighByte_Test);
     TEST_CALL(CPUTests, GetLowByte_Test);

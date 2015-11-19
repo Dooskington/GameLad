@@ -58,6 +58,133 @@ private:
 
 public:
     // Misc tests
+    TEST_METHOD(Timing_Test)
+    {
+        byte opTimes[] = 
+        {
+            1,3,2,2,1,1,2,1,5,2,2,2,1,1,2,1,
+            0,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
+            2,3,2,2,1,1,2,1,2,2,2,2,1,1,2,1,
+            2,3,2,2,3,3,3,1,2,2,2,2,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            2,2,2,2,2,2,0,2,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            2,3,3,4,3,4,2,4,2,4,3,0,3,6,2,4,
+            2,3,3,0,3,4,2,4,2,4,3,0,3,0,2,4,
+            3,3,2,0,0,4,2,4,4,1,4,0,0,0,2,4,
+            3,3,2,1,0,4,2,4,3,2,4,1,0,0,2,4
+        };
+
+        byte condOpTimes[] =
+        {
+            1,3,2,2,1,1,2,1,5,2,2,2,1,1,2,1,
+            0,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
+            3,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
+            3,3,2,2,3,3,3,1,3,2,2,2,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            2,2,2,2,2,2,0,2,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
+            5,3,4,4,6,4,2,4,5,4,4,0,6,6,2,4,
+            5,3,4,0,6,4,2,4,5,4,4,0,6,0,2,4,
+            3,3,2,0,0,4,2,4,4,1,4,0,0,0,2,4,
+            3,3,2,1,0,4,2,4,3,2,4,1,0,0,2,4
+        };
+
+        byte cbOpTimes[] =
+        {
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,3,2,2,2,2,2,2,2,3,2,
+            2,2,2,2,2,2,3,2,2,2,2,2,2,2,3,2,
+            2,2,2,2,2,2,3,2,2,2,2,2,2,2,3,2,
+            2,2,2,2,2,2,3,2,2,2,2,2,2,2,3,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2,
+            2,2,2,2,2,2,4,2,2,2,2,2,2,2,4,2
+        };
+
+        for (int opCode = 0x00;opCode <= 0xFF; opCode++)
+        {
+            byte m_Mem[] = { (byte)(opCode) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            if (spCPU->m_operationMap[opCode] == nullptr)
+                continue;
+
+            spCPU->Step();
+
+            if (opTimes[opCode] == condOpTimes[opCode])
+            {
+                Assert::AreEqual((int)opTimes[opCode] * 4, (int)spCPU->m_cycles);
+            }
+            else
+            {
+                if (opTimes[opCode] * 4 != (int)spCPU->m_cycles)
+                {
+                    Assert::AreEqual((int)condOpTimes[opCode] * 4, (int)spCPU->m_cycles);
+                }
+            }
+        }
+
+        for (int opCode = 0x00;opCode <= 0xFF; opCode++)
+        {
+            byte m_Mem[] = { (byte)(opCode) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            if (spCPU->m_operationMap[opCode] == nullptr)
+                continue;
+
+            spCPU->m_AF = 0x00FF;
+            spCPU->Step();
+
+            if (opTimes[opCode] == condOpTimes[opCode])
+            {
+                Assert::AreEqual((int)opTimes[opCode] * 4, (int)spCPU->m_cycles);
+            }
+            else
+            {
+                if (opTimes[opCode] * 4 != (int)spCPU->m_cycles)
+                {
+                    Assert::AreEqual((int)condOpTimes[opCode] * 4, (int)spCPU->m_cycles);
+                }
+            }
+        }
+
+        for (int opCode = 0x00;opCode <= 0xFF; opCode++)
+        {
+            byte m_Mem[] = { 0xCB, (byte)(opCode) };
+            std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+            spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+            if (spCPU->m_operationMapCB[opCode] == nullptr)
+                continue;
+
+            spCPU->Step();
+
+            Assert::AreEqual((int)cbOpTimes[opCode] * 4, (int)spCPU->m_cycles);
+        }
+
+    }
+
     TEST_METHOD(Endian_Test)
     {
         ushort value = 0x1234; // [0x34 0x12]
@@ -1144,7 +1271,7 @@ public:
         spCPU->Step();
 
         // Verify expectations after
-        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::IsTrue(spCPU->m_isHalted);
 
@@ -2755,7 +2882,7 @@ public:
         spCPU->Step();
 
         // Verify expectations after
-        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::IsTrue(spCPU->m_isHalted);
 
@@ -4320,7 +4447,7 @@ public:
         spCPU->Step();
 
         // Verify expectations after
-        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(2, (int)spCPU->m_PC);
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
         Assert::AreEqual(0x00C0, (int)spCPU->m_AF);
@@ -4329,7 +4456,7 @@ public:
 
         spCPU->Step();
 
-        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
@@ -4356,7 +4483,7 @@ public:
         spCPU->Step();
 
         // Verify expectations after
-        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
         Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0xFF12));
 
