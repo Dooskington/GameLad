@@ -4456,7 +4456,7 @@ public:
 
         spCPU->Step();
 
-        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
