@@ -119,7 +119,7 @@ byte MBC1_MBC::ReadByte(const ushort& address)
             targetBank |= (m_ROMRAMBankUpper << 4);
         }
 
-        ushort target = (address - 0x4000);
+        unsigned int target = (address - 0x4000);
         target += (0x4000 * targetBank);
         return m_ROM[target];
     }
@@ -145,7 +145,7 @@ byte MBC1_MBC::ReadByte(const ushort& address)
         }
 
         // In ROM Mode, only bank 0x00 is available
-        ushort target = address - 0xA000;
+        unsigned int target = address - 0xA000;
         if (m_ROMRAMMode == RAMBankMode)
         {
             // Offset based on the bank number
@@ -241,7 +241,7 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
         }
 
         // In ROM Mode, only bank 0x00 is available
-        ushort target = address - 0xA000;
+        unsigned int target = address - 0xA000;
         if (m_ROMRAMMode == RAMBankMode)
         {
             // Offset based on the bank number
@@ -288,7 +288,7 @@ byte MBC2_MBC::ReadByte(const ushort& address)
         This area may contain any of the further 16KByte banks of the ROM, allowing to address up to 16 ROM
         Banks (almost 256KByte).
         */
-        ushort target = (address - 0x4000);
+        unsigned int target = (address - 0x4000);
         target += (0x4000 * m_ROMBank);
         return m_ROM[target];
     }
@@ -436,7 +436,7 @@ byte MBC3_MBC::ReadByte(const ushort& address)
         4000-7FFF - ROM Bank 01-7F (Read Only)
         Same as for MBC1, except that accessing banks 20h, 40h, and 60h is supported now.
         */
-        ushort target = (address - 0x4000);
+        unsigned int target = (address - 0x4000);
         target += (0x4000 * m_ROMBank);
         return m_ROM[target];
     }
@@ -462,7 +462,7 @@ byte MBC3_MBC::ReadByte(const ushort& address)
 
         if (m_RAMBank <= 0x03)
         {
-            ushort target = address - 0xA000;
+            unsigned int target = address - 0xA000;
             // Offset based on the bank number
             target += (0x2000 * m_RAMBank);
             return m_RAM[target];
@@ -557,7 +557,7 @@ bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
 
         if (m_RAMBank <= 0x03)
         {
-            ushort target = address - 0xA000;
+            unsigned int target = address - 0xA000;
             // Offset based on the bank number
             target += (0x2000 * m_RAMBank);
             m_RAM[target] = val;
