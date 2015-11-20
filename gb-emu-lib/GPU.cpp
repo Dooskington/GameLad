@@ -352,10 +352,7 @@ void GPU::LaunchDMATransfer(const byte address)
 
 void GPU::RenderScanline()
 {
-    if (BGDisplayEnable)
-    {
-        RenderBackgroundScanline();
-    }
+    RenderBackgroundScanline();
 
     if (WindowDisplayEnable)
     {
@@ -378,9 +375,7 @@ void GPU::RenderImage()
 
 void GPU::RenderBackgroundScanline()
 {
-    const ushort tileNumberMap = 0x9800;
-    const ushort tileData = 0x8000;
-    byte palette[]
+    const byte palette[]
     {
         GBColors[m_BGPaletteData & 0x03],
         GBColors[(m_BGPaletteData >> 2) & 0x03],
@@ -388,13 +383,47 @@ void GPU::RenderBackgroundScanline()
         GBColors[(m_BGPaletteData >> 6) & 0x03],
     };
 
+    if (!BGDisplayEnable)
+    {
+        /*
+        LCDC.0 - 1) Monochrome Gameboy and SGB: BG Display
+        When Bit 0 is cleared, the background becomes blank (white). 
+        Window and Sprites may still be displayed (if enabled in Bit 1 and/or Bit 5).
+        */
+        for (int x = 0;x < 160;x++)
+        {
+            // If BG is disabled, render a white background
+            m_DisplayPixels[(m_LCDControllerYCoordinate * 160) + x] = GBColors[0];
+        }
+
+        return;
+    }
+
+    /*
+    Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+    Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
+    #define BGWindowTileDataSelect ISBITSET(m_LCDControl, 4)
+    #define BGWTileMapDisplaySelect ISBITSET(m_LCDControl, 3)
+    */
+    ushort tileNumberMap = BGWTileMapDisplaySelect ? 0x9C00 : 0x9800;
+    ushort tileData = BGWindowTileDataSelect ? 0x8000 : 0x9000;
+
     byte tileY = (byte)((m_LCDControllerYCoordinate + m_ScrollY) / 8);
     byte tileYOffset = (byte)((m_LCDControllerYCoordinate + m_ScrollY) % 8);
     for (byte x = 0; x < 160; x++)
     {
         byte tileX = (byte)((m_ScrollX + x) / 8);
         byte tileNumber = ReadByte((ushort)(tileNumberMap + (tileY * 32) + tileX));
-        ushort tileDataPtr = (ushort)(tileData + tileNumber * 0x10);
+        ushort tileDataPtr = 0;
+        
+        if (BGWindowTileDataSelect)
+        {
+            tileDataPtr = (ushort)(tileData + tileNumber * 0x10);
+        }
+        else
+        {
+            tileDataPtr = (ushort)(tileData + static_cast<sbyte>(tileNumber) * 0x10);
+        }
 
         tileDataPtr += (ushort)(tileYOffset * 2);
 
