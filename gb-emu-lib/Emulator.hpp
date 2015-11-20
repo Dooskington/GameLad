@@ -19,7 +19,7 @@ class Emulator
 public:
     Emulator();
 
-    void StepFrame();
+    void Step();
     void Stop();
     bool Initialize(const char* rom);
     byte* GetCurrentFrame();

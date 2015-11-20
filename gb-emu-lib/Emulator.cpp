@@ -7,10 +7,9 @@ Emulator::Emulator()
 {
 }
 
-void Emulator::StepFrame()
+void Emulator::Step()
 {
-    // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
-    m_cpu->StepFrame();
+    m_cpu->Step();
 }
 
 void Emulator::Stop()

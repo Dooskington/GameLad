@@ -728,45 +728,6 @@ bool CPU::LoadROM(const char* path)
     return m_cartridge->LoadROM(path);
 }
 
-void CPU::StepFrame()
-{
-    while (m_cycles < CyclesPerFrame)
-    {
-        Step(); // Execute the current instruction
-    }
-
-    // Reset the cycles. If we went over our max cycles, the next frame will start a
-    // few cycles ahead.
-    m_cycles -= CyclesPerFrame;
-}
-
-void CPU::TriggerInterrupt(byte interrupt)
-{
-    byte IF = m_MMU->ReadByte(0xFF0F);
-    if (interrupt == INT40) IF = SETBIT(IF, 0);
-    else if (interrupt == INT48) IF = SETBIT(IF, 1);
-    else if (interrupt == INT50) IF = SETBIT(IF, 2);
-    else if (interrupt == INT58) IF = SETBIT(IF, 3);
-    else if (interrupt == INT60) IF = SETBIT(IF, 4);
-
-    m_MMU->WriteByte(0xFF0F, IF);
-}
-
-byte* CPU::GetCurrentFrame()
-{
-    return m_GPU->GetCurrentFrame();
-}
-
-void CPU::SetInput(byte input, byte buttons)
-{
-    m_joypad->SetInput(input, buttons);
-}
-
-void CPU::SetVSyncCallback(void(*pCallback)())
-{
-    m_GPU->SetVSyncCallback(pCallback);
-}
-
 void CPU::Step()
 {
     unsigned long cycles = 0x00;
@@ -836,6 +797,33 @@ void CPU::Step()
     }
 
     HandleInterrupts();
+}
+
+void CPU::TriggerInterrupt(byte interrupt)
+{
+    byte IF = m_MMU->ReadByte(0xFF0F);
+    if (interrupt == INT40) IF = SETBIT(IF, 0);
+    else if (interrupt == INT48) IF = SETBIT(IF, 1);
+    else if (interrupt == INT50) IF = SETBIT(IF, 2);
+    else if (interrupt == INT58) IF = SETBIT(IF, 3);
+    else if (interrupt == INT60) IF = SETBIT(IF, 4);
+
+    m_MMU->WriteByte(0xFF0F, IF);
+}
+
+byte* CPU::GetCurrentFrame()
+{
+    return m_GPU->GetCurrentFrame();
+}
+
+void CPU::SetInput(byte input, byte buttons)
+{
+    m_joypad->SetInput(input, buttons);
+}
+
+void CPU::SetVSyncCallback(void(*pCallback)())
+{
+    m_GPU->SetVSyncCallback(pCallback);
 }
 
 byte CPU::GetHighByte(ushort dest)

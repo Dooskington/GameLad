@@ -36,15 +36,13 @@ private:
 public:
     bool Initialize();
     bool LoadROM(const char* path);
-    void StepFrame();
+    void Step();
     void TriggerInterrupt(byte interrupt);
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);
     void SetVSyncCallback(void(*pCallback)());
 
 private:
-    void Step();
-
     static byte GetHighByte(ushort dest);
     static byte GetLowByte(ushort dest);
 
