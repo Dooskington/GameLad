@@ -296,8 +296,8 @@ bool GPU::WriteByte(const ushort& address, const byte val)
         m_ScrollX = val;
         return true;
     case LCDControllerYCoordinate:
-        Logger::Log("GPU::WriteByte cannot write to address 0x%04X (LCDControllerYCoordinate)", address);
-        return false;
+        m_LCDControllerYCoordinate = 0;
+        return true;
     case LYCompare:
         m_LYCompare = val;
         return true;
@@ -418,7 +418,7 @@ void GPU::RenderOBJScanline()
     {
         // Grab the sprite data
         byte objY = m_OAM[i];                // The sprite Y position, minus 16 (apparently)
-        byte spriteSize = ISBITSET(LCDControl, 2) ? 0x10 : 0x08; // 0x00 = 8x8, 0x01 = 8x16
+        byte spriteSize = OBJSize ? 0x10 : 0x08; // 0x00 = 8x8, 0x01 = 8x16
         int height = spriteSize;
 
         // Sprite rect:
