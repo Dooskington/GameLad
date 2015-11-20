@@ -414,6 +414,8 @@ void GPU::RenderBackgroundScanline()
 
 void GPU::RenderOBJScanline()
 {
+    const byte SPRITESIZEINBYTES = 16;
+
     // Loop through each sprite
     for (byte i = 0; i < 160; i += 4)
     {
@@ -436,12 +438,10 @@ void GPU::RenderOBJScanline()
             byte objX = m_OAM[i + 1];               // The sprite X position, minus 8 (apparently)
             byte spriteTileNumber = m_OAM[i + 2];   // The tile or pattern number of the sprite
             byte spriteFlags = m_OAM[i + 3];        // The sprites render flags (priority, flip, palette)
-            byte spriteBytes = 16;
 
             if (spriteSize == 0x10)
             {
                 spriteTileNumber &= 0xFE;
-                spriteBytes *= 2;
             }
 
             byte paletteNumber = ISBITSET(spriteFlags, 4) ? 0x01 : 0x00;
@@ -462,8 +462,8 @@ void GPU::RenderOBJScanline()
             // The memory location of this sprites tile can be found by adding the sprites tile
             // number to the location of the tile data.
             // If the spriteSize == 0x00, ignore the lower bit of the tile number.
-            ushort tilePointer = tileData + (spriteTileNumber * spriteBytes);
-            byte tileYOffset = ISBITSET(spriteFlags, 6) ? (7 - (m_LCDControllerYCoordinate - y)) : (m_LCDControllerYCoordinate - y);
+            ushort tilePointer = tileData + (spriteTileNumber * SPRITESIZEINBYTES);
+            byte tileYOffset = ISBITSET(spriteFlags, 6) ? ((height - 1) - (m_LCDControllerYCoordinate - y)) : (m_LCDControllerYCoordinate - y);
             tilePointer += (tileYOffset * 2);
 
             // The data for this line of the sprite, 8 pixels
@@ -478,7 +478,6 @@ void GPU::RenderOBJScanline()
                 if (pixelX >= 0 && pixelX < 160)
                 {
                     byte bit = ISBITSET(spriteFlags, 5) ? indexX : 7 - indexX;
-                    //byte pixelVal = ((high >> (bit - 1)) & 0x02) | ((low >> bit) & 0x01);
                     byte pixelVal = 0x00;
                     if (ISBITSET(high, bit)) pixelVal |= 0x02;
                     if (ISBITSET(low, bit)) pixelVal |= 0x01;
