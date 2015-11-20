@@ -84,7 +84,33 @@ Uint64 renderStart = SDL_GetPerformanceCounter();
 void VSyncCallback()
 {
     Render(spRenderer.get(), spTexture.get(), emulator);
+    renderFrames++;
+    Uint64 renderEnd = SDL_GetPerformanceCounter();
 
+    // Loop until we use up the rest of our frame time
+    while (true)
+    {
+        renderEnd = SDL_GetPerformanceCounter();
+        renderElapsedInSec = (double)(renderEnd - renderStart) / SDL_GetPerformanceFrequency();
+
+        // Break out once we use up our time per frame
+        if (renderElapsedInSec >= TimePerFrame)
+        {
+            break;
+        }
+    }
+
+    // Print Render FPS every 5 seconds
+    renderTimeInSec += renderElapsedInSec;
+    if (renderTimeInSec > 0.5)
+    {
+        // Uncomment to display render FPS
+        //Logger::Log("RFPS: %f", renderFrames / renderTimeInSec);
+        renderFrames = 0;
+        renderTimeInSec = 0;
+    }
+
+    renderStart = renderEnd;
 }
 
 void ProcessInput(Emulator& emulator)
@@ -162,9 +188,9 @@ int main(int argc, char** argv)
     //std::string romPath = "res/tests/instr_timing.gb";            // PASSED
 
     //std::string romPath = "res/tests/mem_timing.gb";            // FAILED
-        //std::string romPath = "res/tests/01-read_timing.gb";            // FAILED
-        //std::string romPath = "res/tests/02-write_timing.gb";            // FAILED
-        //std::string romPath = "res/tests/03-modify_timing.gb";            // FAILED
+        //std::string romPath = "res/tests/01-read_timing.gb";        // FAILED
+        //std::string romPath = "res/tests/02-write_timing.gb";       // FAILED
+        //std::string romPath = "res/tests/03-modify_timing.gb";      // FAILED
 
     //std::string romPath = "res/tests/oam_bug.gb";            // FAILED
 
@@ -173,11 +199,13 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Super Mario Land (World).gb";
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
-    //std::string romPath = "res/games/Tetris.gb";
-    
-    std::string romPath = "res/games/Mario.gbc";
+    std::string romPath = "res/games/Tetris.gb";
+    //std::string romPath = "res/games/Zelda.gb";
+    //std::string romPath = "res/games/Metroid.gb";
+    //std::string romPath = "res/games/Castlevania.gb";
 
     //std::string romPath = "res/games/Lemmings.gbc";   // Requires MBC5 - NYI
+    //std::string romPath = "res/games/Mario2.gbc";   // Requires MBC5 - NYI
     if(argc > 2)
     {
         romPath = argv[2];
@@ -246,38 +274,7 @@ int main(int argc, char** argv)
             }
 
             ProcessInput(emulator);
-
-            // Emulate one frame on the CPU (70244 cycles or CyclesPerFrame)
-            emulator.StepFrame();
-
-            renderFrames++;
-
-            Uint64 renderEnd = SDL_GetPerformanceCounter();
-
-            // Loop until we use up the rest of our frame time
-            while (true)
-            {
-                renderEnd = SDL_GetPerformanceCounter();
-                renderElapsedInSec = (double)(renderEnd - renderStart) / SDL_GetPerformanceFrequency();
-
-                // Break out once we use up our time per frame
-                if (renderElapsedInSec >= TimePerFrame)
-                {
-                    break;
-                }
-            }
-
-            // Print Render FPS every 5 seconds
-            renderTimeInSec += renderElapsedInSec;
-            if (renderTimeInSec > 0.5)
-            {
-                // Uncomment to display render FPS
-                //Logger::Log("RFPS: %f", renderFrames / renderTimeInSec);
-                renderFrames = 0;
-                renderTimeInSec = 0;
-            }
-
-            renderStart = renderEnd;
+            emulator.Step();
         }
     }
 

@@ -119,6 +119,10 @@ void GPU::Step(unsigned long cycles)
         {
             m_ModeClock -= ReadingOAMVRAMCycles;
             SETMODE(ModeHBlank);
+
+            // Write a scanline to the framebuffer
+            RenderScanline();
+
             if (HBlankInterrupt && (m_CPU != nullptr))
             {
                 m_CPU->TriggerInterrupt(INT48);
@@ -130,9 +134,6 @@ void GPU::Step(unsigned long cycles)
         if (m_ModeClock >= HBlankCycles)
         {
             m_ModeClock -= HBlankCycles;
-
-            // Write a scanline to the framebuffer
-            RenderScanline();
 
             // After the last HBlank, push the framebuffer to the window
             m_LCDControllerYCoordinate++;
