@@ -387,7 +387,7 @@ void GPU::RenderBackgroundScanline()
     {
         /*
         LCDC.0 - 1) Monochrome Gameboy and SGB: BG Display
-        When Bit 0 is cleared, the background becomes blank (white). 
+        When Bit 0 is cleared, the background becomes blank (white).
         Window and Sprites may still be displayed (if enabled in Bit 1 and/or Bit 5).
         */
         for (int x = 0;x < 160;x++)
@@ -408,14 +408,14 @@ void GPU::RenderBackgroundScanline()
     ushort tileNumberMap = BGWTileMapDisplaySelect ? 0x9C00 : 0x9800;
     ushort tileData = BGWindowTileDataSelect ? 0x8000 : 0x9000;
 
-    byte tileY = (byte)((m_LCDControllerYCoordinate + m_ScrollY) / 8);
+    byte tileY = (byte)(((m_LCDControllerYCoordinate + m_ScrollY) / 8) % 32);
     byte tileYOffset = (byte)((m_LCDControllerYCoordinate + m_ScrollY) % 8);
     for (byte x = 0; x < 160; x++)
     {
-        byte tileX = (byte)((m_ScrollX + x) / 8);
+        byte tileX = (byte)(((m_ScrollX + x) / 8) % 32);
         byte tileNumber = ReadByte((ushort)(tileNumberMap + (tileY * 32) + tileX));
         ushort tileDataPtr = 0;
-        
+
         if (BGWindowTileDataSelect)
         {
             tileDataPtr = (ushort)(tileData + tileNumber * 0x10);
