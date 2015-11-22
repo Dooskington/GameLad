@@ -204,8 +204,9 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Metroid.gb";
     //std::string romPath = "res/games/Castlevania.gb";
 
-    //std::string romPath = "res/games/Lemmings.gbc";   // Requires MBC5 - NYI
-    //std::string romPath = "res/games/Mario2.gbc";   // Requires MBC5 - NYI
+    // CGB Only
+    //std::string romPath = "res/games/Lemmings.gbc";   // Requires MBC5
+    //std::string romPath = "res/games/Mario2.gbc";   // Requires MBC5
     if(argc > 2)
     {
         romPath = argv[2];
