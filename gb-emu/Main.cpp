@@ -172,9 +172,9 @@ int main(int argc, char** argv)
         windowScale = atoi(argv[1]);
     }
 
-    //std::string bootROM;
+    std::string bootROM;
     //std::string bootROM = "res/games/dmg_bios.bin";
-    std::string bootROM = "res/games/gbc_bios.bin";
+    //std::string bootROM = "res/games/gbc_bios.bin";
 
     //std::string romPath = "res/tests/cpu_instrs.gb";            // PASSED
         //std::string romPath = "res/tests/01-special.gb";            // PASSED
