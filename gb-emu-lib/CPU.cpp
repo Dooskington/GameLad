@@ -723,9 +723,53 @@ bool CPU::Initialize()
     return Initialize(new MMU(), false);
 }
 
-bool CPU::LoadROM(const char* path)
+bool CPU::LoadROM(const char* bootROMPath, const char* cartridgePath)
 {
-    return m_cartridge->LoadROM(path);
+    if (!m_MMU->LoadBootROM(bootROMPath))
+    {
+        return false;
+    }
+
+    if (m_MMU->ReadByte(0xFF50) != 0x00)
+    {
+        m_PC = 0x0100;
+
+        m_AF = 0x01B0;
+        m_BC = 0x0013;
+        m_DE = 0x00D8;
+        m_HL = 0x014D;
+
+        m_SP = 0xFFFE;
+
+        m_MMU->WriteByte(0xFF05, 0x00);  // TIMA
+        m_MMU->WriteByte(0xFF06, 0x00);  // TMA
+        m_MMU->WriteByte(0xFF07, 0x00);  // TAC
+
+        m_MMU->WriteByte(0xFF10, 0x80);  // NR10
+        m_MMU->WriteByte(0xFF11, 0xBF);  // NR11
+        m_MMU->WriteByte(0xFF12, 0xF3);  // NR12
+        m_MMU->WriteByte(0xFF14, 0xBF);  // NR14
+        m_MMU->WriteByte(0xFF16, 0x3F);  // NR21
+        m_MMU->WriteByte(0xFF17, 0x00);  // NR22
+        m_MMU->WriteByte(0xFF19, 0xBF);  // NR24
+        m_MMU->WriteByte(0xFF1A, 0x7F);  // NR30
+        m_MMU->WriteByte(0xFF1B, 0xFF);  // NR31
+        m_MMU->WriteByte(0xFF1C, 0x9F);  // NR32
+        m_MMU->WriteByte(0xFF1E, 0xBF);  // NR33
+        m_MMU->WriteByte(0xFF20, 0xFF);  // NR41
+        m_MMU->WriteByte(0xFF21, 0x00);  // NR42
+        m_MMU->WriteByte(0xFF22, 0x00);  // NR43
+        m_MMU->WriteByte(0xFF23, 0xBF);  // NR30
+        m_MMU->WriteByte(0xFF24, 0x77);  // NR50
+        m_MMU->WriteByte(0xFF25, 0xF3);  // NR51
+        m_MMU->WriteByte(0xFF26, 0xF1);  // NR52
+
+        m_MMU->WriteByte(0xFFFF, 0x00);  // IE
+
+        m_GPU->PreBoot();
+    }
+
+    return m_cartridge->LoadROM(cartridgePath);
 }
 
 void CPU::Step()

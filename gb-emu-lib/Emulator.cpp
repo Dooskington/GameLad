@@ -17,7 +17,7 @@ void Emulator::Stop()
     m_cpu.reset();
 }
 
-bool Emulator::Initialize(const char* rom)
+bool Emulator::Initialize(const char* bootROMPath, const char* cartridgePath)
 {
     // Create CPU
     m_cpu = std::make_unique<CPU>();
@@ -33,7 +33,7 @@ bool Emulator::Initialize(const char* rom)
         return false;
     }
 
-    if (!m_cpu->LoadROM(rom))
+    if (!m_cpu->LoadROM(bootROMPath, cartridgePath))
     {
         Logger::Log("Failed to load the Gameboy ROM");
         return false;

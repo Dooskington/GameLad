@@ -21,7 +21,7 @@ public:
 
     void Step();
     void Stop();
-    bool Initialize(const char* rom);
+    bool Initialize(const char* bootROMPath, const char* cartridgePath);
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);
     void SetVSyncCallback(void(*pCallback)());

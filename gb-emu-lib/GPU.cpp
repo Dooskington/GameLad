@@ -331,6 +331,19 @@ void GPU::SetVSyncCallback(void(*pCallback)())
     m_pVSyncCallback = pCallback;
 }
 
+void GPU::PreBoot()
+{
+    m_LCDControllerYCoordinate = 0x91;
+    m_ScrollY = 0x00;
+    m_ScrollX = 0x00;
+    m_LYCompare = 0x00;
+    m_BGPaletteData = 0xFC;
+    m_ObjectPalette0Data = 0xFF;
+    m_ObjectPalette1Data = 0xFF;
+    m_WindowYPosition = 0x00;
+    m_WindowXPositionMinus7 = 0x00;
+}
+
 void GPU::LaunchDMATransfer(const byte address)
 {
     /*
