@@ -8,6 +8,7 @@ public:
 
     void RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit);
     unsigned short ReadUShort(const ushort& address);
+    bool LoadBootROM(const char* bootROMPath);
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
@@ -20,6 +21,7 @@ private:
 private:
     // Booting
     byte m_isBooting;
+    std::unique_ptr<byte> m_BIOS;
 
     // Memory
     IMemoryUnit* m_memoryUnits[0xFFFF + 1];

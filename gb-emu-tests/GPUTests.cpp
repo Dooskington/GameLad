@@ -41,6 +41,11 @@ private:
             return val;
         }
 
+        bool LoadBootROM(const char* bootROMPath)
+        {
+            return true;
+        }
+
         byte ReadByte(const ushort& address)
         {
             return m_data[address];

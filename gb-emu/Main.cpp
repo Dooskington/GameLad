@@ -172,6 +172,10 @@ int main(int argc, char** argv)
         windowScale = atoi(argv[1]);
     }
 
+    std::string bootROM;
+    //std::string bootROM = "res/games/dmg_bios.bin";
+    //std::string bootROM = "res/games/gbc_bios.bin";
+
     //std::string romPath = "res/tests/cpu_instrs.gb";            // PASSED
         //std::string romPath = "res/tests/01-special.gb";            // PASSED
         //std::string romPath = "res/tests/02-interrupts.gb";         // PASSED
@@ -204,8 +208,9 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Metroid.gb";
     //std::string romPath = "res/games/Castlevania.gb";
 
-    //std::string romPath = "res/games/Lemmings.gbc";   // Requires MBC5 - NYI
-    //std::string romPath = "res/games/Mario2.gbc";   // Requires MBC5 - NYI
+    // CGB Only
+    //std::string romPath = "res/games/Lemmings.gbc";   // Requires MBC5
+    //std::string romPath = "res/games/Mario2.gbc";   // Requires MBC5
     if(argc > 2)
     {
         romPath = argv[2];
@@ -250,7 +255,7 @@ int main(int argc, char** argv)
     spTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(
         SDL_CreateTexture(spRenderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144));
 
-    if (emulator.Initialize(romPath.data()))
+    if (emulator.Initialize(bootROM.empty() ? nullptr : bootROM.data(), romPath.data()))
     {
         emulator.SetVSyncCallback(&VSyncCallback);
 

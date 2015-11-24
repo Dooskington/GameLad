@@ -23,11 +23,11 @@ bool Cartridge::LoadROM(const char* path)
     if (file.is_open())
     {
         size = file.tellg();
-        #if WINDOWS
-               int iSize = static_cast<int>(size.seekpos());
-        #else
-               int iSize = size;
-        #endif
+#if WINDOWS
+        int iSize = static_cast<int>(size.seekpos());
+#else
+        int iSize = size;
+#endif
 
         file.seekg(0, std::ios::beg);
 
@@ -141,6 +141,14 @@ bool Cartridge::LoadMBC(unsigned int actualSize)
     case MBC3RAM:
     case MBC3RAMBattery:
         m_MBC = std::unique_ptr<MBC3_MBC>(new MBC3_MBC(m_ROM.get(), m_RAM.get()));
+        return true;
+    case MBC5:
+    case MBC5RAM:
+    case MBC5RAMBattery:
+    case MBC5Rumble:
+    case MBC5RumbleRAM:
+    case MBC5RumbleRAMBattery:
+        m_MBC = std::unique_ptr<MBC5_MBC>(new MBC5_MBC(m_ROM.get(), m_RAM.get()));
         return true;
     default:
         Logger::Log("Unsupported Cartridge MBC type: 0x%02X", mbcType);

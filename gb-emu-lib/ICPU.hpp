@@ -11,7 +11,7 @@ class ICPU
 public:
     virtual ~ICPU() {}
     virtual bool Initialize() = 0;
-    virtual bool LoadROM(const char* path) = 0;
+    virtual bool LoadROM(const char* bootROMPath, const char* cartridgePath) = 0;
     virtual void Step() = 0;
     virtual void TriggerInterrupt(byte interrupt) = 0;
     virtual byte* GetCurrentFrame() = 0;

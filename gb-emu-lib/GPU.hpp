@@ -50,6 +50,7 @@ public:
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
     void SetVSyncCallback(void(*pCallback)());
+    void PreBoot();
 
 private:
     void LaunchDMATransfer(const byte address);

@@ -15,7 +15,7 @@ MBCs Control Registers.
 #define ROMBankMode 0x00
 #define RAMBankMode 0x01
 
-MBC::MBC(byte* pROM, byte* pRAM) : 
+MBC::MBC(byte* pROM, byte* pRAM) :
     m_ROM(pROM),
     m_RAM(pRAM),
     m_isRAMEnabled(false)
@@ -571,5 +571,133 @@ bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
     }
 
     Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X", address);
+    return false;
+}
+
+/*
+MBC5 (max 2MByte ROM and/or 32KByte RAM and Timer)
+
+- ROM upto 64MBit (8MByte) divided into 512 banks, each 16kByte.
+- RAM upto 1MBit (128kByte) divided into 16 banks, each 8kByte
+*/
+
+MBC5_MBC::MBC5_MBC(byte* pROM, byte* pRAM) :
+    MBC(pROM, pRAM),
+    m_RAMG(0x00),
+    m_ROMBank(0x0000),
+    m_RAMBank(0x00)
+{
+}
+
+MBC5_MBC::~MBC5_MBC()
+{
+}
+
+// IMemoryUnit
+byte MBC5_MBC::ReadByte(const ushort& address)
+{
+    if (address <= 0x3FFF)
+    {
+        /*
+        0000-3FFF - ROM Bank 00 (Read Only)
+        Same as for MBC1.
+        */
+        return m_ROM[address];
+    }
+    else if (address <= 0x7FFF)
+    {
+        /*
+        16kByte switchable ROM bank (Latched to MBC5 pins "RA")
+        Bank 0-511 (The 0 bank here is a MBC5 speciality)
+        HLLLLLL LLAAAAAA AAAAAAAA (64MBit)
+        (i/o resides in this bank, see below)
+        */
+        unsigned int target = (address - 0x4000);
+        target += (0x4000 * m_ROMBank);
+        return m_ROM[target];
+    }
+    else if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        /*
+        8kByte switchable RAM bank (Latched via MBC5 pins "AA")
+        This is 17 bit wide in order to access 1MBit.
+        B BBBAAAAA AAAAAAAA
+        */
+        unsigned int target = address - 0xA000;
+        target += (0x2000 * m_RAMBank);
+        return m_RAM[target];
+    }
+
+    Logger::Log("MBC5_MBC::ReadByte doesn't support reading from 0x%04X", address);
+    return 0x00;
+}
+
+bool MBC5_MBC::WriteByte(const ushort& address, const byte val)
+{
+    if (address <= 0x1FFF)
+    {
+        /*
+        External Extended Memory Register (RAMG)
+        (This is ram enable on original MBC5 with 0x0A)
+
+        7  6  5  4  3  2  1  0
+        |  |              |
+        |  |           1 = RAM write enable
+        |  |           0 = RAM write inhibit
+        |  |
+        |  1 = LED on
+        |  0 = LED off
+        |
+        1 = IO enable
+        0 = IO disable
+        */
+        m_RAMG = val;
+        return true;
+    }
+    else if (address <= 0x2FFF)
+    {
+        /*
+        Lower ROM Bank Register (ROMB0)
+        Switchable ROM bank low select (First 8 RA bits)
+        LLLL LLLL
+        */
+        m_ROMBank = (m_ROMBank & 0xFF00) | val;
+        return true;
+    }
+    else if (address <= 0x3FFF)
+    {
+        /*
+        Upper ROM Bank Register (ROMB1)
+        Switchable ROM bank high select (9th RA bit)
+        XXXX XXXH
+        */
+        ushort upper = (ushort)(val & 0x01);
+        m_ROMBank = (m_ROMBank & 0x00FF) | (upper << 8);
+        return true;
+    }
+    else if (address <= 0x4FFF)
+    {
+        /*
+        RAM Bank Register (RAMB)
+        Switchable RAM bank select (4 AA bits)
+        XXXX BBBB
+        */
+        m_RAMBank = (val & 0x0F);
+        return true;
+    }
+    else if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        /*
+        8kByte switchable RAM bank (Latched via MBC5 pins "AA")
+        This is 17 bit wide in order to access 1MBit.
+        B BBBAAAAA AAAAAAAA
+        */
+        unsigned int target = address - 0xA000;
+        target += (0x2000 * m_RAMBank);
+        m_RAM[target] = val;
+        return true;
+    }
+
+    Logger::Log("MBC5_MBC::WriteByte doesn't support writing to 0x%04X", address);
     return false;
 }
