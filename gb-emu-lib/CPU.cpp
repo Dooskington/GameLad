@@ -764,6 +764,16 @@ bool CPU::LoadROM(const char* bootROMPath, const char* cartridgePath)
         m_MMU->WriteByte(0xFF25, 0xF3);  // NR51
         m_MMU->WriteByte(0xFF26, 0xF1);  // NR52
 
+        m_MMU->WriteByte(0xFF40, 0x91);  // LCDC
+        m_MMU->WriteByte(0xFF42, 0x00);  // SCY
+        m_MMU->WriteByte(0xFF43, 0x00);  // SCX
+        m_MMU->WriteByte(0xFF45, 0x00);  // LYC
+        m_MMU->WriteByte(0xFF47, 0xFC);  // BGP
+        m_MMU->WriteByte(0xFF48, 0xFF);  // OBP0
+        m_MMU->WriteByte(0xFF49, 0xFF);  // OBP1
+        m_MMU->WriteByte(0xFF4A, 0x00);  // WY
+        m_MMU->WriteByte(0xFF4B, 0x00);  // WX
+
         m_MMU->WriteByte(0xFFFF, 0x00);  // IE
 
         m_GPU->PreBoot();
