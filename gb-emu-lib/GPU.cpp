@@ -525,11 +525,29 @@ void GPU::RenderOBJScanline()
                     if (ISBITSET(low, bit)) pixelVal |= 0x01;
                     byte color = palette[pixelVal];
 
-                    // Check if the pixel is transparent
+                    // If the pixel is not transparent
                     if (pixelVal != 0x00)
                     {
                         int index = (m_LCDControllerYCoordinate * 160) + pixelX;
-                        m_DisplayPixels[index] = color;
+
+                        // If the sprite has priority 0 (Render above BG)
+                        if (!ISBITSET(spriteFlags, 7))
+                        {
+                            m_DisplayPixels[index] = color;
+                        }
+                        else 
+                        {
+                            // This sprite has priority 1 (Render behind BG)
+                            // The sprite pixels only get rendered above BG pixels that are white.
+                            // All other BG pixels stay on top.
+
+                            // If the BG pixel is white
+                            if (m_DisplayPixels[index] == 0xEB)
+                            {
+                                // Render that sprite pixel
+                                m_DisplayPixels[index] = color;
+                            }
+                        }
                     }
                 }
             }
