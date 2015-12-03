@@ -477,6 +477,13 @@ void GPU::RenderBackgroundScanline()
 void GPU::RenderOBJScanline()
 {
     const byte SPRITESIZEINBYTES = 16;
+    const byte bgPalette[]
+    {
+        GBColors[m_BGPaletteData & 0x03],
+        GBColors[(m_BGPaletteData >> 2) & 0x03],
+        GBColors[(m_BGPaletteData >> 4) & 0x03],
+        GBColors[(m_BGPaletteData >> 6) & 0x03],
+    };
 
     // Loop through each sprite
     for (byte i = 0; i < 160; i += 4)
@@ -555,7 +562,7 @@ void GPU::RenderOBJScanline()
                         int index = ((m_LCDControllerYCoordinate * 160) + pixelX) * 4;
 
                         // If the sprite has priority 0 (Render above BG)
-                        if (!ISBITSET(spriteFlags, 7) || (m_bgPixels[index + 3] == 0xEB))
+                        if (!ISBITSET(spriteFlags, 7) || (m_bgPixels[index + 3] == bgPalette[0x00]))
                         {
                             // If the BG pixel is white
                             //  This sprite has priority 1 (Render behind BG)
