@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "GPU.hpp"
 
-#define TINT 1
+#define TINT 0
 
 /*
     FF40 - LCDC - LCD Control (R/W)
@@ -368,6 +368,7 @@ void GPU::LaunchDMATransfer(const byte address)
 void GPU::RenderScanline()
 {
     RenderBackgroundScanline();
+    memcpy(m_DisplayPixels + (m_LCDControllerYCoordinate * 160 * 4), m_bgPixels + (m_LCDControllerYCoordinate * 160 * 4), 160 * 4);
 
     if (WindowDisplayEnable)
     {
@@ -409,15 +410,15 @@ void GPU::RenderBackgroundScanline()
         {
             // If BG is disabled, render a white background
             int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
-            m_DisplayPixels[index + 3] = GBColors[0];   // R
+            m_bgPixels[index + 3] = GBColors[0];   // R
 #ifdef TINT
-            m_DisplayPixels[index + 2] = 0x00;   // G
-            m_DisplayPixels[index + 1] = 0x00;   // B
+            m_bgPixels[index + 2] = 0x00;   // G
+            m_bgPixels[index + 1] = 0x00;   // B
 #else
-            m_DisplayPixels[index + 2] = GBColors[0];   // G
-            m_DisplayPixels[index + 1] = GBColors[0];   // B
+            m_bgPixels[index + 2] = GBColors[0];   // G
+            m_bgPixels[index + 1] = GBColors[0];   // B
 #endif
-            m_DisplayPixels[index + 0] = 0xFF;          // A
+            m_bgPixels[index + 0] = 0xFF;          // A
         }
 
         return;
@@ -461,15 +462,15 @@ void GPU::RenderBackgroundScanline()
         byte color = palette[pLo + pHi];
 
         int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
-        m_DisplayPixels[index + 3] = color; // R
+        m_bgPixels[index + 3] = color; // R
 #if TINT
-        m_DisplayPixels[index + 2] = 0x00; // G
-        m_DisplayPixels[index + 1] = 0x00; // B
+        m_bgPixels[index + 2] = 0x00; // G
+        m_bgPixels[index + 1] = 0x00; // B
 #else
-        m_DisplayPixels[index + 2] = color; // G
-        m_DisplayPixels[index + 1] = color; // B
+        m_bgPixels[index + 2] = color; // G
+        m_bgPixels[index + 1] = color; // B
 #endif
-        m_DisplayPixels[index + 0] = 0xFF;  // A
+        m_bgPixels[index + 0] = 0xFF;  // A
     }
 }
 
@@ -554,7 +555,7 @@ void GPU::RenderOBJScanline()
                         int index = ((m_LCDControllerYCoordinate * 160) + pixelX) * 4;
 
                         // If the sprite has priority 0 (Render above BG)
-                        if (!ISBITSET(spriteFlags, 7) || (m_DisplayPixels[index] == 0x00))
+                        if (!ISBITSET(spriteFlags, 7) || (m_bgPixels[index + 3] == 0xEB))
                         {
                             // If the BG pixel is white
                             //  This sprite has priority 1 (Render behind BG)
