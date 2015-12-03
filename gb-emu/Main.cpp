@@ -193,8 +193,8 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
     //std::string romPath = "res/games/Tetris.gb";
-    std::string romPath = "res/games/Zelda.gb";
-    //std::string romPath = "res/games/Metroid.gb";
+    //std::string romPath = "res/games/Zelda.gb";
+    std::string romPath = "res/games/Metroid.gb";
     //std::string romPath = "res/games/Castlevania.gb";
 
     // CGB Only
@@ -220,7 +220,7 @@ int main(int argc, char** argv)
     // Create window
     spWindow = std::unique_ptr<SDL_Window, SDLWindowDeleter>(
         SDL_CreateWindow(
-            "Gameboy",
+            "GameLad",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
             windowWidth * windowScale, // Original = 160
