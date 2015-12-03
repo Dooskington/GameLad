@@ -525,6 +525,10 @@ void GPU::RenderOBJScanline()
                     if (ISBITSET(low, bit)) pixelVal |= 0x01;
                     byte color = palette[pixelVal];
 
+                    // If two sprites x coordinates are the same on DMG OR CGB, the one with the lower address in OAM will be 'on top'
+                    // If two sprites x coordinates are different on DMG, the one with the x coordinate closer to the ? right ? of the screen will be on top, regardless of position in OAM. (When in DMG mode(i.e.when playing a non - color enhanced game), the CGB emulates this behavior)
+                    // If two sprites x coordinates are different on CGB in CGB mode, the one with the lower address in OAM will be 'on top', regardless of x coordinate.
+
                     // If the pixel is not transparent
                     if (pixelVal != 0x00)
                     {
@@ -542,7 +546,7 @@ void GPU::RenderOBJScanline()
                             // All other BG pixels stay on top.
 
                             // If the BG pixel is white
-                            if (m_DisplayPixels[index] == 0xEB)
+                            if (m_DisplayPixels[index] == 0x00)
                             {
                                 // Render that sprite pixel
                                 m_DisplayPixels[index] = color;
