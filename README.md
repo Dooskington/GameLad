@@ -1,12 +1,10 @@
-# gb-emu
+# GameLad
 
-This is mostly a learning project to explore the fun world of emulation.  It is not intended to be a complete project that will support every ROM out there.  Let's just hope we can get it to boot!
-
--Dooskington & TyrenDe
+The [GameLad](http://www.dooskington.com/gamelad/) is a (relatively) fully featured gameboy emulator that I have been working on for a few months in conjunction with [TyrenDe](https://github.com/TyrenDe).
 
 ### Compiling
 
-To compile on Windows, use the Visual Studio 2015 project.
+To compile on Windows, use the Visual Studio project. Currently, only VS2013 is supported.
 
 To compile on Mac OSX, use make.
 
