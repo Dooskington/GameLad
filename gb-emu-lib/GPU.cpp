@@ -544,14 +544,23 @@ void GPU::RenderOBJScanline()
                     if (ISBITSET(low, bit)) pixelVal |= 0x01;
                     byte color = palette[pixelVal];
 
+                    // If two sprites x coordinates are the same on DMG OR CGB, the one with the lower address in OAM will be 'on top'
+                    // If two sprites x coordinates are different on DMG, the one with the x coordinate closer to the ? right ? of the screen will be on top, regardless of position in OAM. (When in DMG mode(i.e.when playing a non - color enhanced game), the CGB emulates this behavior)
+                    // If two sprites x coordinates are different on CGB in CGB mode, the one with the lower address in OAM will be 'on top', regardless of x coordinate.
+
                     // If the pixel is not transparent
                     if (pixelVal != 0x00)
                     {
                         int index = ((m_LCDControllerYCoordinate * 160) + pixelX) * 4;
 
                         // If the sprite has priority 0 (Render above BG)
-                        if (!ISBITSET(spriteFlags, 7))
+                        if (!ISBITSET(spriteFlags, 7) || (m_DisplayPixels[index] == 0x00))
                         {
+                            // If the BG pixel is white
+                            //  This sprite has priority 1 (Render behind BG)
+                            //  The sprite pixels only get rendered above BG pixels that are white.
+                            //  All other BG pixels stay on top.
+                            // Render that sprite pixel
                             m_DisplayPixels[index + 2] = color; // G
 #if TINT
                             m_DisplayPixels[index + 3] = 0x00; // R
@@ -561,27 +570,6 @@ void GPU::RenderOBJScanline()
                             m_DisplayPixels[index + 1] = color; // B
 #endif
                             m_DisplayPixels[index + 0] = 0xFF;  // A
-                        }
-                        else 
-                        {
-                            // This sprite has priority 1 (Render behind BG)
-                            // The sprite pixels only get rendered above BG pixels that are white.
-                            // All other BG pixels stay on top.
-
-                            // If the BG pixel is white
-                            if (m_DisplayPixels[index + 3] == 0xEB)
-                            {
-                                // Render that sprite pixel
-                                m_DisplayPixels[index + 2] = color; // G
-#if TINT
-                                m_DisplayPixels[index + 3] = 0x00; // R
-                                m_DisplayPixels[index + 1] = 0x00; // B
-#else
-                                m_DisplayPixels[index + 3] = color; // R
-                                m_DisplayPixels[index + 1] = color; // B
-#endif
-                                m_DisplayPixels[index + 0] = 0xFF;  // A
-                            }
                         }
                     }
                 }
