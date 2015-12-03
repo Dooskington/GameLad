@@ -49,18 +49,7 @@ void Render(SDL_Renderer* pRenderer, SDL_Texture* pTexture, Emulator& emulator)
 
     // Render Game
     byte* pData = emulator.GetCurrentFrame();
-    for (int y = 0; y < 144; y++)
-    {
-        for (int x = 0; x < 160; x++)
-        {
-            int index = ((y * 160) + x) * 4;
-            pPixels[index + 3] = *pData;    // R
-            pPixels[index + 2] = *pData;    // G
-            pPixels[index + 1] = *pData;    // B
-            pPixels[index + 0] = 0xFF;      // A
-            pData++;
-        }
-    }
+    memcpy(pPixels, pData, 160 * 144 * 4);
 
     SDL_UnlockTexture(pTexture);
 
@@ -203,8 +192,8 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Super Mario Land (World).gb";
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
-    std::string romPath = "res/games/Tetris.gb";
-    //std::string romPath = "res/games/Zelda.gb";
+    //std::string romPath = "res/games/Tetris.gb";
+    std::string romPath = "res/games/Zelda.gb";
     //std::string romPath = "res/games/Metroid.gb";
     //std::string romPath = "res/games/Castlevania.gb";
 

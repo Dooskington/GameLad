@@ -1,6 +1,8 @@
 #include "pch.hpp"
 #include "GPU.hpp"
 
+#define TINT 1
+
 /*
     FF40 - LCDC - LCD Control (R/W)
     Bit 7 - LCD Display Enable             (0=Off, 1=On)
@@ -406,7 +408,16 @@ void GPU::RenderBackgroundScanline()
         for (int x = 0;x < 160;x++)
         {
             // If BG is disabled, render a white background
-            m_DisplayPixels[(m_LCDControllerYCoordinate * 160) + x] = GBColors[0];
+            int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
+            m_DisplayPixels[index + 3] = GBColors[0];   // R
+#ifdef TINT
+            m_DisplayPixels[index + 2] = 0x00;   // G
+            m_DisplayPixels[index + 1] = 0x00;   // B
+#else
+            m_DisplayPixels[index + 2] = GBColors[0];   // G
+            m_DisplayPixels[index + 1] = GBColors[0];   // B
+#endif
+            m_DisplayPixels[index + 0] = 0xFF;          // A
         }
 
         return;
@@ -449,8 +460,16 @@ void GPU::RenderBackgroundScanline()
 
         byte color = palette[pLo + pHi];
 
-        int index = (m_LCDControllerYCoordinate * 160) + x;
-        m_DisplayPixels[index] = color;
+        int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
+        m_DisplayPixels[index + 3] = color; // R
+#if TINT
+        m_DisplayPixels[index + 2] = 0x00; // G
+        m_DisplayPixels[index + 1] = 0x00; // B
+#else
+        m_DisplayPixels[index + 2] = color; // G
+        m_DisplayPixels[index + 1] = color; // B
+#endif
+        m_DisplayPixels[index + 0] = 0xFF;  // A
     }
 }
 
@@ -532,25 +551,25 @@ void GPU::RenderOBJScanline()
                     // If the pixel is not transparent
                     if (pixelVal != 0x00)
                     {
-                        int index = (m_LCDControllerYCoordinate * 160) + pixelX;
+                        int index = ((m_LCDControllerYCoordinate * 160) + pixelX) * 4;
 
                         // If the sprite has priority 0 (Render above BG)
-                        if (!ISBITSET(spriteFlags, 7))
+                        if (!ISBITSET(spriteFlags, 7) || (m_DisplayPixels[index] == 0x00))
                         {
-                            m_DisplayPixels[index] = color;
-                        }
-                        else 
-                        {
-                            // This sprite has priority 1 (Render behind BG)
-                            // The sprite pixels only get rendered above BG pixels that are white.
-                            // All other BG pixels stay on top.
-
                             // If the BG pixel is white
-                            if (m_DisplayPixels[index] == 0x00)
-                            {
-                                // Render that sprite pixel
-                                m_DisplayPixels[index] = color;
-                            }
+                            //  This sprite has priority 1 (Render behind BG)
+                            //  The sprite pixels only get rendered above BG pixels that are white.
+                            //  All other BG pixels stay on top.
+                            // Render that sprite pixel
+                            m_DisplayPixels[index + 2] = color; // G
+#if TINT
+                            m_DisplayPixels[index + 3] = 0x00; // R
+                            m_DisplayPixels[index + 1] = 0x00; // B
+#else
+                            m_DisplayPixels[index + 3] = color; // R
+                            m_DisplayPixels[index + 1] = color; // B
+#endif
+                            m_DisplayPixels[index + 0] = 0xFF;  // A
                         }
                     }
                 }
