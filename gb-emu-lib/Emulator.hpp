@@ -19,7 +19,7 @@ class Emulator
 public:
     Emulator();
 
-    void Step();
+    int Step();
     void Stop();
     bool Initialize(const char* bootROMPath, const char* cartridgePath);
     byte* GetCurrentFrame();
