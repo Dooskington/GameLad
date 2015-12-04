@@ -373,7 +373,7 @@ void GPU::LaunchDMATransfer(const byte address)
     ushort source = (static_cast<ushort>(address) * 0x0100);
     for (byte offset = 0x00; offset <= 0x9F; offset++)
     {
-        m_OAM[offset] = m_MMU->ReadByte(source | offset);
+        m_OAM[offset] = m_MMU->Read(source | offset);
     }
 }
 

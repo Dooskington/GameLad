@@ -715,7 +715,8 @@ bool CPU::LoadROM(const char* bootROMPath, const char* cartridgePath)
         return false;
     }
 
-    if (m_MMU->ReadByte(0xFF50) != 0x00)
+    // If we are already booted
+    if (m_MMU->Read(0xFF50) != 0x00)
     {
         m_PC = 0x0100;
 
@@ -726,40 +727,40 @@ bool CPU::LoadROM(const char* bootROMPath, const char* cartridgePath)
 
         m_SP = 0xFFFE;
 
-        m_MMU->WriteByte(0xFF05, 0x00);  // TIMA
-        m_MMU->WriteByte(0xFF06, 0x00);  // TMA
-        m_MMU->WriteByte(0xFF07, 0x00);  // TAC
+        m_MMU->Write(0xFF05, 0x00);  // TIMA
+        m_MMU->Write(0xFF06, 0x00);  // TMA
+        m_MMU->Write(0xFF07, 0x00);  // TAC
 
-        m_MMU->WriteByte(0xFF10, 0x80);  // NR10
-        m_MMU->WriteByte(0xFF11, 0xBF);  // NR11
-        m_MMU->WriteByte(0xFF12, 0xF3);  // NR12
-        m_MMU->WriteByte(0xFF14, 0xBF);  // NR14
-        m_MMU->WriteByte(0xFF16, 0x3F);  // NR21
-        m_MMU->WriteByte(0xFF17, 0x00);  // NR22
-        m_MMU->WriteByte(0xFF19, 0xBF);  // NR24
-        m_MMU->WriteByte(0xFF1A, 0x7F);  // NR30
-        m_MMU->WriteByte(0xFF1B, 0xFF);  // NR31
-        m_MMU->WriteByte(0xFF1C, 0x9F);  // NR32
-        m_MMU->WriteByte(0xFF1E, 0xBF);  // NR33
-        m_MMU->WriteByte(0xFF20, 0xFF);  // NR41
-        m_MMU->WriteByte(0xFF21, 0x00);  // NR42
-        m_MMU->WriteByte(0xFF22, 0x00);  // NR43
-        m_MMU->WriteByte(0xFF23, 0xBF);  // NR30
-        m_MMU->WriteByte(0xFF24, 0x77);  // NR50
-        m_MMU->WriteByte(0xFF25, 0xF3);  // NR51
-        m_MMU->WriteByte(0xFF26, 0xF1);  // NR52
+        m_MMU->Write(0xFF10, 0x80);  // NR10
+        m_MMU->Write(0xFF11, 0xBF);  // NR11
+        m_MMU->Write(0xFF12, 0xF3);  // NR12
+        m_MMU->Write(0xFF14, 0xBF);  // NR14
+        m_MMU->Write(0xFF16, 0x3F);  // NR21
+        m_MMU->Write(0xFF17, 0x00);  // NR22
+        m_MMU->Write(0xFF19, 0xBF);  // NR24
+        m_MMU->Write(0xFF1A, 0x7F);  // NR30
+        m_MMU->Write(0xFF1B, 0xFF);  // NR31
+        m_MMU->Write(0xFF1C, 0x9F);  // NR32
+        m_MMU->Write(0xFF1E, 0xBF);  // NR33
+        m_MMU->Write(0xFF20, 0xFF);  // NR41
+        m_MMU->Write(0xFF21, 0x00);  // NR42
+        m_MMU->Write(0xFF22, 0x00);  // NR43
+        m_MMU->Write(0xFF23, 0xBF);  // NR30
+        m_MMU->Write(0xFF24, 0x77);  // NR50
+        m_MMU->Write(0xFF25, 0xF3);  // NR51
+        m_MMU->Write(0xFF26, 0xF1);  // NR52
 
-        m_MMU->WriteByte(0xFF40, 0x91);  // LCDC
-        m_MMU->WriteByte(0xFF42, 0x00);  // SCY
-        m_MMU->WriteByte(0xFF43, 0x00);  // SCX
-        m_MMU->WriteByte(0xFF45, 0x00);  // LYC
-        m_MMU->WriteByte(0xFF47, 0xFC);  // BGP
-        m_MMU->WriteByte(0xFF48, 0xFF);  // OBP0
-        m_MMU->WriteByte(0xFF49, 0xFF);  // OBP1
-        m_MMU->WriteByte(0xFF4A, 0x00);  // WY
-        m_MMU->WriteByte(0xFF4B, 0x00);  // WX
+        m_MMU->Write(0xFF40, 0x91);  // LCDC
+        m_MMU->Write(0xFF42, 0x00);  // SCY
+        m_MMU->Write(0xFF43, 0x00);  // SCX
+        m_MMU->Write(0xFF45, 0x00);  // LYC
+        m_MMU->Write(0xFF47, 0xFC);  // BGP
+        m_MMU->Write(0xFF48, 0xFF);  // OBP0
+        m_MMU->Write(0xFF49, 0xFF);  // OBP1
+        m_MMU->Write(0xFF4A, 0x00);  // WY
+        m_MMU->Write(0xFF4B, 0x00);  // WX
 
-        m_MMU->WriteByte(0xFFFF, 0x00);  // IE
+        m_MMU->Write(0xFFFF, 0x00);  // IE
 
         m_GPU->PreBoot();
     }
@@ -775,7 +776,7 @@ int CPU::Step()
     {
         cycles = NOP(0x00);
 
-        if (m_IFWhenHalted != m_MMU->ReadByte(0xFF0F))
+        if (m_IFWhenHalted != m_MMU->Read(0xFF0F))
         {
             // We received an interrupt, resume
             m_isHalted = false;
@@ -835,14 +836,14 @@ int CPU::Step()
 
 void CPU::TriggerInterrupt(byte interrupt)
 {
-    byte IF = m_MMU->ReadByte(0xFF0F);
+    byte IF = m_MMU->Read(0xFF0F);
     if (interrupt == INT40) IF = SETBIT(IF, 0);
     else if (interrupt == INT48) IF = SETBIT(IF, 1);
     else if (interrupt == INT50) IF = SETBIT(IF, 2);
     else if (interrupt == INT58) IF = SETBIT(IF, 3);
     else if (interrupt == INT60) IF = SETBIT(IF, 4);
 
-    m_MMU->WriteByte(0xFF0F, IF);
+    m_MMU->Write(0xFF0F, IF);
 }
 
 byte* CPU::GetCurrentFrame()
@@ -928,7 +929,7 @@ bool CPU::IsFlagSet(byte flag)
 void CPU::PushByteToSP(byte val)
 {
     m_SP--;
-    m_MMU->WriteByte(m_SP, val);
+    m_MMU->Write(m_SP, val);
 }
 
 void CPU::PushUShortToSP(ushort val)
@@ -946,14 +947,14 @@ ushort CPU::PopUShort()
 
 byte CPU::PopByte()
 {
-    byte val = m_MMU->ReadByte(m_SP);
+    byte val = m_MMU->Read(m_SP);
     m_SP++;
     return val;
 }
 
 byte CPU::ReadBytePC()
 {
-    byte val = m_MMU->ReadByte(m_PC);
+    byte val = m_MMU->Read(m_PC);
     m_PC++;
     return val;
 }
@@ -1057,8 +1058,8 @@ void CPU::HandleInterrupts()
     // an interrupt flag is set, handle the interrupt.
     if (m_IME == 0x01)
     {
-        byte IE = m_MMU->ReadByte(0xFFFF);
-        byte IF = m_MMU->ReadByte(0xFF0F);
+        byte IE = m_MMU->Read(0xFFFF);
+        byte IF = m_MMU->Read(0xFF0F);
 
         // This will only match valid interrupts
         byte activeInterrupts = ((IE & IF) & 0x0F);
@@ -1100,7 +1101,7 @@ void CPU::HandleInterrupts()
                 IF = CLEARBIT(IF, 4);
             }
 
-            m_MMU->WriteByte(0xFF0F, IF);
+            m_MMU->Write(0xFF0F, IF);
         }
     }
 }
@@ -1129,7 +1130,7 @@ unsigned long CPU::NOP(const byte& opCode)
 */
 unsigned long CPU::LD_BC_A(const byte& opCode)
 {
-    m_MMU->WriteByte(m_BC, GetHighByte(m_AF));
+    m_MMU->Write(m_BC, GetHighByte(m_AF));
     return 8;
 }
 
@@ -1222,7 +1223,7 @@ unsigned long CPU::LDr_HL_(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode >> 3);
 
-    (*r) = m_MMU->ReadByte(m_HL);
+    (*r) = m_MMU->Read(m_HL);
 
     return 8;
 }
@@ -1242,7 +1243,7 @@ unsigned long CPU::LDr_HL_(const byte& opCode)
 unsigned long CPU::LD_HL_r(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
-    m_MMU->WriteByte(m_HL, (*r)); // Load r into the address pointed at by HL.
+    m_MMU->Write(m_HL, (*r)); // Load r into the address pointed at by HL.
 
     return 8;
 }
@@ -1414,8 +1415,8 @@ unsigned long CPU::LD_nn_SP(const byte& opCode)
     ushort nn = ReadUShortPC();
 
     // Load A into (nn)
-    m_MMU->WriteByte(nn + 1, GetHighByte(m_SP));
-    m_MMU->WriteByte(nn, GetLowByte(m_SP));
+    m_MMU->Write(nn + 1, GetHighByte(m_SP));
+    m_MMU->Write(nn, GetLowByte(m_SP));
 
     return 20;
 }
@@ -1764,7 +1765,7 @@ unsigned long CPU::XORr(const byte& opCode)
 */
 unsigned long CPU::XOR_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
     SetHighByte(&m_AF, r ^ GetHighByte(m_AF));
 
     // Affects Z and clears NHC
@@ -1830,7 +1831,7 @@ unsigned long CPU::ORr(const byte& opCode)
 */
 unsigned long CPU::OR_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
     SetHighByte(&m_AF, r | GetHighByte(m_AF));
 
     // Affects Z and clears NHC
@@ -1985,12 +1986,12 @@ unsigned long CPU::DECr(const byte& opCode)
 */
 unsigned long CPU::INC_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     bool isBit3Before = ISBITSET(HL, 3);
     HL += 1;
     bool isBit3After = ISBITSET(HL, 3);
 
-    m_MMU->WriteByte(m_HL, HL);
+    m_MMU->Write(m_HL, HL);
 
     if (HL == 0x00)
     {
@@ -2026,7 +2027,7 @@ unsigned long CPU::INC_HL_(const byte& opCode)
 */
 unsigned long CPU::DEC_HL_(const byte& opCode)
 {
-    byte val = m_MMU->ReadByte(m_HL);
+    byte val = m_MMU->Read(m_HL);
     byte calc = (val - 1);
 
     SetFlag(SubtractFlag);
@@ -2041,7 +2042,7 @@ unsigned long CPU::DEC_HL_(const byte& opCode)
         ClearFlag(HalfCarryFlag);
     }
 
-    m_MMU->WriteByte(m_HL, calc);
+    m_MMU->Write(m_HL, calc);
 
     return 12;
 }
@@ -2059,7 +2060,7 @@ unsigned long CPU::DEC_HL_(const byte& opCode)
 unsigned long CPU::LD_HL_n(const byte& opCode)
 {
     byte n = ReadBytePC();
-    m_MMU->WriteByte(m_HL, n); // Load n into the address pointed at by HL.
+    m_MMU->Write(m_HL, n); // Load n into the address pointed at by HL.
 
     return 12;
 }
@@ -2171,7 +2172,7 @@ unsigned long CPU::STOP(const byte& opCode)
 */
 unsigned long CPU::LD_DE_A(const byte& opCode)
 {
-    m_MMU->WriteByte(m_DE, GetHighByte(m_AF));
+    m_MMU->Write(m_DE, GetHighByte(m_AF));
     return 8;
 }
 
@@ -2228,7 +2229,7 @@ unsigned long CPU::JRe(const byte& opCode)
 */
 unsigned long CPU::LDA_DE_(const byte& opCode)
 {
-    byte val = m_MMU->ReadByte(m_DE);
+    byte val = m_MMU->Read(m_DE);
     SetHighByte(&m_AF, val);
     return 8;
 }
@@ -2244,7 +2245,7 @@ unsigned long CPU::LDA_DE_(const byte& opCode)
 */
 unsigned long CPU::LDA_BC_(const byte& opCode)
 {
-    byte val = m_MMU->ReadByte(m_BC);
+    byte val = m_MMU->Read(m_BC);
     SetHighByte(&m_AF, val);
 
     return 8;
@@ -2327,7 +2328,7 @@ unsigned long CPU::RRA(const byte& opCode)
 */
 unsigned long CPU::LDI_HL_A(const byte& opCode)
 {
-    m_MMU->WriteByte(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
+    m_MMU->Write(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL++;
 
@@ -2416,7 +2417,7 @@ unsigned long CPU::DAA(const byte& opCode)
 */
 unsigned long CPU::LDIA_HL_(const byte& opCode)
 {
-    SetHighByte(&m_AF, m_MMU->ReadByte(m_HL));
+    SetHighByte(&m_AF, m_MMU->Read(m_HL));
     m_HL++;
 
     return 8;
@@ -2454,7 +2455,7 @@ unsigned long CPU::CPL(const byte& opCode)
 */
 unsigned long CPU::LDD_HL_A(const byte& opCode)
 {
-    m_MMU->WriteByte(m_HL, GetHighByte(m_AF));
+    m_MMU->Write(m_HL, GetHighByte(m_AF));
 
     m_HL--;
     return 8;
@@ -2471,7 +2472,7 @@ unsigned long CPU::LDD_HL_A(const byte& opCode)
 */
 unsigned long CPU::LDDA_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     SetHighByte(&m_AF, HL);
 
     m_HL--;
@@ -2488,7 +2489,7 @@ unsigned long CPU::LDDA_HL_(const byte& opCode)
 unsigned long CPU::HALT(const byte& opCode)
 {
     m_isHalted = true;
-    m_IFWhenHalted = m_MMU->ReadByte(0xFF0F);
+    m_IFWhenHalted = m_MMU->Read(0xFF0F);
     return 0;
 }
 
@@ -2506,7 +2507,7 @@ unsigned long CPU::HALT(const byte& opCode)
 unsigned long CPU::ADDA_HL_(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     SetHighByte(&m_AF, AddByte(A, HL));
 
     return 8;
@@ -2525,7 +2526,7 @@ unsigned long CPU::ADDA_HL_(const byte& opCode)
 */
 unsigned long CPU::ADCA_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     ADC(HL);
     return 8;
 }
@@ -2544,7 +2545,7 @@ unsigned long CPU::ADCA_HL_(const byte& opCode)
 unsigned long CPU::SUB_HL_(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     byte result = A - HL;
     SetHighByte(&m_AF, result);
 
@@ -2569,7 +2570,7 @@ unsigned long CPU::SUB_HL_(const byte& opCode)
 */
 unsigned long CPU::SBCA_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     SBC(HL);
     return 8;
 }
@@ -2587,7 +2588,7 @@ unsigned long CPU::SBCA_HL_(const byte& opCode)
 */
 unsigned long CPU::AND_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     byte result = HL & GetHighByte(m_AF);
     SetHighByte(&m_AF, result);
 
@@ -2620,7 +2621,7 @@ unsigned long CPU::AND_HL_(const byte& opCode)
 */
 unsigned long CPU::CP_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->ReadByte(m_HL);
+    byte HL = m_MMU->Read(m_HL);
     byte A = GetHighByte(m_AF);
     byte result = A - HL;
 
@@ -2792,7 +2793,7 @@ unsigned long CPU::LD_0xFF00n_A(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
 
-    m_MMU->WriteByte(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
+    m_MMU->Write(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
 
     return 12;
 }
@@ -2808,7 +2809,7 @@ unsigned long CPU::LD_0xFF00n_A(const byte& opCode)
 */
 unsigned long CPU::LD_0xFF00C_A(const byte& opCode)
 {
-    m_MMU->WriteByte(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
+    m_MMU->Write(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
 
     return 8;
 }
@@ -2827,7 +2828,7 @@ unsigned long CPU::LD_nn_A(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
-    m_MMU->WriteByte(nn, GetHighByte(m_AF)); // Load A into (nn)
+    m_MMU->Write(nn, GetHighByte(m_AF)); // Load A into (nn)
 
     return 16;
 }
@@ -2876,7 +2877,7 @@ unsigned long CPU::XORn(const byte& opCode)
 unsigned long CPU::LDA_0xFF00n_(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
-    SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + n));
+    SetHighByte(&m_AF, m_MMU->Read(0xFF00 + n));
 
     return 12;
 }
@@ -2892,7 +2893,7 @@ unsigned long CPU::LDA_0xFF00n_(const byte& opCode)
 */
 unsigned long CPU::LDA_0xFF00C_(const byte& opCode)
 {
-    SetHighByte(&m_AF, m_MMU->ReadByte(0xFF00 + GetLowByte(m_BC)));
+    SetHighByte(&m_AF, m_MMU->Read(0xFF00 + GetLowByte(m_BC)));
 
     return 8;
 }
@@ -3001,7 +3002,7 @@ unsigned long CPU::LDHLSPe(const byte& opCode)
 unsigned long CPU::LDA_nn_(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
-    SetHighByte(&m_AF, m_MMU->ReadByte(nn));
+    SetHighByte(&m_AF, m_MMU->Read(nn));
 
     return 16;
 }
@@ -3093,7 +3094,7 @@ unsigned long CPU::RLCr(const byte& opCode)
 */
 unsigned long CPU::RLC_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Grab bit 7 and store it in the carryflag
     ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
@@ -3104,7 +3105,7 @@ unsigned long CPU::RLC_HL_(const byte& opCode)
     // Set bit 0 of r to the old CarryFlag
     r = IsFlagSet(CarryFlag) ? SETBIT((r), 0) : CLEARBIT((r), 0);
 
-    m_MMU->WriteByte(m_HL, r);
+    m_MMU->Write(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3156,7 +3157,7 @@ unsigned long CPU::RRCr(const byte& opCode)
 */
 unsigned long CPU::RRC_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Grab bit 0 and store it in the carryflag
     ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
@@ -3167,7 +3168,7 @@ unsigned long CPU::RRC_HL_(const byte& opCode)
     // Set bit 0 of r to the old CarryFlag
     r = IsFlagSet(CarryFlag) ? SETBIT((r), 7) : CLEARBIT((r), 7);
 
-    m_MMU->WriteByte(m_HL, r);
+    m_MMU->Write(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3222,7 +3223,7 @@ unsigned long CPU::RLr(const byte& opCode)
 */
 unsigned long CPU::RL_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
@@ -3236,7 +3237,7 @@ unsigned long CPU::RL_HL_(const byte& opCode)
     // Set bit 0 of r to the old CarryFlag
     r = carry ? SETBIT((r), 0) : CLEARBIT((r), 0);
 
-    m_MMU->WriteByte(m_HL, r);
+    m_MMU->Write(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3291,7 +3292,7 @@ unsigned long CPU::RRr(const byte& opCode)
 */
 unsigned long CPU::RR_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
@@ -3305,7 +3306,7 @@ unsigned long CPU::RR_HL_(const byte& opCode)
     // Set bit 7 of r to the old CarryFlag
     r = carry ? SETBIT((r), 7) : CLEARBIT((r), 7);
 
-    m_MMU->WriteByte(m_HL, r);
+    m_MMU->Write(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3353,14 +3354,14 @@ unsigned long CPU::SLAr(const byte& opCode)
 */
 unsigned long CPU::SLA_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Grab bit 7 and store it in the carryflag
     ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     r = r << 1;
-    m_MMU->WriteByte(m_HL, r);
+    m_MMU->Write(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3408,14 +3409,14 @@ unsigned long CPU::SRAr(const byte& opCode)
 */
 unsigned long CPU::SRA_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Grab bit 0 and store it in the carryflag
     ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r right
     r = (r >> 1) | (r & 0x80);
-    m_MMU->WriteByte(m_HL, r);
+    m_MMU->Write(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3464,7 +3465,7 @@ unsigned long CPU::SRLr(const byte& opCode)
 */
 unsigned long CPU::SRL_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Grab bit 0 and store it in the carryflag
     ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
@@ -3472,7 +3473,7 @@ unsigned long CPU::SRL_HL_(const byte& opCode)
     // Shift r right
     r = r >> 1;
     r = CLEARBIT(r, 7);
-    m_MMU->WriteByte(m_HL, r);
+    m_MMU->Write(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3516,7 +3517,7 @@ unsigned long CPU::BITbr(const byte& opCode)
 unsigned long CPU::BITb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
 
     // Test bit b in r
     (!ISBITSET(r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3556,8 +3557,8 @@ unsigned long CPU::RESbr(const byte& opCode)
 unsigned long CPU::RESb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
-    byte r = m_MMU->ReadByte(m_HL);
-    m_MMU->WriteByte(m_HL, CLEARBIT(r, bit));
+    byte r = m_MMU->Read(m_HL);
+    m_MMU->Write(m_HL, CLEARBIT(r, bit));
 
     return 16;
 }
@@ -3591,8 +3592,8 @@ unsigned long CPU::SETbr(const byte& opCode)
 unsigned long CPU::SETb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
-    byte r = m_MMU->ReadByte(m_HL);
-    m_MMU->WriteByte(m_HL, SETBIT(r, bit));
+    byte r = m_MMU->Read(m_HL);
+    m_MMU->Write(m_HL, SETBIT(r, bit));
 
     return 16;
 }
@@ -3634,11 +3635,11 @@ unsigned long CPU::SWAPr(const byte& opCode)
 */
 unsigned long CPU::SWAP_HL_(const byte& opCode)
 {
-    byte r = m_MMU->ReadByte(m_HL);
+    byte r = m_MMU->Read(m_HL);
     byte lowNibble = (r & 0x0F);
     byte highNibble = (r & 0xF0);
 
-    m_MMU->WriteByte(m_HL, (lowNibble << 4) | (highNibble >> 4));
+    m_MMU->Write(m_HL, (lowNibble << 4) | (highNibble >> 4));
 
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);

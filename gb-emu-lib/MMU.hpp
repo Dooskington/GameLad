@@ -1,6 +1,6 @@
 #pragma once
 
-class MMU : public IMMU
+class MMU : public IMMU, IMemoryUnit
 {
 public:
     MMU();
@@ -10,13 +10,16 @@ public:
     unsigned short ReadUShort(const ushort& address);
     bool LoadBootROM(const char* bootROMPath);
 
+    byte Read(const ushort& address);
+    bool Write(const ushort& address, const byte val);
+
     // IMemoryUnit
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    byte ReadByteInternal(const ushort& address);
-    bool WriteByteInternal(const ushort& address, const byte val);
+    //byte ReadByteInternal(const ushort& address);
+    //bool WriteByteInternal(const ushort& address, const byte val);
 
 private:
     // Booting
