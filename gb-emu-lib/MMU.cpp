@@ -170,7 +170,6 @@ byte MMU::ReadByte(const ushort& address)
     }
     else if (address >= 0xFEA0 && address <= 0xFEFF)
     {
-        Logger::Log("Strange");
         // Unusable memory
         return 0x00;
     }
@@ -196,7 +195,6 @@ byte MMU::ReadByte(const ushort& address)
     }
     else
     {
-        Logger::Log("Strange2: 0x%02X", address);
         return 0x00;
     }
 }
@@ -219,11 +217,6 @@ bool MMU::WriteByte(const ushort& address, const byte val)
     {
         m_bank1[address - 0xF000] = val;
     }
-    else if (address >= 0xFEA0 && address <= 0xFEFF)
-    {
-        // Unusable memory
-        Logger::Log("Strange3");
-    }
     else if (address >= 0xFF80 && address <= 0xFFFE)
     {
         m_HRAM[address - 0xFF80] = val;
@@ -243,10 +236,6 @@ bool MMU::WriteByte(const ushort& address, const byte val)
     else if (address == 0xFF4D)
     {
         m_Key1 = val;
-    }
-    else
-    {
-        Logger::Log("Strange4");
     }
 
     return true;
