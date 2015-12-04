@@ -57,6 +57,12 @@ private:
     void RenderScanline();
     void RenderImage();
     void RenderBackgroundScanline();
+    void RenderWindowScanline();
+    void RenderBGWindowScanline(
+        ushort tileNumberMap, 
+        byte scrollX,
+        byte scrollY,
+        bool isBG);
     void RenderOBJScanline();
 
 private:
