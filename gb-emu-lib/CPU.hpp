@@ -36,7 +36,7 @@ private:
 public:
     bool Initialize();
     bool LoadROM(const char* bootROMPath, const char* cartridgePath);
-    void Step();
+    int Step();
     void TriggerInterrupt(byte interrupt);
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);

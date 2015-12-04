@@ -12,7 +12,7 @@ public:
     virtual ~ICPU() {}
     virtual bool Initialize() = 0;
     virtual bool LoadROM(const char* bootROMPath, const char* cartridgePath) = 0;
-    virtual void Step() = 0;
+    virtual int Step() = 0;
     virtual void TriggerInterrupt(byte interrupt) = 0;
     virtual byte* GetCurrentFrame() = 0;
     virtual void SetInput(byte input, byte buttons) = 0;

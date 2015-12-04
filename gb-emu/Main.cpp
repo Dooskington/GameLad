@@ -1,7 +1,11 @@
 #include "PCH.hpp"
 #include <Emulator.hpp>
 
-const double TimePerFrame = 1.0 / 60.0;
+// Play with this 1/120 is "FAST" and 1/60 is "SLOW"
+const double TimePerFrame = 1.0 / 90.0;
+
+// The number of CPU cycles per frame
+const unsigned int CyclesPerFrame = 70224;
 
 struct SDLWindowDeleter
 {
@@ -42,7 +46,6 @@ void Render(SDL_Renderer* pRenderer, SDL_Texture* pTexture, Emulator& emulator)
     SDL_SetRenderDrawColor(pRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderClear(pRenderer);
 
-    //SDL_CreateRGBSurface(0, 160, 144, 8, )
     byte* pPixels;
     int pitch = 0;
     SDL_LockTexture(pTexture, nullptr, (void**)&pPixels, &pitch);
@@ -64,46 +67,15 @@ std::unique_ptr<SDL_Renderer, SDLRendererDeleter> spRenderer;
 std::unique_ptr<SDL_Texture, SDLTextureDeleter> spTexture;
 Emulator emulator;
 
-int renderFrames = 0;
-double renderElapsedInSec = 0;
-double renderTimeInSec = 0;
-Uint64 renderStart = SDL_GetPerformanceCounter();
-
 // The emulator will call this whenever we hit VBlank
 void VSyncCallback()
 {
     Render(spRenderer.get(), spTexture.get(), emulator);
-    renderFrames++;
-    Uint64 renderEnd = SDL_GetPerformanceCounter();
-
-    // Loop until we use up the rest of our frame time
-    while (true)
-    {
-        renderEnd = SDL_GetPerformanceCounter();
-        renderElapsedInSec = (double)(renderEnd - renderStart) / SDL_GetPerformanceFrequency();
-
-        // Break out once we use up our time per frame
-        if (renderElapsedInSec >= TimePerFrame)
-        {
-            break;
-        }
-    }
-
-    // Print Render FPS every 5 seconds
-    renderTimeInSec += renderElapsedInSec;
-    if (renderTimeInSec > 0.5)
-    {
-        // Uncomment to display render FPS
-        //Logger::Log("RFPS: %f", renderFrames / renderTimeInSec);
-        renderFrames = 0;
-        renderTimeInSec = 0;
-    }
-
-    renderStart = renderEnd;
 }
 
 void ProcessInput(Emulator& emulator)
 {
+    SDL_PumpEvents();
     const Uint8 *keys = SDL_GetKeyboardState(NULL);
     byte input = JOYPAD_NONE;
     byte buttons = JOYPAD_NONE;
@@ -192,9 +164,9 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Super Mario Land (World).gb";
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
-    //std::string romPath = "res/games/Tetris.gb";
+    std::string romPath = "res/games/Tetris.gb";
     //std::string romPath = "res/games/Zelda.gb";
-    std::string romPath = "res/games/Metroid.gb";
+    //std::string romPath = "res/games/Metroid.gb";
     //std::string romPath = "res/games/Castlevania.gb";
 
     // CGB Only
@@ -248,7 +220,8 @@ int main(int argc, char** argv)
     {
         emulator.SetVSyncCallback(&VSyncCallback);
 
-        renderStart = SDL_GetPerformanceCounter();
+        int cycles = 0;
+        Uint64 frameStart = SDL_GetPerformanceCounter();
         while (isRunning)
         {
             // Poll for window input
@@ -268,7 +241,28 @@ int main(int argc, char** argv)
             }
 
             ProcessInput(emulator);
-            emulator.Step();
+            while (cycles < CyclesPerFrame)
+            {
+                cycles += emulator.Step();
+            }
+
+            cycles -= CyclesPerFrame;
+
+            Uint64 frameEnd = SDL_GetPerformanceCounter();
+            // Loop until we use up the rest of our frame time
+            while (true)
+            {
+                frameEnd = SDL_GetPerformanceCounter();
+                double frameElapsedInSec = (double)(frameEnd - frameStart) / SDL_GetPerformanceFrequency();
+
+                // Break out once we use up our time per frame
+                if (frameElapsedInSec >= TimePerFrame)
+                {
+                    break;
+                }
+            }
+
+            frameStart = frameEnd;
         }
     }
 

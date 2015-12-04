@@ -3,21 +3,6 @@
 
 #include <vector>
 
-// The number of CPU cycles per frame
-const unsigned int CyclesPerFrame = 70224;
-
-struct Trace
-{
-    byte opCode;
-    ushort AF;
-    ushort BC;
-    ushort DE;
-    ushort HL;
-    ushort SP;
-    ushort PC;
-};
-std::vector<Trace> trace;
-
 CPU::CPU() :
     m_cycles(0),
     m_isHalted(false),
@@ -782,7 +767,7 @@ bool CPU::LoadROM(const char* bootROMPath, const char* cartridgePath)
     return m_cartridge->LoadROM(cartridgePath);
 }
 
-void CPU::Step()
+int CPU::Step()
 {
     unsigned long cycles = 0x00;
 
@@ -816,12 +801,6 @@ void CPU::Step()
         if (instruction != nullptr)
         {
             cycles = (this->*instruction)(opCode);
-            Trace t = { opCode, m_AF, m_BC, m_DE, m_HL, m_SP, m_PC };
-            trace.push_back(t);
-            if (trace.size() > 10)
-            {
-                trace.erase(trace.begin());
-            }
         }
         else
         {
@@ -851,6 +830,7 @@ void CPU::Step()
     }
 
     HandleInterrupts();
+    return cycles;
 }
 
 void CPU::TriggerInterrupt(byte interrupt)

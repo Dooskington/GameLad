@@ -7,9 +7,9 @@ Emulator::Emulator()
 {
 }
 
-void Emulator::Step()
+int Emulator::Step()
 {
-    m_cpu->Step();
+    return m_cpu->Step();
 }
 
 void Emulator::Stop()

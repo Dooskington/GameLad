@@ -411,7 +411,7 @@ void GPU::RenderBackgroundScanline()
             // If BG is disabled, render a white background
             int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
             m_bgPixels[index + 3] = GBColors[0];   // R
-#ifdef TINT
+#if TINT
             m_bgPixels[index + 2] = 0x00;   // G
             m_bgPixels[index + 1] = 0x00;   // B
 #else
