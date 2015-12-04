@@ -294,7 +294,7 @@ bool GPU::WriteByte(const ushort& address, const byte val)
                 // The display was turned off, clear the screen
                 // Set color to white
                 memset(m_DisplayPixels, GBColors[0], ARRAYSIZE(m_DisplayPixels));
-                for (int a = 0;a < ARRAYSIZE(m_DisplayPixels);a += 4)
+                for (unsigned int a = 0;a < ARRAYSIZE(m_DisplayPixels);a += 4)
                 {
                     m_DisplayPixels[a] = 0xFF;   // Set Alpha to 0xFF
                 }
@@ -364,7 +364,7 @@ void GPU::PreBoot()
 
     // Initialize color to white
     memset(m_DisplayPixels, GBColors[0], ARRAYSIZE(m_DisplayPixels));
-    for (int a = 0;a < ARRAYSIZE(m_DisplayPixels);a += 4)
+    for (unsigned int a = 0;a < ARRAYSIZE(m_DisplayPixels);a += 4)
     {
         m_DisplayPixels[a] = 0xFF;   // Set Alpha to 0xFF
     }

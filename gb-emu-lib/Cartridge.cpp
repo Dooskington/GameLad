@@ -3,12 +3,31 @@
 
 #include "MBC.hpp"
 
-Cartridge::Cartridge()
+Cartridge::Cartridge() :
+    m_MBCType(ROMOnly)
 {
 }
 
 Cartridge::~Cartridge()
 {
+    switch (m_MBCType)
+    {
+    case MBC1RAMBattery:
+    case MBC3TimerBattery:
+    case MBC3TimerRAMBattery:
+    case MBC3RAMBattery:
+    case MBC5RAMBattery:
+    case MBC5RumbleRAMBattery:
+        // Theses all have batteries to backup the ram, save now
+        std::ofstream file(m_Path + "_RAM", std::ios::out | std::ios::binary | std::ios::trunc);
+        if (file.is_open())
+        {
+            file.write((char*)m_RAM.get(), m_RAMSize);
+            file.close();
+        }
+        break;
+    }
+
     m_MBC.reset();
     m_ROM.reset();
     m_RAM.reset();
@@ -16,6 +35,7 @@ Cartridge::~Cartridge()
 
 bool Cartridge::LoadROM(const char* path)
 {
+    m_Path = path;
     bool succeeded = false;
     std::streampos size;
 
@@ -35,7 +55,7 @@ bool Cartridge::LoadROM(const char* path)
 
         if (file.read(reinterpret_cast<char*>(m_ROM.get()), size))
         {
-            Logger::Log("Loaded game rom %s (%d bytes)", path, iSize);
+            Logger::Log("Loaded game ROM %s (%d bytes)", path, iSize);
 
             if (iSize < 0x014F)
             {
@@ -71,7 +91,7 @@ bool Cartridge::WriteByte(const ushort& address, const byte val)
 
 bool Cartridge::LoadMBC(unsigned int actualSize)
 {
-    byte mbcType = m_ROM.get()[CartridgeTypeAddress];
+    m_MBCType = m_ROM.get()[CartridgeTypeAddress];
     byte romSizeFlag = m_ROM.get()[ROMSizeAddress];
     byte ramSizeFlag = m_ROM.get()[RAMSizeAddress];
 
@@ -95,32 +115,53 @@ bool Cartridge::LoadMBC(unsigned int actualSize)
         return false;
     }
 
-    unsigned int ramSize = 0;
     switch (ramSizeFlag)
     {
     case RAM_None:
-        ramSize = 0;
+        m_RAMSize = 0;
         break;
     case RAM_2KB:
-        ramSize = (1024 * 2);
+        m_RAMSize = (1024 * 2);
         break;
     case RAM_8KB:
-        ramSize = (1024 * 8);
+        m_RAMSize = (1024 * 8);
         break;
     case RAM_32KB:
-        ramSize = (1024 * 32);
+        m_RAMSize = (1024 * 32);
         break;
     default:
         Logger::Log("Cartridge::LoadMBC - Unexpected RAM size flag: 0x%02X", ramSizeFlag);
         return false;
     }
 
-    if (ramSize > 0)
+    if (m_RAMSize > 0)
     {
-        m_RAM = std::unique_ptr<byte>(new byte[ramSize]);
+        std::string ramPath = m_Path + "_RAM";
+        m_RAM = std::unique_ptr<byte>(new byte[m_RAMSize]);
+        // If _RAM file exists
+        std::ifstream file(ramPath, std::ios::in | std::ios::binary | std::ios::ate);
+        if (file.is_open())
+        {
+            std::streampos size = file.tellg();
+#if WINDOWS
+            int iSize = static_cast<int>(size.seekpos());
+#else
+            int iSize = size;
+#endif
+            file.seekg(0, std::ios::beg);
+
+            if (iSize != m_RAMSize)
+            {
+                Logger::Log("Cartridge::LoadMBC - Saved RAM was not the expected size. Got: %d   Expected : %d", iSize, m_RAMSize);
+            }
+            else if (file.read(reinterpret_cast<char*>(m_RAM.get()), size))
+            {
+                Logger::Log("Loaded game RAM %s (%d bytes)", ramPath.data(), m_RAMSize);
+            }
+        }
     }
 
-    switch (mbcType)
+    switch (m_MBCType)
     {
     case ROMOnly:
         m_MBC = std::unique_ptr<ROMOnly_MBC>(new ROMOnly_MBC(m_ROM.get(), m_RAM.get()));
@@ -151,7 +192,7 @@ bool Cartridge::LoadMBC(unsigned int actualSize)
         m_MBC = std::unique_ptr<MBC5_MBC>(new MBC5_MBC(m_ROM.get(), m_RAM.get()));
         return true;
     default:
-        Logger::Log("Unsupported Cartridge MBC type: 0x%02X", mbcType);
+        Logger::Log("Unsupported Cartridge MBC type: 0x%02X", m_MBCType);
         return false;
     }
 }

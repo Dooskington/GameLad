@@ -24,17 +24,6 @@ Specifies which Memory Bank Controller (if any) is used in the cartridge, and if
 12h  MBC3+RAM
 */
 
-#define ROMRAM              0x08
-#define ROMRAMBattery       0x09
-
-#define MMM01               0x0B
-#define MMM01RAM            0x0C
-#define MMM01RAMBattery     0x0D
-
-#define PocketCamera        0xFC
-#define BandaiTama5         0xFD
-#define HuC3                0xFE
-#define HuC1RAMBattery      0xFF
 
 /*
 0x0148 - ROM Size
@@ -94,6 +83,9 @@ private:
     bool LoadMBC(unsigned int actualSize);
 
 private:
+    std::string m_Path;
+    byte m_MBCType;
+    unsigned int m_RAMSize;
     std::unique_ptr<byte> m_ROM;
     std::unique_ptr<byte> m_RAM;
     std::unique_ptr<IMemoryUnit> m_MBC;

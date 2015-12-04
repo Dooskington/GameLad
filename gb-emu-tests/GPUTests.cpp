@@ -67,7 +67,7 @@ public:
         std::unique_ptr<GPUTestsMMU> spMMU = std::unique_ptr<GPUTestsMMU>(new GPUTestsMMU(nullptr, 0));
         std::unique_ptr<GPU> spGPU = std::unique_ptr<GPU>(new GPU(spMMU.get(), nullptr));
 
-        Assert::AreEqual(0, (int)spGPU->m_ModeClock);
+        Assert::AreEqual(VBlankCycles, (int)spGPU->m_ModeClock);
         Assert::AreEqual(ModeVBlank, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
         Assert::IsFalse(ISBITSET(spGPU->m_LCDControl, 7));
         spGPU->Step(4);
