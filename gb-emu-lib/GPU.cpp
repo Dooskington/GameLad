@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "GPU.hpp"
 
-#define TINT 1
+#define TINT 0
 
 /*
     FF40 - LCDC - LCD Control (R/W)
@@ -52,6 +52,7 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     m_MMU(pMMU),
     m_CPU(pCPU),
     m_ModeClock(0),
+    m_DMAClocksRemaining(0),
     m_pVSyncCallback(nullptr),
     m_LCDControl(0x00),
     m_ScrollY(0x00),
@@ -94,6 +95,13 @@ GPU::~GPU()
 */
 void GPU::Step(unsigned long cycles)
 {
+    if (m_DMAClocksRemaining > 0)
+    {
+        // TODO: I think the spec says the CPU cannot access ANYTHING except HRAM while this happens
+        // Still copying data
+        m_DMAClocksRemaining -= cycles;
+    }
+
     // If the LCD screen is off, then reset all values and exit early
     if (!IsLCDDisplayEnabled)
     {
@@ -207,7 +215,7 @@ byte GPU::ReadByte(const ushort& address)
         // CONSIDER: Test mode to see if available
         if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAMVRAM))
         {
-            //Logger::Log("GPU:ReadByte cannot access VRAM.");
+            Logger::Log("GPU:ReadByte cannot access VRAM.");
             return 0x00;
         }
 
@@ -218,7 +226,7 @@ byte GPU::ReadByte(const ushort& address)
         // CONSIDER: Test mode to see if available
         if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAM || GETMODE == ModeReadingOAMVRAM))
         {
-            //Logger::Log("GPU:ReadByte cannot access OAM.");
+            Logger::Log("GPU:ReadByte cannot access OAM.");
             return 0x00;
         }
 
@@ -264,6 +272,7 @@ bool GPU::WriteByte(const ushort& address, const byte val)
     {
         if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAMVRAM))
         {
+            // TODO: Zelda and Metriod get here a lot, this is bad
             //Logger::Log("GPU:WriteByte cannot access VRAM.");
             return false;
         }
@@ -275,7 +284,7 @@ bool GPU::WriteByte(const ushort& address, const byte val)
     {
         if (IsLCDDisplayEnabled && (GETMODE == ModeReadingOAM || GETMODE == ModeReadingOAMVRAM))
         {
-            //Logger::Log("GPU:WriteByte cannot access OAM.");
+            Logger::Log("GPU:WriteByte cannot access OAM.");
             return false;
         }
 
@@ -356,7 +365,10 @@ void GPU::LaunchDMATransfer(const byte address)
 
     Source:      XX00-XX9F   ;XX in range from 00-F1h
     Destination: FE00-FE9F
+
+    It takes 160 microseconds until the transfer has completed. (0.016ms or 752 clocks).
     */
+    m_DMAClocksRemaining = 752;
 
     ushort source = (static_cast<ushort>(address) * 0x0100);
     for (byte offset = 0x00; offset <= 0x9F; offset++)
@@ -397,6 +409,8 @@ void GPU::RenderBackgroundScanline()
         LCDC.0 - 1) Monochrome Gameboy and SGB: BG Display
         When Bit 0 is cleared, the background becomes blank (white).
         Window and Sprites may still be displayed (if enabled in Bit 1 and/or Bit 5).
+
+        So, we just need to render a white background and get out early
         */
         for (int x = 0;x < 160;x++)
         {
@@ -416,44 +430,7 @@ void GPU::RenderBackgroundScanline()
         return;
     }
 
-    //     Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
-    ushort tileNumberMap = BGTileMapDisplaySelect ? 0x9C00 : 0x9800;
-    RenderBGWindowScanline(tileNumberMap, m_ScrollX, m_ScrollY, true);
-}
-
-void GPU::RenderWindowScanline()
-{
-    // Don't render if the window is below this position
-    if (m_LCDControllerYCoordinate < m_WindowYPosition)
-        return;
-
-    //     Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
-    ushort tileNumberMap = WindowTileMapDisplaySelect ? 0x9C00 : 0x9800;
-
-    // TODO: Something is wrong here! For Metroid, subtracting 0x10 works great
-    // For other games, not so much... The math is broken. Also, if the window position goes OVER (positive)
-    // we'd need to NOT render over the background.
-    /*
-    The Window
-    Besides background, there is also a "window" overlaying the background. The window is not 
-    scrollable i.e. it is always displayed starting from its left upper corner. The location of a 
-    window on the screen can be adjusted via WX and WY registers. Screen coordinates of the top left
-    corner of a window are WX-7,WY. The tiles for the window are stored in the Tile Data Table. Both
-    the Background and the window share the same Tile Data Table.
-
-    Both background and window can be disabled or enabled separately via bits in the LCDC register.
-    */
-
-    // Maybe it doesn't "wrap" like the background? So we may have to change the logic to not wrap?
-    RenderBGWindowScanline(tileNumberMap, m_WindowXPositionMinus7 - 7, m_WindowYPosition - 0x10, false);
-}
-
-void GPU::RenderBGWindowScanline(
-    ushort tileNumberMap, 
-    byte scrollX,
-    byte scrollY,
-    bool isBG)
-{
+    // Load BG (and window) palette data
     const byte palette[]
     {
         GBColors[m_BGPaletteData & 0x03],
@@ -462,20 +439,127 @@ void GPU::RenderBGWindowScanline(
         GBColors[(m_BGPaletteData >> 6) & 0x03],
     };
 
-    /*
-    Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-    #define BGWindowTileDataSelect ISBITSET(m_LCDControl, 4)
-    */
+    // If bit 3 is NOT set: BG Tile Numbers at 0x9800
+    // if bit 3 IS     set: BG Tile Numbers at 0x9C00
+    //     Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
+    ushort tileNumberMap = BGTileMapDisplaySelect ? 0x9C00 : 0x9800;
+
+    // If bit 4 is     set: BG Tile Data at 0x8000
+    // If bit 4 is NOT set: BG Tile Data at 0x8800
+    //      Note: Tile data #0 is actually 0x9000, and the tile number is a SIGNED byte where
+    //            0x80 (-128) is the lowest tile and is at 0x8800
+    // Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
     ushort tileData = BGWindowTileDataSelect ? 0x8000 : 0x9000;
 
-    byte tileY = (byte)(((m_LCDControllerYCoordinate + scrollY) / 8) % 32);
-    byte tileYOffset = (byte)((m_LCDControllerYCoordinate + scrollY) % 8);
+    // This is confusing, but we need to figure out WHICH tile in the 32x32 tile map to render
+    // tileY is the tile # we will later lookup in the Tile Data. We take the current line #, add
+    // the scroll value, then divide by 8 (since there are 8 lines per map).  Finally we MOD that
+    // by 32, since the BG map wraps and is 32 rows high.
+    byte tileY = (byte)(((m_LCDControllerYCoordinate + m_ScrollY) / 8) % 32);
+
+    // This is the "offset" into the current tile we need to render. Basically it'll be the 
+    // current line plus the scroll and MOD by 8 (the # of pixels per tile).
+    byte tileYOffset = (byte)((m_LCDControllerYCoordinate + m_ScrollY) % 8);
+
+    // Now loop through each pixel on this line
     for (byte x = 0; x < 160; x++)
     {
-        byte tileX = (byte)(((scrollX + x) / 8) % 32);
-        byte tileNumber = ReadByte((ushort)(tileNumberMap + (tileY * 32) + tileX));
-        ushort tileDataPtr = 0;
+        // We need to determine the current X tile (in the same way we did the Y tile)
+        byte tileX = (byte)(((m_ScrollX + x) / 8) % 32);
 
+        // Finally, we can read the correct tile number from the tile map (32x32)
+        byte tileNumber = ReadByte((ushort)(tileNumberMap + (tileY * 32) + tileX));
+
+        // Now we need to get a pointer to the tile data
+        ushort tileDataPtr = 0;
+        if (BGWindowTileDataSelect)
+        {
+            // Tile number is unsigned and each tile is 16 bytes
+            tileDataPtr = (ushort)(tileData + tileNumber * 0x10);
+        }
+        else
+        {
+            // Tile number is "signed" and each tile is 16 bytes
+            tileDataPtr = (ushort)(tileData + static_cast<sbyte>(tileNumber) * 0x10);
+        }
+
+        // Each line is 2 bytes long, so we need to offset for the current line
+        tileDataPtr += (ushort)(tileYOffset * 2);
+
+        // Read the two bytes!
+        byte b1 = ReadByte(tileDataPtr);
+        byte b2 = ReadByte((ushort)(tileDataPtr + 1));
+
+        // Figure out which palette # it uses
+        byte bit = (byte)(7 - ((m_ScrollX + x) % 8));
+        byte pLo = ISBITSET(b1, bit) ? 0x01 : 0x00;
+        byte pHi = ISBITSET(b2, bit) ? 0x02 : 0x00;
+
+        // Get the color
+        byte color = palette[pLo + pHi];
+
+        // Find and set the index of the image
+        int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
+        m_bgPixels[index + 3] = color; // R
+#if TINT
+        m_bgPixels[index + 2] = 0x00; // G
+        m_bgPixels[index + 1] = 0x00; // B
+#else
+        m_bgPixels[index + 2] = color; // G
+        m_bgPixels[index + 1] = color; // B
+#endif
+        m_bgPixels[index + 0] = 0xFF;  // A
+    }
+}
+
+void GPU::RenderWindowScanline()
+{
+    // Get the "relative" window position, if it is less than 0, we are off screen, exit
+    int winY = m_LCDControllerYCoordinate - m_WindowYPosition;
+    if (winY < 0)
+        return;
+
+    const byte palette[]
+    {
+        GBColors[m_BGPaletteData & 0x03],
+        GBColors[(m_BGPaletteData >> 2) & 0x03],
+        GBColors[(m_BGPaletteData >> 4) & 0x03],
+        GBColors[(m_BGPaletteData >> 6) & 0x03],
+    };
+
+    // If bit 6 is NOT set: BG Tile Numbers at 0x9800
+    // if bit 6 IS     set: BG Tile Numbers at 0x9C00
+    //     Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+    ushort tileNumberMap = WindowTileMapDisplaySelect ? 0x9C00 : 0x9800;
+    
+    // If bit 4 is     set: BG Tile Data at 0x8000
+    // If bit 4 is NOT set: BG Tile Data at 0x8800
+    //      Note: Tile data #0 is actually 0x9000, and the tile number is a SIGNED byte where
+    //            0x80 (-128) is the lowest tile and is at 0x8800
+    // Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+    ushort tileData = BGWindowTileDataSelect ? 0x8000 : 0x9000;
+
+    // The Window is also 32x32 tiles, and the tile are 8 pixels tall, so figure out which tile we
+    // need by dividing by 8.  Also get the offset by getting the remainder
+    byte tileY = (byte)(winY / 8);
+    byte tileYOffset = (byte)(winY % 8);
+
+    // Get the relative window position
+    int winX = m_WindowXPositionMinus7 - 7;
+    for (int x = 0; x < 160; x++)
+    {
+        // If the window is to the right of here, don't do anything
+        if (x < winX)
+            continue;
+
+        // Get the X tile for this pixel
+        byte tileX = (byte)((x - winX) / 8);
+        
+        // Calculate the tile number
+        byte tileNumber = ReadByte((ushort)(tileNumberMap + (tileY * 32) + tileX));
+
+        // Find the tile data
+        ushort tileDataPtr = 0;
         if (BGWindowTileDataSelect)
         {
             tileDataPtr = (ushort)(tileData + tileNumber * 0x10);
@@ -487,42 +571,27 @@ void GPU::RenderBGWindowScanline(
 
         tileDataPtr += (ushort)(tileYOffset * 2);
 
+        // Read tile data
         byte b1 = ReadByte(tileDataPtr);
         byte b2 = ReadByte((ushort)(tileDataPtr + 1));
 
-        byte bit = (byte)(7 - ((scrollX + x) % 8));
+        // Find the pixel we care about and look up palette and color
+        byte bit = (byte)(7 - x % 8);
         byte pLo = ISBITSET(b1, bit) ? 0x01 : 0x00;
         byte pHi = ISBITSET(b2, bit) ? 0x02 : 0x00;
-
         byte color = palette[pLo + pHi];
 
+        // Set the image color
         int index = ((m_LCDControllerYCoordinate * 160) + x) * 4;
-
-        if (isBG)
-        {
-            m_bgPixels[index + 3] = color; // R
+        m_bgPixels[index + 1] = color; // B
 #if TINT
-            m_bgPixels[index + 2] = 0x00; // G
-            m_bgPixels[index + 1] = 0x00; // B
+        m_bgPixels[index + 2] = 0x00; // G
+        m_bgPixels[index + 3] = 0x00; // R
 #else
-            m_bgPixels[index + 2] = color; // G
-            m_bgPixels[index + 1] = color; // B
+        m_bgPixels[index + 2] = color; // G
+        m_bgPixels[index + 3] = color; // R
 #endif
-            m_bgPixels[index + 0] = 0xFF;  // A
-        }
-        else
-        {
-            m_bgPixels[index + 1] = color; // B
-#if TINT
-            m_bgPixels[index + 2] = 0x00; // G
-            m_bgPixels[index + 3] = 0x00; // R
-#else
-            m_bgPixels[index + 2] = color; // G
-            m_bgPixels[index + 3] = color; // R
-#endif
-            m_bgPixels[index + 0] = 0xFF;  // A
-        }
-        
+        m_bgPixels[index + 0] = 0xFF;  // A
     }
 }
 

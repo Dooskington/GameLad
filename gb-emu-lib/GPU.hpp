@@ -58,11 +58,6 @@ private:
     void RenderImage();
     void RenderBackgroundScanline();
     void RenderWindowScanline();
-    void RenderBGWindowScanline(
-        ushort tileNumberMap, 
-        byte scrollX,
-        byte scrollY,
-        bool isBG);
     void RenderOBJScanline();
 
 private:
@@ -74,6 +69,7 @@ private:
     byte m_DisplayPixels[160 * 144 * 4];
 
     unsigned long m_ModeClock;
+    int m_DMAClocksRemaining;
     void(*m_pVSyncCallback)();
     
     byte m_LCDControl;

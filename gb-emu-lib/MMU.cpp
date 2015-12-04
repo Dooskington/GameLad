@@ -50,13 +50,9 @@ MMU::~MMU()
 
 void MMU::RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit)
 {
-    for (ushort index = startRange; index <= endRange; index++)
+    for (int index = startRange; index <= endRange; index++)
     {
         m_memoryUnits[index] = pUnit;
-
-        // Prevent wrap around
-        if (index == 0xFFFF)
-            break;
     }
 }
 
@@ -190,6 +186,7 @@ byte MMU::ReadByteInternal(const ushort& address)
     }
     else if (address >= 0xFEA0 && address <= 0xFEFF)
     {
+        Logger::Log("Strange");
         // Unusable memory
         return 0x00;
     }
@@ -215,6 +212,7 @@ byte MMU::ReadByteInternal(const ushort& address)
     }
     else
     {
+        Logger::Log("Strange2");
         return 0x00;
     }
 }
@@ -240,6 +238,7 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
     else if (address >= 0xFEA0 && address <= 0xFEFF)
     {
         // Unusable memory
+        Logger::Log("Strange3");
     }
     else if (address >= 0xFF80 && address <= 0xFFFE)
     {
@@ -260,6 +259,10 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
     else if (address == 0xFF4D)
     {
         m_Key1 = val;
+    }
+    else
+    {
+        Logger::Log("Strange4");
     }
 
     return true;
