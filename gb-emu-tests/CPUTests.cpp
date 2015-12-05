@@ -35,9 +35,9 @@ private:
 
         unsigned short ReadUShort(const ushort& address)
         {
-            ushort val = ReadByte(address + 1);
+            ushort val = Read(address + 1);
             val = val << 8;
-            val |= ReadByte(address);
+            val |= Read(address);
             return val;
         }
 
@@ -46,12 +46,12 @@ private:
             return true;
         }
 
-        byte ReadByte(const ushort& address)
+        byte Read(const ushort& address)
         {
             return m_data[address];
         }
 
-        bool WriteByte(const ushort& address, const byte val)
+        bool Write(const ushort& address, const byte val)
         {
             m_data[address] = val;
             return true;
@@ -360,7 +360,7 @@ public:
 
         spCPU->m_AF = 0x0000;
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x01);
+        spCPU->m_MMU->Write(0x1234, 0x01);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -378,7 +378,7 @@ public:
 
         spCPU->m_AF = 0x0500;
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x05);
+        spCPU->m_MMU->Write(0x1234, 0x05);
 
         spCPU->Step();
 
@@ -493,7 +493,7 @@ public:
             Assert::AreEqual(0, (int)spCPU->m_PC);
 
             spCPU->m_HL = 0x1234;
-            spCPU->m_MMU->WriteByte(0x1234, 0x12);
+            spCPU->m_MMU->Write(0x1234, 0x12);
 
             spCPU->Step();
 
@@ -547,7 +547,7 @@ public:
             Assert::AreEqual(0, (int)spCPU->m_PC);
 
             spCPU->m_HL = 0x1234;
-            spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+            spCPU->m_MMU->Write(0x1234, 0xFF);
 
             switch (reg)
             {
@@ -576,7 +576,7 @@ public:
 
             spCPU->Step();
 
-            byte result = spCPU->m_MMU->ReadByte(spCPU->m_HL);
+            byte result = spCPU->m_MMU->Read(spCPU->m_HL);
 
             switch (reg)
             {
@@ -920,7 +920,7 @@ public:
             Assert::AreEqual(16, (int)spCPU->m_cycles);
             Assert::AreEqual(0x0002, (int)spCPU->m_PC);
 
-            Assert::AreEqual((int)value, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+            Assert::AreEqual((int)value, (int)spCPU->m_MMU->Read(spCPU->m_HL));
 
             spCPU.reset();
         }
@@ -1026,7 +1026,7 @@ public:
             // Verify expectations after
             Assert::AreEqual(16, (int)spCPU->m_cycles);
             Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-            Assert::AreEqual((int)value, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+            Assert::AreEqual((int)value, (int)spCPU->m_MMU->Read(spCPU->m_HL));
 
             spCPU.reset();
         }
@@ -1098,7 +1098,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->Read(0x1234));
 
         spCPU.reset();
     }
@@ -1304,7 +1304,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->Read(0x1234));
 
         spCPU.reset();
     }
@@ -1766,7 +1766,7 @@ public:
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_BC = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x12);
+        spCPU->m_MMU->Write(0x1234, 0x12);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -1820,7 +1820,7 @@ public:
 
         spCPU->m_AF = 0xFF00;
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+        spCPU->m_MMU->Write(0x1234, 0xFF);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -1835,7 +1835,7 @@ public:
         Assert::AreEqual(0x00C0, (int)spCPU->m_AF);
 
         spCPU->m_AF = 0x0400;
-        spCPU->m_MMU->WriteByte(0x1234, 0x05);
+        spCPU->m_MMU->Write(0x1234, 0x05);
 
         spCPU->Step();
 
@@ -1892,7 +1892,7 @@ public:
 
         spCPU->m_AF = 0xFF00;
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+        spCPU->m_MMU->Write(0x1234, 0xFF);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -1907,7 +1907,7 @@ public:
         Assert::AreEqual(0x00C0, (int)spCPU->m_AF);
 
         spCPU->m_AF = 0x0500;
-        spCPU->m_MMU->WriteByte(0x1234, 0x05);
+        spCPU->m_MMU->Write(0x1234, 0x05);
         spCPU->SetFlag(CarryFlag);
 
         spCPU->Step();
@@ -2494,7 +2494,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->Read(0x1234));
         Assert::AreEqual(0x1235, (int)spCPU->m_HL);
 
         spCPU.reset();
@@ -2508,7 +2508,7 @@ public:
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x12);
+        spCPU->m_MMU->Write(0x1234, 0x12);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -2547,7 +2547,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->Read(0x1234));
         Assert::AreEqual(0x1233, (int)spCPU->m_HL);
 
         spCPU.reset();
@@ -2562,7 +2562,7 @@ public:
 
         spCPU->m_HL = 0x1234;
         spCPU->m_AF = 0x0000;
-        spCPU->m_MMU->WriteByte(0x1234, 0x12);
+        spCPU->m_MMU->Write(0x1234, 0x12);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -2611,7 +2611,7 @@ public:
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x00);
+        spCPU->m_MMU->Write(0x1234, 0x00);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -2623,29 +2623,29 @@ public:
         // Verify expectations after
         Assert::AreEqual(12, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x01, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x01, (int)spCPU->m_MMU->Read(0x1234));
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
-        spCPU->m_MMU->WriteByte(0x1234, 0x02);
+        spCPU->m_MMU->Write(0x1234, 0x02);
         spCPU->Step();
 
         // Verify expectations after
         Assert::AreEqual(24, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x03, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x03, (int)spCPU->m_MMU->Read(0x1234));
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
-        spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+        spCPU->m_MMU->Write(0x1234, 0xFF);
         spCPU->Step();
 
         // Verify expectations after
         Assert::AreEqual(36, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
-        Assert::AreEqual(0x00, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x00, (int)spCPU->m_MMU->Read(0x1234));
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsFalse(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
@@ -2661,7 +2661,7 @@ public:
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+        spCPU->m_MMU->Write(0x1234, 0xFF);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -2673,29 +2673,29 @@ public:
         // Verify expectations after
         Assert::AreEqual(12, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0xFE, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0xFE, (int)spCPU->m_MMU->Read(0x1234));
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
-        spCPU->m_MMU->WriteByte(0x1234, 0x01);
+        spCPU->m_MMU->Write(0x1234, 0x01);
         spCPU->Step();
 
         // Verify expectations after
         Assert::AreEqual(24, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x00, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0x00, (int)spCPU->m_MMU->Read(0x1234));
         Assert::IsTrue(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsFalse(spCPU->IsFlagSet(HalfCarryFlag));
 
-        spCPU->m_MMU->WriteByte(0x1234, 0x00);
+        spCPU->m_MMU->Write(0x1234, 0x00);
         spCPU->Step();
 
         // Verify expectations after
         Assert::AreEqual(36, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0003, (int)spCPU->m_PC);
-        Assert::AreEqual(0xFF, (int)spCPU->m_MMU->ReadByte(0x1234));
+        Assert::AreEqual(0xFF, (int)spCPU->m_MMU->Read(0x1234));
         Assert::IsFalse(spCPU->IsFlagSet(ZeroFlag));
         Assert::IsTrue(spCPU->IsFlagSet(SubtractFlag));
         Assert::IsTrue(spCPU->IsFlagSet(HalfCarryFlag));
@@ -2718,7 +2718,7 @@ public:
 
         spCPU->Step();
 
-        byte result = spCPU->m_MMU->ReadByte(spCPU->m_HL);
+        byte result = spCPU->m_MMU->Read(spCPU->m_HL);
 
         // Verify expectations after
         Assert::AreEqual(0x12, (int)result);
@@ -3052,7 +3052,7 @@ public:
         spCPU->m_AF = 0xFF00;
         spCPU->m_HL = 0x1234;
 
-        spCPU->m_MMU->WriteByte(0x1234, 0x01);
+        spCPU->m_MMU->Write(0x1234, 0x01);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -3075,7 +3075,7 @@ public:
         spCPU->m_AF = 0xFF00;
         spCPU->m_HL = 0x1234;
 
-        spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+        spCPU->m_MMU->Write(0x1234, 0xFF);
 
         spCPU->Step();
 
@@ -3787,7 +3787,7 @@ public:
 
         spCPU->m_AF = 0x1400;
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x12);
+        spCPU->m_MMU->Write(0x1234, 0x12);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -3850,7 +3850,7 @@ public:
 
         spCPU->m_AF = 0x0200;
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x02);
+        spCPU->m_MMU->Write(0x1234, 0x02);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -4085,7 +4085,7 @@ public:
 
         spCPU->m_AF = 0xFF00;
 
-        spCPU->m_MMU->WriteByte(0x1234, 0xFF);
+        spCPU->m_MMU->Write(0x1234, 0xFF);
 
         spCPU->Step();
 
@@ -4199,7 +4199,7 @@ public:
 
         spCPU->m_AF = 0x0000;
         spCPU->m_HL = 0x1234;
-        spCPU->m_MMU->WriteByte(0x1234, 0x05);
+        spCPU->m_MMU->Write(0x1234, 0x05);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -4218,7 +4218,7 @@ public:
         Assert::AreEqual(0x0B00, (int)spCPU->m_AF);
 
         spCPU->m_AF = 0xFF00;
-        spCPU->m_MMU->WriteByte(0x1234, 0x01);
+        spCPU->m_MMU->Write(0x1234, 0x01);
 
         spCPU->Step();
 
@@ -4490,7 +4490,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(12, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0xFF12));
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->Read(0xFF12));
 
         spCPU.reset();
     }
@@ -4542,7 +4542,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::AreEqual(0x12, (int)spCPU->m_MMU->ReadByte(0xFF12));
+        Assert::AreEqual(0x12, (int)spCPU->m_MMU->Read(0xFF12));
 
         spCPU.reset();
     }
@@ -4654,12 +4654,12 @@ public:
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
-        spCPU->m_MMU->WriteByte((0xFF00 + 0x12), 0x34);
+        spCPU->m_MMU->Write((0xFF00 + 0x12), 0x34);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0000, (int)spCPU->m_PC);
-        Assert::AreEqual(0x34, (int)spCPU->m_MMU->ReadByte(0xFF00 + 0x12));
+        Assert::AreEqual(0x34, (int)spCPU->m_MMU->Read(0xFF00 + 0x12));
 
         // Step the CPU 1 OpCode
         spCPU->Step();
@@ -4707,12 +4707,12 @@ public:
 
         spCPU->m_BC = 0x0012;
 
-        spCPU->m_MMU->WriteByte((0xFF00 + 0x12), 0x34);
+        spCPU->m_MMU->Write((0xFF00 + 0x12), 0x34);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0000, (int)spCPU->m_PC);
-        Assert::AreEqual(0x34, (int)spCPU->m_MMU->ReadByte(0xFF00 + 0x12));
+        Assert::AreEqual(0x34, (int)spCPU->m_MMU->Read(0xFF00 + 0x12));
 
         // Step the CPU 1 OpCode
         spCPU->Step();
@@ -4803,7 +4803,7 @@ public:
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
-        spCPU->m_MMU->WriteByte(0x1234, 0x55);
+        spCPU->m_MMU->Write(0x1234, 0x55);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -4886,7 +4886,7 @@ public:
 
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
-        Assert::AreEqual(0x55, (int)(spCPU->m_MMU->ReadByte(0x1234)));
+        Assert::AreEqual(0x55, (int)(spCPU->m_MMU->Read(0x1234)));
 
         spCPU.reset();
     }
@@ -5222,7 +5222,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x9D, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x9D, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU->Step();
@@ -5230,7 +5230,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x3B, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x3B, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -5494,7 +5494,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x9D, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x9D, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU->Step();
@@ -5502,7 +5502,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0xCE, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0xCE, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -5766,7 +5766,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x009C, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x009C, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU->Step();
@@ -5774,7 +5774,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x0039, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x0039, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6100,7 +6100,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x001C, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x001C, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         spCPU->Step();
@@ -6108,7 +6108,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x008E, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x008E, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6241,7 +6241,7 @@ public:
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
 
-        Assert::AreEqual(0xBA, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0xBA, (int)spCPU->m_MMU->Read(spCPU->m_HL));
 
         spCPU.reset();
     }
@@ -6462,7 +6462,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x007E, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x007E, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6471,7 +6471,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x00FC, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x00FC, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6726,7 +6726,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x00FE, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x00FE, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6735,7 +6735,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x00FF, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x00FF, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();
@@ -6990,7 +6990,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(16, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0002, (int)spCPU->m_PC);
-        Assert::AreEqual(0x007E, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x007E, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsTrue(spCPU->IsFlagSet(CarryFlag));
 
         // Step the CPU 1 OpCode
@@ -6999,7 +6999,7 @@ public:
         // Verify expectations after
         Assert::AreEqual(32, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0004, (int)spCPU->m_PC);
-        Assert::AreEqual(0x003F, (int)spCPU->m_MMU->ReadByte(spCPU->m_HL));
+        Assert::AreEqual(0x003F, (int)spCPU->m_MMU->Read(spCPU->m_HL));
         Assert::IsFalse(spCPU->IsFlagSet(CarryFlag));
 
         spCPU.reset();

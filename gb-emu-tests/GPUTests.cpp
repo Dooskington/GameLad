@@ -35,9 +35,9 @@ private:
 
         unsigned short ReadUShort(const ushort& address)
         {
-            ushort val = ReadByte(address + 1);
+            ushort val = Read(address + 1);
             val = val << 8;
-            val |= ReadByte(address);
+            val |= Read(address);
             return val;
         }
 
@@ -46,12 +46,12 @@ private:
             return true;
         }
 
-        byte ReadByte(const ushort& address)
+        byte Read(const ushort& address)
         {
             return m_data[address];
         }
 
-        bool WriteByte(const ushort& address, const byte val)
+        bool Write(const ushort& address, const byte val)
         {
             m_data[address] = val;
             return true;
@@ -67,7 +67,7 @@ public:
         std::unique_ptr<GPUTestsMMU> spMMU = std::unique_ptr<GPUTestsMMU>(new GPUTestsMMU(nullptr, 0));
         std::unique_ptr<GPU> spGPU = std::unique_ptr<GPU>(new GPU(spMMU.get(), nullptr));
 
-        Assert::AreEqual(0, (int)spGPU->m_ModeClock);
+        Assert::AreEqual(VBlankCycles, (int)spGPU->m_ModeClock);
         Assert::AreEqual(ModeVBlank, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
         Assert::IsFalse(ISBITSET(spGPU->m_LCDControl, 7));
         spGPU->Step(4);

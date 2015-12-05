@@ -41,7 +41,7 @@
 MMU::MMU() :
     m_isBooting(0x00)
 {
-    RegisterMemoryUnit(0x0000, 0xFFFF, nullptr);
+    RegisterMemoryUnit(0x0000, 0xFFFF, this);
 }
 
 MMU::~MMU()
@@ -50,17 +50,13 @@ MMU::~MMU()
 
 void MMU::RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit)
 {
-    for (ushort index = startRange; index <= endRange; index++)
+    for (int index = startRange; index <= endRange; index++)
     {
         m_memoryUnits[index] = pUnit;
-
-        // Prevent wrap around
-        if (index == 0xFFFF)
-            break;
     }
 }
 
-byte MMU::ReadByte(const ushort& address)
+byte MMU::Read(const ushort& address)
 {
     // If we are booting and reading below 0x00FF, read from the boot rom.
     if ((m_isBooting == 0x00) && (address <= 0x00FF))
@@ -74,22 +70,14 @@ byte MMU::ReadByte(const ushort& address)
         return m_BIOS.get()[address];
     }
 
-    auto spUnit = std::move(m_memoryUnits[address]);
-    if (spUnit == nullptr)
-    {
-        return ReadByteInternal(address);
-    }
-    else
-    {
-        return spUnit->ReadByte(address);
-    }
+    return m_memoryUnits[address]->ReadByte(address);
 }
 
 ushort MMU::ReadUShort(const ushort& address)
 {
-    ushort val = ReadByte(address + 1);
+    ushort val = Read(address + 1);
     val = val << 8;
-    val |= ReadByte(address);
+    val |= Read(address);
     return val;
 }
 
@@ -141,7 +129,7 @@ bool MMU::LoadBootROM(const char* bootROMPath)
     }
 }
 
-bool MMU::WriteByte(const ushort& address, const byte val)
+bool MMU::Write(const ushort& address, const byte val)
 {
     if ((m_isBooting == 0x00) && (address <= 0x00FF))
     {
@@ -149,18 +137,10 @@ bool MMU::WriteByte(const ushort& address, const byte val)
         return false;
     }
 
-    auto spUnit = std::move(m_memoryUnits[address]);
-    if (spUnit == nullptr)
-    {
-        return WriteByteInternal(address, val);
-    }
-    else
-    {
-        return spUnit->WriteByte(address, val);
-    }
+    return m_memoryUnits[address]->WriteByte(address, val);
 }
 
-byte MMU::ReadByteInternal(const ushort& address)
+byte MMU::ReadByte(const ushort& address)
 {
     /*
     -MMU:
@@ -219,7 +199,7 @@ byte MMU::ReadByteInternal(const ushort& address)
     }
 }
 
-bool MMU::WriteByteInternal(const ushort& address, const byte val)
+bool MMU::WriteByte(const ushort& address, const byte val)
 {
     if (address >= 0xC000 && address <= 0xCFFF)
     {
@@ -236,10 +216,6 @@ bool MMU::WriteByteInternal(const ushort& address, const byte val)
     else if (address >= 0xF000 && address <= 0xFDFF)
     {
         m_bank1[address - 0xF000] = val;
-    }
-    else if (address >= 0xFEA0 && address <= 0xFEFF)
-    {
-        // Unusable memory
     }
     else if (address >= 0xFF80 && address <= 0xFFFE)
     {

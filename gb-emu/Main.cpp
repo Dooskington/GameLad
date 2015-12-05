@@ -2,7 +2,8 @@
 #include <Emulator.hpp>
 
 // Play with this 1/120 is "FAST" and 1/60 is "SLOW"
-const double TimePerFrame = 1.0 / 90.0;
+const double TimePerFrame = 1.0 / 120.0;
+//const double TimePerFrame = 16.783536 / 1000;
 
 // The number of CPU cycles per frame
 const unsigned int CyclesPerFrame = 70224;
@@ -164,8 +165,8 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Super Mario Land (World).gb";
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
-    std::string romPath = "res/games/Tetris.gb";
-    //std::string romPath = "res/games/Zelda.gb";
+    //std::string romPath = "res/games/Tetris.gb";
+    std::string romPath = "res/games/Zelda.gb";
     //std::string romPath = "res/games/Metroid.gb";
     //std::string romPath = "res/games/Castlevania.gb";
 
@@ -220,7 +221,7 @@ int main(int argc, char** argv)
     {
         emulator.SetVSyncCallback(&VSyncCallback);
 
-        int cycles = 0;
+        unsigned int cycles = 0;
         Uint64 frameStart = SDL_GetPerformanceCounter();
         while (isRunning)
         {
