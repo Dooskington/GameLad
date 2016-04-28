@@ -6,6 +6,8 @@ The [GameLad](http://www.dooskington.com/gamelad/) is a (relatively) fully featu
 
 It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests, which means our emulation of the GameBoy's Z80 chip is pretty solid.
 
+Development began in October 2015.
+
 Learn more [here](http://dooskington.com/gamelad/).
 
 Technology     | Purpose
