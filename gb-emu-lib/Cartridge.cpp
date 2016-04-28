@@ -112,7 +112,7 @@ bool Cartridge::LoadMBC(unsigned int actualSize)
     if (actualSize != romSize)
     {
         Logger::Log("Cartridge::LoadMBC - Unexpected ROM file size. Got: %d   Expected: %d", actualSize, romSize);
-        return false;
+        return true;
     }
 
     switch (ramSizeFlag)
