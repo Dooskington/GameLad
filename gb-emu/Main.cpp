@@ -166,7 +166,8 @@ int main(int argc, char** argv)
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
     //std::string romPath = "res/games/Tetris.gb";
-    std::string romPath = "res/games/Zelda.gb";
+    //std::string romPath = "res/games/Zelda.gb";
+    std::string romPath = "res/games/plantboy.gb";
     //std::string romPath = "res/games/Metroid.gb";
     //std::string romPath = "res/games/Castlevania.gb";
 
