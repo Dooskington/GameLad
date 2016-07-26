@@ -1,9 +1,8 @@
 #include "PCH.hpp"
 #include <Emulator.hpp>
 
-// Play with this 1/120 is "FAST" and 1/60 is "SLOW"
-const double TimePerFrame = 1.0 / 120.0;
-//const double TimePerFrame = 16.783536 / 1000;
+// 60 FPS or 16.67ms
+const double TimePerFrame = 1.0 / 60.0;
 
 // The number of CPU cycles per frame
 const unsigned int CyclesPerFrame = 70224;
