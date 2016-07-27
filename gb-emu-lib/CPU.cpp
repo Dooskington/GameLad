@@ -6,7 +6,6 @@
 CPU::CPU() :
     m_cycles(0),
     m_isHalted(false),
-    m_IFWhenHalted(0x00),
     m_AF(0x0000),
     m_BC(0x0000),
     m_DE(0x0000),
@@ -774,13 +773,10 @@ int CPU::Step()
 
     if (m_isHalted)
     {
+        // While halted, the CPU spins on NOP
+        // The CPU will be unhalted on any triggered interrupt
+        // Thanks to /r/binjimint for finding this pesky bug!
         cycles = NOP(0x00);
-
-        if (m_IFWhenHalted != m_MMU->Read(0xFF0F))
-        {
-            // We received an interrupt, resume
-            m_isHalted = false;
-        }
     }
     else
     {
@@ -842,6 +838,9 @@ void CPU::TriggerInterrupt(byte interrupt)
     else if (interrupt == INT50) IF = SETBIT(IF, 2);
     else if (interrupt == INT58) IF = SETBIT(IF, 3);
     else if (interrupt == INT60) IF = SETBIT(IF, 4);
+
+    // If we were halted, wake up
+    m_isHalted = false;
 
     m_MMU->Write(0xFF0F, IF);
 }
@@ -2489,7 +2488,7 @@ unsigned long CPU::LDDA_HL_(const byte& opCode)
 unsigned long CPU::HALT(const byte& opCode)
 {
     m_isHalted = true;
-    m_IFWhenHalted = m_MMU->Read(0xFF0F);
+    //m_IFWhenHalted = m_MMU->Read(0xFF0F);
     return 0;
 }
 
