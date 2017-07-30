@@ -8,7 +8,7 @@ It supports Tetris and some other games with a few minor issues. The emulator pa
 
 Development began in October 2015.
 
-Learn more [here](http://declanhopkins.com/gamelad/).
+Learn more [here](http://declanhopkins.com/projects/gamelad.html).
 
 Technology     | Purpose
 ---------------|----------
