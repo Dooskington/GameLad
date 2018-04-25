@@ -14,3 +14,15 @@ Technology     | Purpose
 **SDL2**       | Windowing, Rendering, & Input
 **VS2013**     | Windows Compilation
 **make**       | Linux and OSX Compilation
+
+# Building
+* Clone and bootstrap per instructions at - https://github.com/microsoft/vcpkg
+
+## Linux
+* `./compile.sh <path_to_cloned_vcpkg>`
+* *For Example:* `./compile.sh ~/git/microsoft/vcpkg`
+
+## Windows
+* Open VS Developer Command Prompt
+* Run `compile.bat <path_to_cloned_vcpkg>`
+* *For Example:* `compile.bat E:\Git\microsoft\vcpkg`

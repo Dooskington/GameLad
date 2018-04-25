@@ -1,10 +1,6 @@
 #pragma once
 
-#if WINDOWS
-    #include <SDL.h>
-#else
-    #include "SDL2/SDL.h"
-#endif
+#include <SDL2/SDL.h>
 
 class APU : public IMemoryUnit
 {
