@@ -1,18 +1,26 @@
 # GameLad
 
-The [GameLad](http://declanhopkins.com/gamelad/) is an almost finished gameboy emulator that was made in conjunction with [tyren](https://github.com/TyrenDe).
+This is a gameboy emulator that I made with [tyren](https://github.com/TyrenDe) in my early college days.
 
 ![GameLad](https://i.imgur.com/QDiatSD.jpg)
 
-It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests, which means our emulation of the GameBoy's Z80 chip is pretty solid. There isn't audio support :(
+It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests. There isn't audio support.
 
-Learn more [here](http://declanhopkins.com/projects/gamelad.html).
+Learn more [here](https://github.com/Dooskington/GameLad/wiki).
 
 Technology     | Purpose
 ---------------|----------
 **C++14**      | Core
 **SDL2**       | Windowing, Rendering, & Input
 **VS2015+**    | Windows Compilation
+
+# Pull Requests
+If you want to submit a pull request for the audio system, or other small fixes, be my guest. Just stay consistent with the style of the rest of the code. The best place to start is probably [here](https://github.com/Dooskington/GameLad/blob/master/gb-emu-lib/APU.cpp).
+
+# What is all this code doing?
+The best place to start is [here](https://github.com/Dooskington/GameLad/wiki).
+
+Then, follow the code of the main emulator loop that starts [here](https://github.com/Dooskington/GameLad/blob/master/gb-emu/Main.cpp#L220).
 
 # Building
 * Clone and bootstrap per instructions at https://github.com/microsoft/vcpkg
