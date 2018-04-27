@@ -56,10 +56,10 @@
     };
 #endif
 
-#if WINDOWS
-    #include <SDL.h>
+#if __has_include("SDL.h")
+  #include <SDL.h>
 #else
-    #include "SDL2/SDL.h"
+  #include "SDL2/SDL.h"
 #endif
 
 typedef unsigned char byte;
