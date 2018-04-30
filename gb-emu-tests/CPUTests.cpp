@@ -199,14 +199,18 @@ public:
 
     TEST_METHOD(GetHighByte_Test)
     {
-        ushort value = 0x1234;
-        Assert::AreEqual(0x12, (int)CPU::GetHighByte(value));
+        ushort value1 = 0x1234;
+        ushort value2 = 0x5678;
+        Assert::AreEqual(0x12, (int)CPU::GetHighByte(value1));
+        Assert::AreEqual(0x56, (int)CPU::GetHighByte(value2));
     }
 
     TEST_METHOD(GetLowByte_Test)
     {
-        ushort value = 0x1234;
-        Assert::AreEqual(0x34, (int)CPU::GetLowByte(value));
+        ushort value1 = 0x1234;
+        ushort value2 = 0x5678;
+        Assert::AreEqual(0x34, (int)CPU::GetLowByte_Test(value1));
+        Assert::AreEqual(0x78, (int)CPU::GetLowByte_Test(value2));
     }
 
     TEST_METHOD(GetByteRegister_Test)
