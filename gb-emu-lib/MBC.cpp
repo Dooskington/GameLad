@@ -135,13 +135,13 @@ byte MBC1_MBC::ReadByte(const ushort& address)
         if (!m_isRAMEnabled)
         {
             // RAM disabled
-            return 0x00;
+            return 0xFF;
         }
 
         if (m_RAM == nullptr)
         {
             // RAM not initialized
-            return 0x00;
+            return 0xFF;
         }
 
         // In ROM Mode, only bank 0x00 is available
@@ -303,7 +303,7 @@ byte MBC2_MBC::ReadByte(const ushort& address)
         if (!m_isRAMEnabled)
         {
             //Logger::Log("MBC2_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
-            return 0x00;
+            return 0xFF;
         }
 
         return m_RAM[address - 0xA000];
@@ -451,13 +451,13 @@ byte MBC3_MBC::ReadByte(const ushort& address)
         if (!m_isRAMEnabled)
         {
             //Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
-            return 0x00;
+            return 0xFF;
         }
 
         if (m_RAM == nullptr)
         {
             //Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
-            return 0x00;
+            return 0xFF;
         }
 
         if (m_RAMBank <= 0x03)
