@@ -156,7 +156,7 @@ byte MMU::ReadByte(const ushort& address)
     {
         return m_bank0[address - 0xC000];
     }
-    else if (address >= 0xC000 && address <= 0xDFFF)
+    else if (address >= 0xD000 && address <= 0xDFFF)
     {
         return m_bank1[address - 0xD000];
     }
