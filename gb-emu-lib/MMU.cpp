@@ -205,7 +205,7 @@ bool MMU::WriteByte(const ushort& address, const byte val)
     {
         m_bank0[address - 0xC000] = val;
     }
-    else if (address >= 0xC000 && address <= 0xDFFF)
+    else if (address >= 0xD000 && address <= 0xDFFF)
     {
         m_bank1[address - 0xD000] = val;
     }
