@@ -52,4 +52,16 @@ private:
     byte m_OutputTerminal;
 
     byte m_SoundOnOff;
+
+    byte PrevChannel1SweepTime;
+    byte PrevChannel1SweepDirection;
+    byte PrevChannel1SweepNumber;
+    byte PrevChannel1WavePatternDuty;
+    byte PrevChannel1SoundLength;
+    byte PrevChannel1VolumeEnvelopeStart;
+    byte PrevChannel1VolumeEnvelopeDirection;
+    byte PrevChannel1VolumeEnvelopeSweepNumber;
+    byte PrevChannel1Initial;
+    byte PrevChannel1CounterConsecutive;
+    int PrevChannel1Frequency;
 };

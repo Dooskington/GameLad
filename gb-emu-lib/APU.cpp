@@ -49,6 +49,22 @@
 #define CHANNEL3 2
 #define CHANNEL4 3
 
+#define Channel1SweepTime ((m_Channel1Sweep >> 4) & 7)
+#define Channel1SweepDirection ((m_Channel1Sweep >> 3) & 1)
+#define Channel1SweepNumber (m_Channel1Sweep & 7)
+
+#define Channel1WavePatternDuty ((m_Channel1SoundLength >> 6) & 3)
+#define Channel1SoundLength ((m_Channel1SoundLength) & 0x3F)
+
+#define Channel1VolumeEnvelopeStart ((m_Channel1VolumeEnvelope >> 4) & 0xF)
+#define Channel1VolumeEnvelopeDirection ((m_Channel1VolumeEnvelope >> 3) & 1)
+#define Channel1VolumeEnvelopeSweepNumber (m_Channel1VolumeEnvelope & 7)
+
+#define Channel1Initial ISBITSET(m_Channel1FrequencyHi, 7)
+#define Channel1CounterConsecutive ((m_Channel1FrequencyHi >> 6) & 1)
+
+#define Channel1Frequency (((m_Channel1FrequencyHi << 8) | m_Channel1FrequencyLo) & 0x7FF)
+
 void Channel1CallbackStatic(void* pUserdata, Uint8* pStream, int length)
 {
     reinterpret_cast<APU*>(pUserdata)->Channel1Callback(
@@ -134,6 +150,57 @@ APU::~APU()
 void APU::Step(unsigned long cycles)
 {
     // TODO: Create audio here based on cycles, etc.
+    byte NewChannel1SweepTime = Channel1SweepTime;
+    byte NewChannel1SweepDirection = Channel1SweepDirection;
+    byte NewChannel1SweepNumber = Channel1SweepNumber;
+    byte NewChannel1WavePatternDuty = Channel1WavePatternDuty;
+    byte NewChannel1SoundLength = Channel1SoundLength;
+    byte NewChannel1VolumeEnvelopeStart = Channel1VolumeEnvelopeStart;
+    byte NewChannel1VolumeEnvelopeDirection = Channel1VolumeEnvelopeDirection;
+    byte NewChannel1VolumeEnvelopeSweepNumber = Channel1VolumeEnvelopeSweepNumber;
+    byte NewChannel1Initial = Channel1Initial;
+    byte NewChannel1CounterConsecutive = Channel1CounterConsecutive;
+    int NewChannel1Frequency = Channel1Frequency;
+
+    if (
+        NewChannel1SweepTime != PrevChannel1SweepTime ||
+        NewChannel1SweepDirection != PrevChannel1SweepDirection ||
+        NewChannel1SweepNumber != PrevChannel1SweepNumber ||
+        NewChannel1WavePatternDuty != PrevChannel1WavePatternDuty ||
+        NewChannel1SoundLength != PrevChannel1SoundLength ||
+        NewChannel1VolumeEnvelopeStart != PrevChannel1VolumeEnvelopeStart ||
+        NewChannel1VolumeEnvelopeDirection != PrevChannel1VolumeEnvelopeDirection ||
+        NewChannel1VolumeEnvelopeSweepNumber != PrevChannel1VolumeEnvelopeSweepNumber ||
+        NewChannel1Initial != PrevChannel1Initial ||
+        NewChannel1CounterConsecutive != PrevChannel1CounterConsecutive ||
+        NewChannel1Frequency != PrevChannel1Frequency
+    ) {
+
+        printf("SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
+            NewChannel1SweepTime,
+            NewChannel1SweepDirection,
+            NewChannel1SweepNumber,
+            NewChannel1WavePatternDuty,
+            NewChannel1SoundLength,
+            NewChannel1VolumeEnvelopeStart,
+            NewChannel1VolumeEnvelopeDirection,
+            NewChannel1VolumeEnvelopeSweepNumber,
+            NewChannel1Initial,
+            NewChannel1CounterConsecutive,
+            NewChannel1Frequency);
+
+        PrevChannel1SweepTime = NewChannel1SweepTime;
+        PrevChannel1SweepDirection = NewChannel1SweepDirection;
+        PrevChannel1SweepNumber = NewChannel1SweepNumber;
+        PrevChannel1WavePatternDuty = NewChannel1WavePatternDuty;
+        PrevChannel1SoundLength = NewChannel1SoundLength;
+        PrevChannel1VolumeEnvelopeStart = NewChannel1VolumeEnvelopeStart;
+        PrevChannel1VolumeEnvelopeDirection = NewChannel1VolumeEnvelopeDirection;
+        PrevChannel1VolumeEnvelopeSweepNumber = NewChannel1VolumeEnvelopeSweepNumber;
+        PrevChannel1Initial = NewChannel1Initial;
+        PrevChannel1CounterConsecutive = NewChannel1CounterConsecutive;
+        PrevChannel1Frequency = NewChannel1Frequency;
+    }
 }
 
 void APU::Channel1Callback(Uint8* pStream, int length)
