@@ -4,7 +4,7 @@ if [[ $1 == "" ]]; then
 else
     VCPKG_DIR=$1
     VCPKG_TOOLS_DIR=$VCPKG_DIR/downloads/tools
-    CMAKE_EXE=$VCPKG_TOOLS_DIR/cmake-3.10.2-linux/cmake-3.10.2-Linux-x86_64/bin/cmake
+    CMAKE_EXE=$VCPKG_TOOLS_DIR/cmake-3.17.2-osx/cmake-3.17.2-Darwin-x86_64/CMake.app/Contents/bin/cmake
 
     rm -rf build
     mkdir build
