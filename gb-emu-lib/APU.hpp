@@ -1,6 +1,15 @@
 #pragma once
 
 #include <SDL2/SDL.h>
+#include <mutex>
+
+#define AudioSampleRate 48000
+#define AudioOutChannelCount 2
+
+// Based on 60Hz screen refresh rate
+#define AudioBufferSize ((AudioSampleRate * AudioOutChannelCount)) // 1 sec TODO: This is pretty big
+#define CyclesPerFrame 70224 // TODO: Can we import this?
+#define CyclesPerSecond 4213440 // CyclesPerFrame * 60
 
 class APU : public IMemoryUnit
 {
@@ -21,9 +30,34 @@ public:
 private:
     void LoadChannel(int index, SDL_AudioCallback callback);
 
+    // Ring buffer for streaming audio data
+    class Buffer {
+        public:
+            Buffer(size_t size);
+            ~Buffer();
+
+            void Reset();
+            void Put(Uint8 element);
+            Uint8 Get();
+
+        private:
+            size_t m_Size;
+            Uint8* m_Bytes;
+            size_t m_ReadIndex;
+            size_t m_WriteIndex;
+            std::mutex mutex;
+
+            void AdvanceReadIndex();
+            void AdvanceWriteIndex();
+    };
+
 private:
+    double m_AudioFrameRemainder;
+
     bool m_Initialized[4];
     SDL_AudioDeviceID m_DeviceChannel[4];
+
+    Buffer m_Channel1Buffer;
 
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
@@ -53,6 +87,7 @@ private:
 
     byte m_SoundOnOff;
 
+    // For testing...
     byte PrevChannel1SweepTime;
     byte PrevChannel1SweepDirection;
     byte PrevChannel1SweepNumber;

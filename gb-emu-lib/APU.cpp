@@ -114,7 +114,9 @@ APU::APU() :
     m_Channel4Counter(0x00),
     m_ChannelControlOnOffVolume(0x00),
     m_OutputTerminal(0x00),
-    m_SoundOnOff(0x00)
+    m_SoundOnOff(0x00),
+    m_Channel1Buffer(AudioBufferSize),
+    m_AudioFrameRemainder(0.0)
 {
     memset(m_Initialized, false, ARRAYSIZE(m_Initialized));
     memset(m_DeviceChannel, 0, ARRAYSIZE(m_DeviceChannel));
@@ -175,7 +177,7 @@ void APU::Step(unsigned long cycles)
         NewChannel1CounterConsecutive != PrevChannel1CounterConsecutive ||
         NewChannel1Frequency != PrevChannel1Frequency
     ) {
-
+        // Debug: Print audio registers whenever a value change occurs
         printf("SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
             NewChannel1SweepTime,
             NewChannel1SweepDirection,
@@ -201,6 +203,23 @@ void APU::Step(unsigned long cycles)
         PrevChannel1CounterConsecutive = NewChannel1CounterConsecutive;
         PrevChannel1Frequency = NewChannel1Frequency;
     }
+
+    // Calculate the number of audio frames to generate for the elapsed CPU cycle count
+    double sample_count = m_AudioFrameRemainder + (((double)AudioSampleRate / (double)CyclesPerSecond) * (double)cycles);
+    double int_part = 0.0;
+    m_AudioFrameRemainder = modf(sample_count, &int_part);
+
+    // Generate some noise to test the audio output when the envelope register is nonzero
+    for (int i = 0; i < int_part; i++) {
+        if (Channel1VolumeEnvelopeStart != 0) {
+            Uint8 val = random() % 256;
+            m_Channel1Buffer.Put(val);
+            m_Channel1Buffer.Put(val);
+        } else {
+            m_Channel1Buffer.Put(0);
+            m_Channel1Buffer.Put(0);
+        }
+    }
 }
 
 void APU::Channel1Callback(Uint8* pStream, int length)
@@ -210,12 +229,10 @@ void APU::Channel1Callback(Uint8* pStream, int length)
     if (!ISBITSET(m_SoundOnOff, 7))
         return;
 
-    /*int v = 0;
     for (int index = 0; index < length; index++)
     {
-        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
-        v += 300;
-    }*/
+        pStream[index] = m_Channel1Buffer.Get();
+    }
 }
 
 void APU::Channel2Callback(Uint8* pStream, int length)
@@ -412,15 +429,13 @@ bool APU::WriteByte(const ushort& address, const byte val)
 
 void APU::LoadChannel(int index, SDL_AudioCallback callback)
 {
-    // Audio is currently disabled
-    /*
     SDL_AudioSpec want, have;
 
     SDL_memset(&want, 0, sizeof(want));
-    want.freq = 48000;
+    want.freq = AudioSampleRate;
     want.format = AUDIO_U8;
-    want.channels = 2;
-    want.samples = 1024 * 2;
+    want.channels = AudioOutChannelCount;
+    want.samples = 1024 * AudioOutChannelCount;
     want.callback = callback;
     want.userdata = this;
 
@@ -433,5 +448,52 @@ void APU::LoadChannel(int index, SDL_AudioCallback callback)
 
     SDL_PauseAudioDevice(m_DeviceChannel[index], 0);
     m_Initialized[index] = true;
-    */
+}
+
+APU::Buffer::Buffer(size_t size) {
+    m_Size = size + 1;
+    m_Bytes = (Uint8*) malloc(m_Size * sizeof(Uint8));
+    if (m_Bytes == nullptr) {
+        // TODO handle error
+    }
+    Reset();
+}
+
+APU::Buffer::~Buffer() {
+    free(m_Bytes);
+}
+
+void APU::Buffer::Reset() {
+    m_ReadIndex = 0;
+    m_WriteIndex = 0;
+    memset(m_Bytes, 0, m_Size * sizeof(Uint8));
+}
+
+void APU::Buffer::Put(Uint8 element) {
+    m_Bytes[m_WriteIndex] = element;
+    AdvanceWriteIndex();
+    if (m_WriteIndex == m_ReadIndex) {
+        AdvanceReadIndex();
+    }
+}
+
+Uint8 APU::Buffer::Get() {
+    Uint8 data;
+    if (m_WriteIndex == m_ReadIndex) {
+        data = 0;
+    } else {
+        data = m_Bytes[m_ReadIndex];
+        AdvanceReadIndex();
+    }
+    return data;
+}
+
+void APU::Buffer::AdvanceReadIndex() {
+    mutex.lock();
+    m_ReadIndex = (m_ReadIndex + 1) % m_Size;
+    mutex.unlock();
+}
+
+void APU::Buffer::AdvanceWriteIndex() {
+    m_WriteIndex = (m_WriteIndex + 1) % m_Size;
 }
