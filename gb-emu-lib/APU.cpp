@@ -1,5 +1,13 @@
 #include "pch.hpp"
 #include "APU.hpp"
+#include <cmath>
+
+#define SILENCE 0x80
+#define HIGH 0xFF
+#define LOW 0x00
+
+#define PI 3.141592653589793
+#define TWO_PI 6.283185307179586
 
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
@@ -202,6 +210,47 @@ void APU::Step(unsigned long cycles)
         PrevChannel1Initial = NewChannel1Initial;
         PrevChannel1CounterConsecutive = NewChannel1CounterConsecutive;
         PrevChannel1Frequency = NewChannel1Frequency;
+
+        // Do anything that requires recaculation based on these values
+
+        // For x = the value in the frequency register, the actual frequency
+        // in Hz is 131072/(2048-x) Hz
+        m_Channel1FrequencyHz = 131072.0 / (double)(2048 - Channel1Frequency);
+
+        // Wave Duty
+        // 00: 12.5%
+        // 01: 25%
+        // 10: 50%
+        // 11: 75%
+        switch (Channel1WavePatternDuty) {
+            case 0:
+                m_Channel1DutyCycle = 0.125;
+                break;
+            case 1:
+                m_Channel1DutyCycle = 0.25;
+                break;
+            case 2:
+                m_Channel1DutyCycle = 0.5;
+                break;
+            case 3:
+                m_Channel1DutyCycle = 0.75;
+                break;
+            default:
+                Logger::LogError("Invalid duty cycle %x", Channel1WavePatternDuty);
+                assert(false);
+        }
+
+        // Keep the upper harmonic below the Nyquist frequency
+        m_Channel1HarmonicsCount = AudioSampleRate / (m_Channel1FrequencyHz * 2);
+        if (m_Channel1HarmonicsCount > MaxHarmonicsCount) m_Channel1HarmonicsCount = MaxHarmonicsCount;
+
+        // Generate the coefficients for each harmonic
+        m_Channel1Coefficients[0] = m_Channel1DutyCycle - 0.5;
+        for (int i = 1; i < m_Channel1HarmonicsCount + 1; i++) {
+            m_Channel1Coefficients[i] = (sin(i * m_Channel1DutyCycle * PI) * 2) / (i * PI);
+        }
+
+        // Logger::Log("Freq = %f Num Harmonics = %d Duty = %f\n", m_Channel1FrequencyHz, m_Channel1HarmonicsCount, m_Channel1DutyCycle);
     }
 
     // Calculate the number of audio frames to generate for the elapsed CPU cycle count
@@ -209,15 +258,26 @@ void APU::Step(unsigned long cycles)
     double int_part = 0.0;
     m_AudioFrameRemainder = modf(sample_count, &int_part);
 
-    // Generate some noise to test the audio output when the envelope register is nonzero
     for (int i = 0; i < int_part; i++) {
+        float f_sample = 0.0;
+        for (int j = 0; j < m_Channel1HarmonicsCount; j++) {
+            f_sample += m_Channel1Coefficients[j] * cos(j * m_Channel1Phase);
+        }
+
+        m_Channel1Phase += (TWO_PI * m_Channel1FrequencyHz) / (double)AudioSampleRate;
+        while (m_Channel1Phase >= TWO_PI) {
+            m_Channel1Phase -= TWO_PI;
+        }
+
+        float f_sample_scaled = (f_sample * 128) + 128;
+        byte sample = (byte) f_sample_scaled;
+
         if (Channel1VolumeEnvelopeStart != 0) {
-            Uint8 val = random() % 256;
-            m_Channel1Buffer.Put(val);
-            m_Channel1Buffer.Put(val);
+            m_Channel1Buffer.Put(sample);
+            m_Channel1Buffer.Put(sample);
         } else {
-            m_Channel1Buffer.Put(0);
-            m_Channel1Buffer.Put(0);
+            m_Channel1Buffer.Put(SILENCE);
+            m_Channel1Buffer.Put(SILENCE);
         }
     }
 }
@@ -466,7 +526,7 @@ APU::Buffer::~Buffer() {
 void APU::Buffer::Reset() {
     m_ReadIndex = 0;
     m_WriteIndex = 0;
-    memset(m_Bytes, 0, m_Size * sizeof(Uint8));
+    memset(m_Bytes, SILENCE, m_Size * sizeof(Uint8));
 }
 
 void APU::Buffer::Put(Uint8 element) {
@@ -480,7 +540,7 @@ void APU::Buffer::Put(Uint8 element) {
 Uint8 APU::Buffer::Get() {
     Uint8 data;
     if (m_WriteIndex == m_ReadIndex) {
-        data = 0;
+        data = SILENCE;
     } else {
         data = m_Bytes[m_ReadIndex];
         AdvanceReadIndex();

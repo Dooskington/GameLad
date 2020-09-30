@@ -11,6 +11,8 @@
 #define CyclesPerFrame 70224 // TODO: Can we import this?
 #define CyclesPerSecond 4213440 // CyclesPerFrame * 60
 
+#define MaxHarmonicsCount 52
+
 class APU : public IMemoryUnit
 {
 public:
@@ -52,13 +54,6 @@ private:
     };
 
 private:
-    double m_AudioFrameRemainder;
-
-    bool m_Initialized[4];
-    SDL_AudioDeviceID m_DeviceChannel[4];
-
-    Buffer m_Channel1Buffer;
-
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
     byte m_Channel1VolumeEnvelope;
@@ -86,6 +81,19 @@ private:
     byte m_OutputTerminal;
 
     byte m_SoundOnOff;
+
+    // Synthesis
+    double m_Channel1FrequencyHz;
+    int m_Channel1HarmonicsCount;
+    double m_Channel1Coefficients[MaxHarmonicsCount];
+    double m_Channel1Phase;
+    double m_Channel1DutyCycle;
+
+    // Output
+    bool m_Initialized[4];
+    SDL_AudioDeviceID m_DeviceChannel[4];
+    double m_AudioFrameRemainder;
+    Buffer m_Channel1Buffer;
 
     // For testing...
     byte PrevChannel1SweepTime;
