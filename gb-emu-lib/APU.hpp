@@ -5,6 +5,7 @@
 
 #define AudioSampleRate 48000
 #define AudioOutChannelCount 2
+#define FrameSizeBytes 8 // 32 bit samples * 2 channels
 
 // Based on 60Hz screen refresh rate
 #define AudioBufferSize ((AudioSampleRate * AudioOutChannelCount)) // 1 sec TODO: This is pretty big
@@ -35,16 +36,19 @@ private:
     // Ring buffer for streaming audio data
     class Buffer {
         public:
-            Buffer(size_t size);
+            Buffer(size_t element_count, size_t element_size);
             ~Buffer();
 
             void Reset();
-            void Put(Uint8 element);
-            Uint8 Get();
+            void Put(Uint8* element);
+            Uint8* Get();
 
         private:
-            size_t m_Size;
+            size_t m_ElementCount;
+            size_t m_ElementSize;
+            size_t m_BufferSize;
             Uint8* m_Bytes;
+            Uint8* m_DefaultBytes;
             size_t m_ReadIndex;
             size_t m_WriteIndex;
             std::mutex mutex;

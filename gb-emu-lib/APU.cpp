@@ -123,7 +123,7 @@ APU::APU() :
     m_ChannelControlOnOffVolume(0x00),
     m_OutputTerminal(0x00),
     m_SoundOnOff(0x00),
-    m_Channel1Buffer(AudioBufferSize),
+    m_Channel1Buffer(AudioBufferSize, FrameSizeBytes),
     m_AudioFrameRemainder(0.0)
 {
     memset(m_Initialized, false, ARRAYSIZE(m_Initialized));
@@ -260,8 +260,11 @@ void APU::Step(unsigned long cycles)
 
     for (int i = 0; i < int_part; i++) {
         float f_sample = 0.0;
-        for (int j = 0; j < m_Channel1HarmonicsCount; j++) {
-            f_sample += m_Channel1Coefficients[j] * cos(j * m_Channel1Phase);
+
+        if (Channel1VolumeEnvelopeStart != 0) {
+            for (int j = 0; j < m_Channel1HarmonicsCount; j++) {
+                f_sample += m_Channel1Coefficients[j] * cos(j * m_Channel1Phase);
+            }
         }
 
         m_Channel1Phase += (TWO_PI * m_Channel1FrequencyHz) / (double)AudioSampleRate;
@@ -269,16 +272,8 @@ void APU::Step(unsigned long cycles)
             m_Channel1Phase -= TWO_PI;
         }
 
-        float f_sample_scaled = (f_sample * 128) + 128;
-        byte sample = (byte) f_sample_scaled;
-
-        if (Channel1VolumeEnvelopeStart != 0) {
-            m_Channel1Buffer.Put(sample);
-            m_Channel1Buffer.Put(sample);
-        } else {
-            m_Channel1Buffer.Put(SILENCE);
-            m_Channel1Buffer.Put(SILENCE);
-        }
+        float f_frame[2] = {f_sample, f_sample};
+        m_Channel1Buffer.Put((Uint8*) f_frame);
     }
 }
 
@@ -289,9 +284,13 @@ void APU::Channel1Callback(Uint8* pStream, int length)
     if (!ISBITSET(m_SoundOnOff, 7))
         return;
 
-    for (int index = 0; index < length; index++)
+    for (int index = 0; index < length; index += FrameSizeBytes)
     {
-        pStream[index] = m_Channel1Buffer.Get();
+        Uint8* frame = m_Channel1Buffer.Get();
+        for (int i = 0; i < FrameSizeBytes; i++) 
+        {
+            pStream[index + i] = frame[i];
+        }
     }
 }
 
@@ -493,7 +492,7 @@ void APU::LoadChannel(int index, SDL_AudioCallback callback)
 
     SDL_memset(&want, 0, sizeof(want));
     want.freq = AudioSampleRate;
-    want.format = AUDIO_U8;
+    want.format = AUDIO_F32;
     want.channels = AudioOutChannelCount;
     want.samples = 1024 * AudioOutChannelCount;
     want.callback = callback;
@@ -510,39 +509,47 @@ void APU::LoadChannel(int index, SDL_AudioCallback callback)
     m_Initialized[index] = true;
 }
 
-APU::Buffer::Buffer(size_t size) {
-    m_Size = size + 1;
-    m_Bytes = (Uint8*) malloc(m_Size * sizeof(Uint8));
+APU::Buffer::Buffer(size_t element_count, size_t element_size) {
+    m_ElementCount = element_count + 1;
+    m_ElementSize = element_size;
+    m_BufferSize = m_ElementCount * m_ElementSize;
+    m_Bytes = (Uint8*) malloc(m_BufferSize * sizeof(Uint8));
     if (m_Bytes == nullptr) {
         // TODO handle error
     }
+    m_DefaultBytes = (Uint8*) malloc(m_ElementSize * sizeof(Uint8));
+     if (m_DefaultBytes == nullptr) {
+        // TODO handle error
+    }
+    memset(m_DefaultBytes, SILENCE, m_ElementSize);
     Reset();
 }
 
 APU::Buffer::~Buffer() {
     free(m_Bytes);
+    free(m_DefaultBytes);
 }
 
 void APU::Buffer::Reset() {
     m_ReadIndex = 0;
     m_WriteIndex = 0;
-    memset(m_Bytes, SILENCE, m_Size * sizeof(Uint8));
+    memset(m_Bytes, SILENCE, m_BufferSize * sizeof(Uint8));
 }
 
-void APU::Buffer::Put(Uint8 element) {
-    m_Bytes[m_WriteIndex] = element;
+void APU::Buffer::Put(Uint8* element) {
+    memcpy(&m_Bytes[m_WriteIndex], element, m_ElementSize);
     AdvanceWriteIndex();
     if (m_WriteIndex == m_ReadIndex) {
         AdvanceReadIndex();
     }
 }
 
-Uint8 APU::Buffer::Get() {
-    Uint8 data;
+Uint8* APU::Buffer::Get() {
+    Uint8* data;
     if (m_WriteIndex == m_ReadIndex) {
-        data = SILENCE;
+        data = m_DefaultBytes;
     } else {
-        data = m_Bytes[m_ReadIndex];
+        data = &m_Bytes[m_ReadIndex];
         AdvanceReadIndex();
     }
     return data;
@@ -550,10 +557,10 @@ Uint8 APU::Buffer::Get() {
 
 void APU::Buffer::AdvanceReadIndex() {
     mutex.lock();
-    m_ReadIndex = (m_ReadIndex + 1) % m_Size;
+    m_ReadIndex = (m_ReadIndex + m_ElementSize) % m_BufferSize;
     mutex.unlock();
 }
 
 void APU::Buffer::AdvanceWriteIndex() {
-    m_WriteIndex = (m_WriteIndex + 1) % m_Size;
+    m_WriteIndex = (m_WriteIndex + m_ElementSize) % m_BufferSize;
 }
