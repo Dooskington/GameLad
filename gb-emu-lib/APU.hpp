@@ -92,6 +92,8 @@ private:
     double m_Channel1Coefficients[MaxHarmonicsCount];
     double m_Channel1Phase;
     double m_Channel1DutyCycle;
+    double m_Channel1SoundLengthTimerSeconds;
+    double m_Channel1SoundLengthSeconds;
 
     // Output
     bool m_Initialized[4];

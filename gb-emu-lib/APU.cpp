@@ -213,6 +213,14 @@ void APU::Step(unsigned long cycles)
 
         // Do anything that requires recaculation based on these values
 
+        if (Channel1Initial) {
+            // Restart the sound
+            m_Channel1SoundLengthTimerSeconds = 0.0;
+        }
+
+        // Sound Length = (64-t1)*(1/256) seconds
+        m_Channel1SoundLengthSeconds = (64.0 - (double)Channel1SoundLength) / 256.0;
+
         // For x = the value in the frequency register, the actual frequency
         // in Hz is 131072/(2048-x) Hz
         m_Channel1FrequencyHz = 131072.0 / (double)(2048 - Channel1Frequency);
@@ -261,7 +269,9 @@ void APU::Step(unsigned long cycles)
     for (int i = 0; i < int_part; i++) {
         float f_sample = 0.0;
 
-        if (Channel1VolumeEnvelopeStart != 0) {
+        bool sound_enabled = Channel1VolumeEnvelopeStart != 0 && (Channel1CounterConsecutive == 0 || m_Channel1SoundLengthTimerSeconds < m_Channel1SoundLengthSeconds);
+
+        if (sound_enabled) {
             for (int j = 0; j < m_Channel1HarmonicsCount; j++) {
                 f_sample += m_Channel1Coefficients[j] * cos(j * m_Channel1Phase);
             }
@@ -271,6 +281,8 @@ void APU::Step(unsigned long cycles)
         while (m_Channel1Phase >= TWO_PI) {
             m_Channel1Phase -= TWO_PI;
         }
+
+        m_Channel1SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
 
         float f_frame[2] = {f_sample, f_sample};
         m_Channel1Buffer.Put((Uint8*) f_frame);
