@@ -552,6 +552,138 @@ void APU::LoadChannel(int index, SDL_AudioCallback callback)
     m_Initialized[index] = true;
 }
 
+APU::AdditiveSquareWaveGenerator::AdditiveSquareWaveGenerator() : 
+    m_FrequencyHz(1.0),
+    m_DutyCycle(50.0),
+    m_CounterModeEnabled(false),
+    m_SoundLengthSeconds(0.0),
+    m_EnvelopeModeEnabled(false),
+    m_EnvelopeDirection(1.0),
+    m_EnvelopeStartVolume(0.0),
+    m_EnvelopeStepLengthSeconds(0.0),
+    m_EnvelopeVolume(0.0),
+    m_HarmonicsCount(0),
+    m_Phase(0.0),
+    m_SoundLengthTimerSeconds(0.0)
+{
+    memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
+}
+
+void APU::AdditiveSquareWaveGenerator::RegenerateCoefficients()
+{
+    // Keep the upper harmonic below the Nyquist frequency
+    m_HarmonicsCount = AudioSampleRate / (m_FrequencyHz * 2);
+    if (m_HarmonicsCount > MaxHarmonicsCount)
+    {
+        m_HarmonicsCount = MaxHarmonicsCount;
+    }
+
+    // Generate the coefficients for each harmonic
+    m_Coefficients[0] = m_DutyCycle - 0.5;
+    for (int i = 1; i < m_HarmonicsCount; i++)
+    {
+        m_Coefficients[i] = (sin(i * m_DutyCycle * PI) * 2) / (i * PI);
+    }
+}
+
+void APU::AdditiveSquareWaveGenerator::SetFrequency(double frequency_hz)
+{
+    double m_FrequencyHz = frequency_hz;
+
+    if (m_FrequencyHz <= 0)
+    {
+        Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
+        assert(false);
+    }
+
+    RegenerateCoefficients();
+}
+
+void APU::AdditiveSquareWaveGenerator::SetDutyCycle(double duty_cycle)
+{
+    m_DutyCycle = duty_cycle;
+
+    if (m_DutyCycle < 0.0 || m_DutyCycle > 1.0)
+    {
+        Logger::LogError("Invalid Duty Cycle %f", m_DutyCycle);
+        assert(false);
+    }
+
+    RegenerateCoefficients();
+}
+
+void APU::AdditiveSquareWaveGenerator::SetCounterModeEnabled(bool is_enabled)
+{
+    m_CounterModeEnabled = is_enabled;
+}
+
+void APU::AdditiveSquareWaveGenerator::SetSoundLength(double sound_length_seconds)
+{
+    m_SoundLengthSeconds = sound_length_seconds;
+}
+
+void APU::AdditiveSquareWaveGenerator::SetEnvelopeStartVolume(double envelope_start_volume)
+{
+    m_EnvelopeStartVolume = envelope_start_volume;
+}
+
+void APU::AdditiveSquareWaveGenerator::SetEnvelopeDirection(EnvelopeDirection direction)
+{
+    m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
+}
+
+void APU::AdditiveSquareWaveGenerator::SetEnvelopeStep(double envelope_step_seconds)
+{
+    m_EnvelopeStepLengthSeconds = envelope_step_seconds;
+}
+
+void APU::AdditiveSquareWaveGenerator::RestartSound()
+{
+    m_SoundLengthTimerSeconds = 0.0;
+}
+
+float APU::AdditiveSquareWaveGenerator::NextSample()
+{
+    float sample = 0.0;
+
+    bool sound_enabled = m_EnvelopeVolume > 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
+
+    if (sound_enabled)
+    {
+        for (int j = 0; j < m_HarmonicsCount; j++)
+        {
+            sample += m_Coefficients[j] * cos(j * m_Phase);
+        }
+
+        if (m_EnvelopeModeEnabled)
+        {
+            int step_number = m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds;
+            double volume = m_EnvelopeStartVolume + (m_EnvelopeDirection * ((double)step_number / 16.0));
+            if (volume < 0.0)
+                volume = 0.0;
+            if (volume > 1.0)
+                volume = 1.0;
+            sample *= volume;
+        }
+    }
+
+    m_Phase += (TWO_PI * m_FrequencyHz) / (double)AudioSampleRate;
+    while (m_Phase >= TWO_PI)
+    {
+        m_Phase -= TWO_PI;
+    }
+
+    if (m_Phase < 0 || m_Phase >= TWO_PI)
+    {
+        Logger::LogError("Invalid phase %f", m_Phase);
+        assert(false);
+    }
+
+    m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
+
+    return sample;
+}
+
 APU::Buffer::Buffer(size_t element_count, size_t element_size) {
     m_ElementCount = element_count + 1;
     m_ElementSize = element_size;

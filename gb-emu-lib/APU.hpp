@@ -57,6 +57,45 @@ private:
             void AdvanceWriteIndex();
     };
 
+    class AdditiveSquareWaveGenerator {
+        typedef enum EnvelopeDirection {
+            UP, DOWN
+        };
+
+        public:
+            AdditiveSquareWaveGenerator();
+            ~AdditiveSquareWaveGenerator() = default;
+
+            void SetFrequency(double frequency_hz);
+            void SetDutyCycle(double duty_cycle);
+            void SetCounterModeEnabled(bool is_enabled);
+            void SetSoundLength(double sound_length_seconds);
+            void SetEnvelopeStartVolume(double envelope_start_volume);
+            void SetEnvelopeDirection(EnvelopeDirection direction);
+            void SetEnvelopeStep(double envelope_step_seconds);
+            
+            void RestartSound();
+            
+            float NextSample();
+
+        private:
+            double m_FrequencyHz;
+            double m_DutyCycle;
+            bool m_CounterModeEnabled;
+            double m_SoundLengthSeconds;
+            bool m_EnvelopeModeEnabled;
+            double m_EnvelopeDirection;
+            double m_EnvelopeStartVolume;
+            double m_EnvelopeStepLengthSeconds; 
+            double m_EnvelopeVolume;
+            int m_HarmonicsCount;
+            double m_Coefficients[MaxHarmonicsCount];
+            double m_Phase;
+            double m_SoundLengthTimerSeconds;
+
+            void RegenerateCoefficients();
+    };
+
 private:
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
@@ -96,8 +135,6 @@ private:
     double m_Channel1SoundLengthSeconds;
     double m_Channel1EnvelopeVolume;
     double m_Channel1EnvelopeStepLengthSeconds;
-
-
 
     // Output
     bool m_Initialized[4];
