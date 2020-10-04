@@ -33,6 +33,10 @@ public:
 private:
     void LoadChannel(int index, SDL_AudioCallback callback);
 
+    typedef enum {
+        UP, DOWN
+    } EnvelopeDirection;
+
     // Ring buffer for streaming audio data
     class Buffer {
         public:
@@ -58,10 +62,6 @@ private:
     };
 
     class AdditiveSquareWaveGenerator {
-        typedef enum EnvelopeDirection {
-            UP, DOWN
-        };
-
         public:
             AdditiveSquareWaveGenerator();
             ~AdditiveSquareWaveGenerator() = default;
@@ -78,6 +78,8 @@ private:
             
             float NextSample();
 
+            void DebugLog();
+
         private:
             double m_FrequencyHz;
             double m_DutyCycle;
@@ -87,7 +89,6 @@ private:
             double m_EnvelopeDirection;
             double m_EnvelopeStartVolume;
             double m_EnvelopeStepLengthSeconds; 
-            double m_EnvelopeVolume;
             int m_HarmonicsCount;
             double m_Coefficients[MaxHarmonicsCount];
             double m_Phase;
@@ -126,15 +127,7 @@ private:
     byte m_SoundOnOff;
 
     // Synthesis
-    double m_Channel1FrequencyHz;
-    int m_Channel1HarmonicsCount;
-    double m_Channel1Coefficients[MaxHarmonicsCount];
-    double m_Channel1Phase;
-    double m_Channel1DutyCycle;
-    double m_Channel1SoundLengthTimerSeconds;
-    double m_Channel1SoundLengthSeconds;
-    double m_Channel1EnvelopeVolume;
-    double m_Channel1EnvelopeStepLengthSeconds;
+    AdditiveSquareWaveGenerator m_Channel1SoundGenerator;
 
     // Output
     bool m_Initialized[4];
