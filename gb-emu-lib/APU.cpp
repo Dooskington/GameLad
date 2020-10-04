@@ -124,7 +124,13 @@ APU::APU() :
     m_OutputTerminal(0x00),
     m_SoundOnOff(0x00),
     m_Channel1Buffer(AudioBufferSize, FrameSizeBytes),
-    m_AudioFrameRemainder(0.0)
+    m_AudioFrameRemainder(0.0),
+    m_Channel1FrequencyHz(0.0),
+    m_Channel1HarmonicsCount(0x00),
+    m_Channel1Phase(0.0),
+    m_Channel1DutyCycle(0.0),
+    m_Channel1SoundLengthTimerSeconds(0.0),
+    m_Channel1SoundLengthSeconds(0.0)
 {
     memset(m_Initialized, false, ARRAYSIZE(m_Initialized));
     memset(m_DeviceChannel, 0, ARRAYSIZE(m_DeviceChannel));
@@ -225,6 +231,11 @@ void APU::Step(unsigned long cycles)
         // in Hz is 131072/(2048-x) Hz
         m_Channel1FrequencyHz = 131072.0 / (double)(2048 - Channel1Frequency);
 
+        if (m_Channel1FrequencyHz <= 0) {
+            Logger::LogError("Invalid Frequency %f", m_Channel1FrequencyHz);
+            assert(false);
+        }
+
         // Wave Duty
         // 00: 12.5%
         // 01: 25%
@@ -254,7 +265,7 @@ void APU::Step(unsigned long cycles)
 
         // Generate the coefficients for each harmonic
         m_Channel1Coefficients[0] = m_Channel1DutyCycle - 0.5;
-        for (int i = 1; i < m_Channel1HarmonicsCount + 1; i++) {
+        for (int i = 1; i < m_Channel1HarmonicsCount; i++) {
             m_Channel1Coefficients[i] = (sin(i * m_Channel1DutyCycle * PI) * 2) / (i * PI);
         }
 
@@ -280,6 +291,11 @@ void APU::Step(unsigned long cycles)
         m_Channel1Phase += (TWO_PI * m_Channel1FrequencyHz) / (double)AudioSampleRate;
         while (m_Channel1Phase >= TWO_PI) {
             m_Channel1Phase -= TWO_PI;
+        }
+
+        if (m_Channel1Phase < 0 || m_Channel1Phase >= TWO_PI) {
+            Logger::LogError("Invalid phase %f", m_Channel1Phase);
+            assert(false);
         }
 
         m_Channel1SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
