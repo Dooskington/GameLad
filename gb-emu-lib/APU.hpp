@@ -128,12 +128,13 @@ private:
 
     // Synthesis
     AdditiveSquareWaveGenerator m_Channel1SoundGenerator;
+    AdditiveSquareWaveGenerator m_Channel2SoundGenerator;
 
     // Output
     bool m_Initialized[4];
     SDL_AudioDeviceID m_DeviceChannel[4];
     double m_AudioFrameRemainder;
-    Buffer m_Channel1Buffer;
+    Buffer m_OutputBuffer;
 
     // For testing...
     byte PrevChannel1SweepTime;
@@ -147,4 +148,13 @@ private:
     byte PrevChannel1Initial;
     byte PrevChannel1CounterConsecutive;
     int PrevChannel1Frequency;
+
+    byte PrevChannel2WavePatternDuty;
+    byte PrevChannel2SoundLength;
+    byte PrevChannel2VolumeEnvelopeStart;
+    byte PrevChannel2VolumeEnvelopeDirection;
+    byte PrevChannel2VolumeEnvelopeSweepNumber;
+    byte PrevChannel2Initial;
+    byte PrevChannel2CounterConsecutive;
+    int PrevChannel2Frequency;
 };

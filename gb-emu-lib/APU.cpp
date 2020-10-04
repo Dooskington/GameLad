@@ -60,18 +60,23 @@
 #define Channel1SweepTime ((m_Channel1Sweep >> 4) & 7)
 #define Channel1SweepDirection ((m_Channel1Sweep >> 3) & 1)
 #define Channel1SweepNumber (m_Channel1Sweep & 7)
-
 #define Channel1WavePatternDuty ((m_Channel1SoundLength >> 6) & 3)
 #define Channel1SoundLength ((m_Channel1SoundLength) & 0x3F)
-
 #define Channel1VolumeEnvelopeStart ((m_Channel1VolumeEnvelope >> 4) & 0xF)
 #define Channel1VolumeEnvelopeDirection ((m_Channel1VolumeEnvelope >> 3) & 1)
 #define Channel1VolumeEnvelopeSweepNumber (m_Channel1VolumeEnvelope & 7)
-
 #define Channel1Initial ISBITSET(m_Channel1FrequencyHi, 7)
 #define Channel1CounterConsecutive ((m_Channel1FrequencyHi >> 6) & 1)
-
 #define Channel1Frequency (((m_Channel1FrequencyHi << 8) | m_Channel1FrequencyLo) & 0x7FF)
+
+#define Channel2WavePatternDuty ((m_Channel2SoundLength >> 6) & 3)
+#define Channel2SoundLength ((m_Channel2SoundLength) & 0x3F)
+#define Channel2VolumeEnvelopeStart ((m_Channel2VolumeEnvelope >> 4) & 0xF)
+#define Channel2VolumeEnvelopeDirection ((m_Channel2VolumeEnvelope >> 3) & 1)
+#define Channel2VolumeEnvelopeSweepNumber (m_Channel2VolumeEnvelope & 7)
+#define Channel2Initial ISBITSET(m_Channel2FrequencyHi, 7)
+#define Channel2CounterConsecutive ((m_Channel2FrequencyHi >> 6) & 1)
+#define Channel2Frequency (((m_Channel2FrequencyHi << 8) | m_Channel2FrequencyLo) & 0x7FF)
 
 void Channel1CallbackStatic(void* pUserdata, Uint8* pStream, int length)
 {
@@ -124,7 +129,8 @@ APU::APU() :
     m_OutputTerminal(0x00),
     m_SoundOnOff(0x00),
     m_Channel1SoundGenerator(),
-    m_Channel1Buffer(AudioBufferSize, FrameSizeBytes),
+    m_Channel2SoundGenerator(),
+    m_OutputBuffer(AudioBufferSize, FrameSizeBytes),
     m_AudioFrameRemainder(0.0)
 {
     memset(m_Initialized, false, ARRAYSIZE(m_Initialized));
@@ -160,6 +166,7 @@ APU::~APU()
 
 void APU::Step(unsigned long cycles)
 {
+    // CHANNEL 1
     byte NewChannel1SweepTime = Channel1SweepTime;
     byte NewChannel1SweepDirection = Channel1SweepDirection;
     byte NewChannel1SweepNumber = Channel1SweepNumber;
@@ -186,18 +193,18 @@ void APU::Step(unsigned long cycles)
         NewChannel1Frequency != PrevChannel1Frequency
     ) {
         // Debug: Print audio registers whenever a value change occurs
-        printf("CHANNEL 1 -- SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
-            NewChannel1SweepTime,
-            NewChannel1SweepDirection,
-            NewChannel1SweepNumber,
-            NewChannel1WavePatternDuty,
-            NewChannel1SoundLength,
-            NewChannel1VolumeEnvelopeStart,
-            NewChannel1VolumeEnvelopeDirection,
-            NewChannel1VolumeEnvelopeSweepNumber,
-            NewChannel1Initial,
-            NewChannel1CounterConsecutive,
-            NewChannel1Frequency);
+        // printf("CHANNEL 1 -- SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
+        //     NewChannel1SweepTime,
+        //     NewChannel1SweepDirection,
+        //     NewChannel1SweepNumber,
+        //     NewChannel1WavePatternDuty,
+        //     NewChannel1SoundLength,
+        //     NewChannel1VolumeEnvelopeStart,
+        //     NewChannel1VolumeEnvelopeDirection,
+        //     NewChannel1VolumeEnvelopeSweepNumber,
+        //     NewChannel1Initial,
+        //     NewChannel1CounterConsecutive,
+        //     NewChannel1Frequency);
 
         PrevChannel1SweepTime = NewChannel1SweepTime;
         PrevChannel1SweepDirection = NewChannel1SweepDirection;
@@ -259,7 +266,98 @@ void APU::Step(unsigned long cycles)
                 assert(false);
         }
 
-        m_Channel1SoundGenerator.DebugLog();
+        // m_Channel1SoundGenerator.DebugLog();
+    }
+
+    // CHANNEL 2
+    byte NewChannel2WavePatternDuty = Channel2WavePatternDuty;
+    byte NewChannel2SoundLength = Channel2SoundLength;
+    byte NewChannel2VolumeEnvelopeStart = Channel2VolumeEnvelopeStart;
+    byte NewChannel2VolumeEnvelopeDirection = Channel2VolumeEnvelopeDirection;
+    byte NewChannel2VolumeEnvelopeSweepNumber = Channel2VolumeEnvelopeSweepNumber;
+    byte NewChannel2Initial = Channel2Initial;
+    byte NewChannel2CounterConsecutive = Channel2CounterConsecutive;
+    int NewChannel2Frequency = Channel2Frequency;
+
+    if (
+        NewChannel2WavePatternDuty != PrevChannel2WavePatternDuty ||
+        NewChannel2SoundLength != PrevChannel2SoundLength ||
+        NewChannel2VolumeEnvelopeStart != PrevChannel2VolumeEnvelopeStart ||
+        NewChannel2VolumeEnvelopeDirection != PrevChannel2VolumeEnvelopeDirection ||
+        NewChannel2VolumeEnvelopeSweepNumber != PrevChannel2VolumeEnvelopeSweepNumber ||
+        NewChannel2Initial != PrevChannel2Initial ||
+        NewChannel2CounterConsecutive != PrevChannel2CounterConsecutive ||
+        NewChannel2Frequency != PrevChannel2Frequency
+    ) {
+        // Debug: Print audio registers whenever a value change occurs
+        // printf("CHANNEL 2 -- DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
+        //     NewChannel2WavePatternDuty,
+        //     NewChannel2SoundLength,
+        //     NewChannel2VolumeEnvelopeStart,
+        //     NewChannel2VolumeEnvelopeDirection,
+        //     NewChannel2VolumeEnvelopeSweepNumber,
+        //     NewChannel2Initial,
+        //     NewChannel2CounterConsecutive,
+        //     NewChannel2Frequency);
+
+        PrevChannel2WavePatternDuty = NewChannel2WavePatternDuty;
+        PrevChannel2SoundLength = NewChannel2SoundLength;
+        PrevChannel2VolumeEnvelopeStart = NewChannel2VolumeEnvelopeStart;
+        PrevChannel2VolumeEnvelopeDirection = NewChannel2VolumeEnvelopeDirection;
+        PrevChannel2VolumeEnvelopeSweepNumber = NewChannel2VolumeEnvelopeSweepNumber;
+        PrevChannel2Initial = NewChannel2Initial;
+        PrevChannel2CounterConsecutive = NewChannel2CounterConsecutive;
+        PrevChannel2Frequency = NewChannel2Frequency;
+
+        // Do anything that requires recaculation based on these values
+
+        if (Channel2Initial) {
+            m_Channel2SoundGenerator.RestartSound();
+        }
+        
+        // Counter/Consecutive modes
+        m_Channel2SoundGenerator.SetCounterModeEnabled(Channel2CounterConsecutive);
+
+        // Sound Length = (64-t1)*(1/256) seconds
+        m_Channel2SoundGenerator.SetSoundLength((64.0 - (double)Channel2SoundLength) / 256.0);
+
+        // Envelope start volume. 4 bits of precision = 16 volume levels.
+        m_Channel2SoundGenerator.SetEnvelopeStartVolume((double)Channel2VolumeEnvelopeStart / 16.0);
+
+        // Length of an envelope step = n * (1/64)
+        m_Channel2SoundGenerator.SetEnvelopeStep((double)Channel2VolumeEnvelopeSweepNumber / 64.0);
+
+        // Envelope direction: 0 = Decrease, 1 = Increase
+        m_Channel2SoundGenerator.SetEnvelopeDirection(Channel2VolumeEnvelopeDirection ? UP : DOWN);
+
+        // For x = the value in the frequency register, the actual frequency
+        // in Hz is 131072/(2048-x) Hz
+        m_Channel2SoundGenerator.SetFrequency(131072.0 / (double)(2048 - Channel2Frequency));
+
+        // Wave Duty
+        // 00: 12.5%
+        // 01: 25%
+        // 10: 50%
+        // 11: 75%
+        switch (Channel2WavePatternDuty) {
+            case 0:
+                m_Channel2SoundGenerator.SetDutyCycle(0.125);
+                break;
+            case 1:
+                m_Channel2SoundGenerator.SetDutyCycle(0.25);
+                break;
+            case 2:
+                m_Channel2SoundGenerator.SetDutyCycle(0.5);
+                break;
+            case 3:
+                m_Channel2SoundGenerator.SetDutyCycle(0.75);
+                break;
+            default:
+                Logger::LogError("Invalid duty cycle %x", Channel2WavePatternDuty);
+                assert(false);
+        }
+
+        // m_Channel2SoundGenerator.DebugLog();
     }
 
     // Calculate the number of audio frames to generate for the elapsed CPU cycle count
@@ -268,9 +366,11 @@ void APU::Step(unsigned long cycles)
     m_AudioFrameRemainder = modf(sample_count, &int_part);
 
     for (int i = 0; i < int_part; i++) {
-        float f_sample = m_Channel1SoundGenerator.NextSample();
-        float f_frame[2] = {f_sample, f_sample};
-        m_Channel1Buffer.Put((Uint8*) f_frame);
+        float ch1_sample = m_Channel1SoundGenerator.NextSample();
+        float ch2_sample = m_Channel2SoundGenerator.NextSample();
+        // Some cheap mixing...
+        float f_frame[2] = {ch1_sample + ch2_sample, ch1_sample + ch2_sample};
+        m_OutputBuffer.Put((Uint8*) f_frame);
     }
 }
 
@@ -283,7 +383,7 @@ void APU::Channel1Callback(Uint8* pStream, int length)
 
     for (int index = 0; index < length; index += FrameSizeBytes)
     {
-        Uint8* frame = m_Channel1Buffer.Get();
+        Uint8* frame = m_OutputBuffer.Get();
         for (int i = 0; i < FrameSizeBytes; i++) 
         {
             pStream[index + i] = frame[i];
