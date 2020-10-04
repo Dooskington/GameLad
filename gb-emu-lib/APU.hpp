@@ -94,6 +94,10 @@ private:
     double m_Channel1DutyCycle;
     double m_Channel1SoundLengthTimerSeconds;
     double m_Channel1SoundLengthSeconds;
+    double m_Channel1EnvelopeVolume;
+    double m_Channel1EnvelopeStepLengthSeconds;
+
+
 
     // Output
     bool m_Initialized[4];

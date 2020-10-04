@@ -227,6 +227,9 @@ void APU::Step(unsigned long cycles)
         // Sound Length = (64-t1)*(1/256) seconds
         m_Channel1SoundLengthSeconds = (64.0 - (double)Channel1SoundLength) / 256.0;
 
+        // Length of an envelope step = n * (1/64)
+        m_Channel1EnvelopeStepLengthSeconds = (double)Channel1VolumeEnvelopeSweepNumber / 64.0;
+
         // For x = the value in the frequency register, the actual frequency
         // in Hz is 131072/(2048-x) Hz
         m_Channel1FrequencyHz = 131072.0 / (double)(2048 - Channel1Frequency);
@@ -285,6 +288,18 @@ void APU::Step(unsigned long cycles)
         if (sound_enabled) {
             for (int j = 0; j < m_Channel1HarmonicsCount; j++) {
                 f_sample += m_Channel1Coefficients[j] * cos(j * m_Channel1Phase);
+            }
+
+            if (Channel1VolumeEnvelopeSweepNumber != 0) {
+                // Envelope is enabled
+                int step_number = m_Channel1SoundLengthTimerSeconds / m_Channel1EnvelopeStepLengthSeconds;
+                int initial_step = Channel1VolumeEnvelopeStart;
+                int direction = Channel1VolumeEnvelopeDirection;
+                int volume = direction == 0x0 ? initial_step - step_number : initial_step + step_number;
+                if (volume < 0x0) volume = 0x0;
+                if (volume > 0xF) volume = 0xF;
+                m_Channel1EnvelopeVolume = (double)volume / 16.0;
+                f_sample *= m_Channel1EnvelopeVolume;
             }
         }
 
