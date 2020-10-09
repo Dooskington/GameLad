@@ -78,6 +78,16 @@
 #define Channel2CounterConsecutive ((m_Channel2FrequencyHi >> 6) & 1)
 #define Channel2Frequency (((m_Channel2FrequencyHi << 8) | m_Channel2FrequencyLo) & 0x7FF)
 
+#define Channel4SoundLength (m_Channel4SoundLength & 0x1F)
+#define Channel4VolumeEnvelopeStart ((m_Channel4VolumeEnvelope >> 4) & 0xF)
+#define Channel4VolumeEnvelopeDirection ((m_Channel4VolumeEnvelope >> 3) & 1)
+#define Channel4VolumeEnvelopeSweepNumber (m_Channel4VolumeEnvelope & 7)
+#define Channel4ShiftClockFrequency ((m_Channel4PolynomialCounter >> 4) & 0xF)
+#define Channel4CounterStep ((m_Channel4PolynomialCounter >> 3) & 1)
+#define Channel4FrequencyDivideRatio (m_Channel4PolynomialCounter & 7)
+#define Channel4Initial ISBITSET(m_Channel4Counter, 7)
+#define Channel4CounterConsecutive ((m_Channel4Counter >> 6) & 1)
+
 void Channel1CallbackStatic(void* pUserdata, Uint8* pStream, int length)
 {
     reinterpret_cast<APU*>(pUserdata)->Channel1Callback(
@@ -130,6 +140,7 @@ APU::APU() :
     m_SoundOnOff(0x00),
     m_Channel1SoundGenerator(),
     m_Channel2SoundGenerator(),
+    m_Channel4SoundGenerator(),
     m_OutputBuffer(AudioBufferSize, FrameSizeBytes),
     m_AudioFrameRemainder(0.0)
 {
@@ -360,6 +371,73 @@ void APU::Step(unsigned long cycles)
         // m_Channel2SoundGenerator.DebugLog();
     }
 
+    byte NewChannel4SoundLength = Channel4SoundLength;
+    byte NewChannel4VolumeEnvelopeStart = Channel4VolumeEnvelopeStart;
+    byte NewChannel4VolumeEnvelopeDirection = Channel4VolumeEnvelopeDirection;
+    byte NewChannel4VolumeEnvelopeSweepNumber = Channel4VolumeEnvelopeSweepNumber;
+    byte NewChannel4ShiftClockFrequency = Channel4ShiftClockFrequency;
+    byte NewChannel4CounterStep = Channel4CounterStep;
+    byte NewChannel4FrequencyDivideRatio = Channel4FrequencyDivideRatio;
+    byte NewChannel4Initial = Channel4Initial;
+    byte NewChannel4CounterConsecutive = Channel4CounterConsecutive;
+
+    if (
+        NewChannel4SoundLength != PrevChannel4SoundLength ||
+        NewChannel4VolumeEnvelopeStart != PrevChannel4VolumeEnvelopeStart ||
+        NewChannel4VolumeEnvelopeDirection != PrevChannel4VolumeEnvelopeDirection ||
+        NewChannel4VolumeEnvelopeSweepNumber != PrevChannel4VolumeEnvelopeSweepNumber ||
+        NewChannel4ShiftClockFrequency != PrevChannel4ShiftClockFrequency ||
+        NewChannel4CounterStep != PrevChannel4CounterStep ||
+        NewChannel4FrequencyDivideRatio != PrevChannel4FrequencyDivideRatio ||
+        NewChannel4Initial != PrevChannel4Initial ||
+        NewChannel4CounterConsecutive != PrevChannel4CounterConsecutive
+    ) {
+        // Debug: Print audio registers whenever a value change occurs
+        printf("CHANNEL 4 -- LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x SHIFT:0x%01x STEP:0x%01x RATIO:0x%01x INIT:0x%01x CC:0x%01x\n",
+            NewChannel4SoundLength,
+            NewChannel4VolumeEnvelopeStart,
+            NewChannel4VolumeEnvelopeDirection,
+            NewChannel4VolumeEnvelopeSweepNumber,
+            NewChannel4ShiftClockFrequency,
+            NewChannel4CounterStep,
+            NewChannel4FrequencyDivideRatio,
+            NewChannel4Initial,
+            NewChannel4CounterConsecutive);
+
+        PrevChannel4SoundLength = NewChannel4SoundLength;
+        PrevChannel4VolumeEnvelopeStart = NewChannel4VolumeEnvelopeStart;
+        PrevChannel4VolumeEnvelopeDirection = NewChannel4VolumeEnvelopeDirection;
+        PrevChannel4VolumeEnvelopeSweepNumber = NewChannel4VolumeEnvelopeSweepNumber;
+        PrevChannel4ShiftClockFrequency = NewChannel4ShiftClockFrequency;
+        PrevChannel4CounterStep = NewChannel4CounterStep;
+        PrevChannel4FrequencyDivideRatio = NewChannel4FrequencyDivideRatio;
+        PrevChannel4Initial = NewChannel4Initial;
+        PrevChannel4CounterConsecutive = NewChannel4CounterConsecutive;
+
+        // Do anything that requires recaculation based on these values
+
+        if (Channel4Initial) {
+            m_Channel4SoundGenerator.RestartSound();
+        }
+
+        // Counter/Consecutive modes
+        m_Channel4SoundGenerator.SetCounterModeEnabled(Channel4CounterConsecutive);
+
+        // Sound Length = (64-t1)*(1/256) seconds
+        m_Channel4SoundGenerator.SetSoundLength((64.0 - (double)Channel4SoundLength) / 256.0);
+
+        // Envelope start volume. 4 bits of precision = 16 volume levels.
+        m_Channel4SoundGenerator.SetEnvelopeStartVolume((double)Channel4VolumeEnvelopeStart / 16.0);
+
+        // Length of an envelope step = n * (1/64)
+        m_Channel4SoundGenerator.SetEnvelopeStep((double)Channel4VolumeEnvelopeSweepNumber / 64.0);
+
+        // Envelope direction: 0 = Decrease, 1 = Increase
+        m_Channel4SoundGenerator.SetEnvelopeDirection(Channel4VolumeEnvelopeDirection ? UP : DOWN);
+
+        m_Channel4SoundGenerator.SetFrequency(1.0); // TODO
+    }
+
     // Calculate the number of audio frames to generate for the elapsed CPU cycle count
     double sample_count = m_AudioFrameRemainder + (((double)AudioSampleRate / (double)CyclesPerSecond) * (double)cycles);
     double int_part = 0.0;
@@ -368,8 +446,9 @@ void APU::Step(unsigned long cycles)
     for (int i = 0; i < int_part; i++) {
         float ch1_sample = m_Channel1SoundGenerator.NextSample();
         float ch2_sample = m_Channel2SoundGenerator.NextSample();
+        float ch4_sample = m_Channel4SoundGenerator.NextSample();
         // Some cheap mixing...
-        float f_frame[2] = {ch1_sample + ch2_sample, ch1_sample + ch2_sample};
+        float f_frame[2] = {ch1_sample + ch2_sample + ch4_sample, ch1_sample + ch2_sample + ch4_sample};
         m_OutputBuffer.Put((Uint8*) f_frame);
     }
 }
@@ -740,6 +819,85 @@ float APU::AdditiveSquareWaveGenerator::NextSample()
     {
         Logger::LogError("Invalid phase %f", m_Phase);
         assert(false);
+    }
+
+    m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
+
+    return sample;
+}
+
+APU::NoiseGenerator::NoiseGenerator() : 
+    m_FrequencyHz(1.0),
+    m_CounterModeEnabled(false),
+    m_SoundLengthSeconds(0.0),
+    m_EnvelopeModeEnabled(false),
+    m_EnvelopeDirection(1.0),
+    m_EnvelopeStartVolume(0.0),
+    m_EnvelopeStepLengthSeconds(0.0),
+    m_Phase(0.0),
+    m_SoundLengthTimerSeconds(0.0)
+{
+    // TODO
+}
+
+void APU::NoiseGenerator::DebugLog() {
+    // TODO
+}
+
+void APU::NoiseGenerator::SetFrequency(double frequency_hz) {
+    m_FrequencyHz = frequency_hz;    
+    
+    if (m_FrequencyHz <= 0)
+    {
+        Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
+        assert(false);
+    }
+}
+
+void APU::NoiseGenerator::SetCounterModeEnabled(bool is_enabled) {
+    m_CounterModeEnabled = is_enabled;
+}
+
+void APU::NoiseGenerator::SetSoundLength(double sound_length_seconds) {
+    m_SoundLengthSeconds = sound_length_seconds;
+}
+
+void APU::NoiseGenerator::SetEnvelopeStartVolume(double envelope_start_volume) {
+    m_EnvelopeStartVolume = envelope_start_volume;
+}
+
+void APU::NoiseGenerator::SetEnvelopeDirection(EnvelopeDirection direction) {
+    m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
+}
+
+void APU::NoiseGenerator::SetEnvelopeStep(double envelope_step_seconds) {
+    m_EnvelopeStepLengthSeconds = envelope_step_seconds;
+    m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
+}
+
+void APU::NoiseGenerator::RestartSound() {
+    m_SoundLengthTimerSeconds = 0.0;
+}
+
+float APU::NoiseGenerator::NextSample() {
+    float sample = 0.0;
+
+    bool sound_enabled = m_EnvelopeStartVolume != 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
+
+    if (sound_enabled) {
+        float r = rand() / (RAND_MAX + 1.0);
+        sample = r > 0.5 ? 0.5 : -0.5;
+
+        if (m_EnvelopeModeEnabled)
+        {
+            int step_number = m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds;
+            double volume = m_EnvelopeStartVolume + (m_EnvelopeDirection * ((double)step_number / 16.0));
+            if (volume < 0.0)
+                volume = 0.0;
+            if (volume > 1.0)
+                volume = 1.0;
+            sample *= volume;
+        }
     }
 
     m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;

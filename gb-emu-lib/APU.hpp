@@ -97,6 +97,36 @@ private:
             void RegenerateCoefficients();
     };
 
+    class NoiseGenerator {
+        public:
+            NoiseGenerator();
+            ~NoiseGenerator() = default;
+
+            void SetFrequency(double frequency_hz);
+            void SetCounterModeEnabled(bool is_enabled);
+            void SetSoundLength(double sound_length_seconds);
+            void SetEnvelopeStartVolume(double envelope_start_volume);
+            void SetEnvelopeDirection(EnvelopeDirection direction);
+            void SetEnvelopeStep(double envelope_step_seconds);
+
+            void RestartSound();
+            
+            float NextSample();
+
+            void DebugLog();
+
+        private:
+            double m_FrequencyHz;
+            bool m_CounterModeEnabled;
+            double m_SoundLengthSeconds;
+            bool m_EnvelopeModeEnabled;
+            double m_EnvelopeDirection;
+            double m_EnvelopeStartVolume;
+            double m_EnvelopeStepLengthSeconds;
+            double m_Phase;
+            double m_SoundLengthTimerSeconds;
+    };
+
 private:
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
@@ -129,6 +159,7 @@ private:
     // Synthesis
     AdditiveSquareWaveGenerator m_Channel1SoundGenerator;
     AdditiveSquareWaveGenerator m_Channel2SoundGenerator;
+    NoiseGenerator m_Channel4SoundGenerator;
 
     // Output
     bool m_Initialized[4];
@@ -157,4 +188,14 @@ private:
     byte PrevChannel2Initial;
     byte PrevChannel2CounterConsecutive;
     int PrevChannel2Frequency;
+
+    byte PrevChannel4SoundLength;
+    byte PrevChannel4VolumeEnvelopeStart;
+    byte PrevChannel4VolumeEnvelopeDirection;
+    byte PrevChannel4VolumeEnvelopeSweepNumber;
+    byte PrevChannel4ShiftClockFrequency;
+    byte PrevChannel4CounterStep;
+    byte PrevChannel4FrequencyDivideRatio;
+    byte PrevChannel4Initial;
+    byte PrevChannel4CounterConsecutive;
 };
