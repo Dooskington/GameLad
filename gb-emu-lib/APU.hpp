@@ -124,9 +124,41 @@ private:
             double m_EnvelopeStartVolume;
             double m_EnvelopeStepLengthSeconds;
             double m_Phase;
+            double m_Signal;
             double m_SoundLengthTimerSeconds;
     };
 
+    class WaveformGenerator
+    {
+    public:
+        WaveformGenerator();
+        ~WaveformGenerator() = default;
+
+        void SetFrequency(double frequency_hz);
+        void SetOutputLevel(double level);
+        void SetCounterModeEnabled(bool is_enabled);
+        void SetSoundLength(double sound_length_seconds);
+        void SetWaveRamLocation(byte* wave_buffer);
+        
+        void Enable();
+        void Disable();
+        void RestartSound();
+
+        float NextSample();
+
+        void DebugLog();
+
+    private:
+        bool m_Enabled;
+        double m_FrequencyHz;
+        bool m_CounterModeEnabled;
+        double m_SoundLengthSeconds;
+        double m_OutputLevel;
+        double m_Phase;
+        double m_SoundLengthTimerSeconds;
+        byte* m_WaveBuffer;
+    };
+    
 private:
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
@@ -142,8 +174,8 @@ private:
     byte m_Channel3SoundOnOff;
     byte m_Channel3SoundLength;
     byte m_Channel3SelectOutputLevel;
-    byte m_Channel3FreuqencyLo;
-    byte m_Channel3FreuqencyHi;
+    byte m_Channel3FrequencyLo;
+    byte m_Channel3FrequencyHi;
     byte m_WavePatternRAM[0x0F + 1];
 
     byte m_Channel4SoundLength;
@@ -159,6 +191,7 @@ private:
     // Synthesis
     AdditiveSquareWaveGenerator m_Channel1SoundGenerator;
     AdditiveSquareWaveGenerator m_Channel2SoundGenerator;
+    WaveformGenerator m_Channel3SoundGenerator;
     NoiseGenerator m_Channel4SoundGenerator;
 
     // Output
@@ -188,6 +221,14 @@ private:
     byte PrevChannel2Initial;
     byte PrevChannel2CounterConsecutive;
     int PrevChannel2Frequency;
+
+    byte PrevChannel3SoundOnOff;
+    byte PrevChannel3SoundLength;
+    byte PrevChannel3SelectOutputLevel;
+    byte PrevChannel3Initial;
+    byte PrevChannel3CounterConsecutive;
+    int PrevChannel3Frequency;
+    byte PrevWavePatternRAM[0x0F + 1];
 
     byte PrevChannel4SoundLength;
     byte PrevChannel4VolumeEnvelopeStart;
