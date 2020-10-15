@@ -406,45 +406,45 @@ void APU::Step(unsigned long cycles)
         IsWaveRamUpdate) {
 
         // Debug: Print audio registers whenever a value change occurs
-        printf("CHANNEL 3 -- ON/OFF:0x%02x LEN:0x%01x LVL:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x DATA:0x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n",
-            NewChannel3SoundOnOff,
-            NewChannel3SoundLength,
-            NewChannel3SelectOutputLevel,
-            NewChannel3Initial,
-            NewChannel3CounterConsecutive,
-            NewChannel3Frequency,
-            (m_WavePatternRAM[0] >> 4) & 0xF,
-            m_WavePatternRAM[0] & 0xF,
-            (m_WavePatternRAM[1] >> 4) & 0xF,
-            m_WavePatternRAM[1] & 0xF,
-            (m_WavePatternRAM[2] >> 4) & 0xF,
-            m_WavePatternRAM[2] & 0xF,
-            (m_WavePatternRAM[3] >> 4) & 0xF,
-            m_WavePatternRAM[3] & 0xF,
-            (m_WavePatternRAM[4] >> 4) & 0xF,
-            m_WavePatternRAM[4] & 0xF,
-            (m_WavePatternRAM[5] >> 4) & 0xF,
-            m_WavePatternRAM[5] & 0xF,
-            (m_WavePatternRAM[6] >> 4) & 0xF,
-            m_WavePatternRAM[6] & 0xF,
-            (m_WavePatternRAM[7] >> 4) & 0xF,
-            m_WavePatternRAM[7] & 0xF,
-            (m_WavePatternRAM[8] >> 4) & 0xF,
-            m_WavePatternRAM[8] & 0xF,
-            (m_WavePatternRAM[9] >> 4) & 0xF,
-            m_WavePatternRAM[9] & 0xF,
-            (m_WavePatternRAM[10] >> 4) & 0xF,
-            m_WavePatternRAM[10] & 0xF,
-            (m_WavePatternRAM[11] >> 4) & 0xF,
-            m_WavePatternRAM[11] & 0xF,
-            (m_WavePatternRAM[12] >> 4) & 0xF,
-            m_WavePatternRAM[12] & 0xF,
-            (m_WavePatternRAM[13] >> 4) & 0xF,
-            m_WavePatternRAM[13] & 0xF,
-            (m_WavePatternRAM[14] >> 4) & 0xF,
-            m_WavePatternRAM[14] & 0xF,
-            (m_WavePatternRAM[15] >> 4) & 0xF,
-            m_WavePatternRAM[15] & 0xF);
+        // printf("CHANNEL 3 -- ON/OFF:0x%02x LEN:0x%01x LVL:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x DATA:0x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n",
+        //     NewChannel3SoundOnOff,
+        //     NewChannel3SoundLength,
+        //     NewChannel3SelectOutputLevel,
+        //     NewChannel3Initial,
+        //     NewChannel3CounterConsecutive,
+        //     NewChannel3Frequency,
+        //     (m_WavePatternRAM[0] >> 4) & 0xF,
+        //     m_WavePatternRAM[0] & 0xF,
+        //     (m_WavePatternRAM[1] >> 4) & 0xF,
+        //     m_WavePatternRAM[1] & 0xF,
+        //     (m_WavePatternRAM[2] >> 4) & 0xF,
+        //     m_WavePatternRAM[2] & 0xF,
+        //     (m_WavePatternRAM[3] >> 4) & 0xF,
+        //     m_WavePatternRAM[3] & 0xF,
+        //     (m_WavePatternRAM[4] >> 4) & 0xF,
+        //     m_WavePatternRAM[4] & 0xF,
+        //     (m_WavePatternRAM[5] >> 4) & 0xF,
+        //     m_WavePatternRAM[5] & 0xF,
+        //     (m_WavePatternRAM[6] >> 4) & 0xF,
+        //     m_WavePatternRAM[6] & 0xF,
+        //     (m_WavePatternRAM[7] >> 4) & 0xF,
+        //     m_WavePatternRAM[7] & 0xF,
+        //     (m_WavePatternRAM[8] >> 4) & 0xF,
+        //     m_WavePatternRAM[8] & 0xF,
+        //     (m_WavePatternRAM[9] >> 4) & 0xF,
+        //     m_WavePatternRAM[9] & 0xF,
+        //     (m_WavePatternRAM[10] >> 4) & 0xF,
+        //     m_WavePatternRAM[10] & 0xF,
+        //     (m_WavePatternRAM[11] >> 4) & 0xF,
+        //     m_WavePatternRAM[11] & 0xF,
+        //     (m_WavePatternRAM[12] >> 4) & 0xF,
+        //     m_WavePatternRAM[12] & 0xF,
+        //     (m_WavePatternRAM[13] >> 4) & 0xF,
+        //     m_WavePatternRAM[13] & 0xF,
+        //     (m_WavePatternRAM[14] >> 4) & 0xF,
+        //     m_WavePatternRAM[14] & 0xF,
+        //     (m_WavePatternRAM[15] >> 4) & 0xF,
+        //     m_WavePatternRAM[15] & 0xF);
 
         PrevChannel3SoundOnOff = NewChannel3SoundOnOff;
         PrevChannel3SoundLength = NewChannel3SoundLength;
@@ -494,7 +494,7 @@ void APU::Step(unsigned long cycles)
         }
 
         // 65536/(2048-x) Hz
-        m_Channel4SoundGenerator.SetFrequency(65536.0 / (2048.0 - Channel3Frequency));
+        m_Channel3SoundGenerator.SetFrequency(65536.0 / (2048.0 - Channel3Frequency));
                 
     }       
 
@@ -580,9 +580,8 @@ void APU::Step(unsigned long cycles)
         float ch4_sample = m_Channel4SoundGenerator.NextSample();
         // Some cheap mixing...
         float f_frame[2] = {
-            // ch1_sample + ch2_sample + ch3_sample + ch4_sample, 
-            // ch1_sample + ch2_sample + ch3_sample + ch4_sample
-            ch3_sample,ch3_sample
+            ch1_sample + ch2_sample + ch3_sample + ch4_sample, 
+            ch1_sample + ch2_sample + ch3_sample + ch4_sample
             };
         m_OutputBuffer.Put((Uint8*) f_frame);
     }
@@ -982,8 +981,6 @@ void APU::NoiseGenerator::DebugLog() {
 
 void APU::NoiseGenerator::SetFrequency(double frequency_hz) {
     m_FrequencyHz = frequency_hz;    
-
-    printf("Freq %f\n", frequency_hz);
     
     if (m_FrequencyHz <= 0)
     {
@@ -1071,7 +1068,7 @@ void APU::WaveformGenerator::DebugLog()
 void APU::WaveformGenerator::SetFrequency(double frequency_hz) 
 {
     m_FrequencyHz = frequency_hz;    
-    
+
     if (m_FrequencyHz <= 0)
     {
         Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
