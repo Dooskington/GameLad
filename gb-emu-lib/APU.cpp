@@ -95,6 +95,18 @@
 #define Channel4Initial ISBITSET(m_Channel4Counter, 7)
 #define Channel4CounterConsecutive ((m_Channel4Counter >> 6) & 1)
 
+#define OutputLevelSO1 (m_ChannelControlOnOffVolume & 0x7)
+#define OutputLevelSO2 ((m_ChannelControlOnOffVolume >> 4) & 0x7)
+
+#define OutputChannel1ToSO1 ISBITSET(m_OutputTerminal, 0)
+#define OutputChannel2ToSO1 ISBITSET(m_OutputTerminal, 1) 
+#define OutputChannel3ToSO1 ISBITSET(m_OutputTerminal, 2)
+#define OutputChannel4ToSO1 ISBITSET(m_OutputTerminal, 3)
+#define OutputChannel1ToSO2 ISBITSET(m_OutputTerminal, 4) 
+#define OutputChannel2ToSO2 ISBITSET(m_OutputTerminal, 5)
+#define OutputChannel3ToSO2 ISBITSET(m_OutputTerminal, 6)
+#define OutputChannel4ToSO2 ISBITSET(m_OutputTerminal, 7)
+
 void Channel1CallbackStatic(void* pUserdata, Uint8* pStream, int length)
 {
     reinterpret_cast<APU*>(pUserdata)->Channel1Callback(
@@ -578,11 +590,24 @@ void APU::Step(unsigned long cycles)
         float ch2_sample = m_Channel2SoundGenerator.NextSample();
         float ch3_sample = m_Channel3SoundGenerator.NextSample();
         float ch4_sample = m_Channel4SoundGenerator.NextSample();
-        // Some cheap mixing...
-        float f_frame[2] = {
-            ch1_sample + ch2_sample + ch3_sample + ch4_sample, 
-            ch1_sample + ch2_sample + ch3_sample + ch4_sample
-            };
+
+        // Left channel "SO1"
+        float so1 = 0.0;
+        if (OutputChannel1ToSO1) so1 += ch1_sample;
+        if (OutputChannel2ToSO1) so1 += ch2_sample;
+        if (OutputChannel3ToSO1) so1 += ch3_sample;
+        if (OutputChannel4ToSO1) so1 += ch4_sample;
+        so1 *= ((float)OutputLevelSO1 / 7); // 0 = mute; 7 = max volume
+
+        // Right channel "SO2"
+        float so2 = 0.0;
+        if (OutputChannel1ToSO2) so2 += ch1_sample;
+        if (OutputChannel2ToSO2) so2 += ch2_sample;
+        if (OutputChannel3ToSO2) so2 += ch3_sample;
+        if (OutputChannel4ToSO2) so2 += ch4_sample;
+        so2 *= ((float)OutputLevelSO2 / 7); // 0 = mute; 7 = max volume
+
+        float f_frame[2] = {so1, so2};
         m_OutputBuffer.Put((Uint8*) f_frame);
     }
 }
