@@ -170,6 +170,23 @@ APU::APU() :
     
     m_Channel3SoundGenerator.SetWaveRamLocation(m_WavePatternRAM);
 
+    m_Channel1SoundGenerator.SetOnChannelOn([this]() -> void {
+        Logger::Log("Ch1 ON");
+        m_SoundOnOff |= 0x01;
+    });
+    m_Channel1SoundGenerator.SetOnChannelOff([this]() -> void {
+        Logger::Log("Ch1 OFF");
+        m_SoundOnOff &= 0xFE;
+    });
+    m_Channel2SoundGenerator.SetOnChannelOn([this]() -> void {
+        Logger::Log("Ch2 ON");
+        m_SoundOnOff |= 0x02;
+    });
+    m_Channel2SoundGenerator.SetOnChannelOff([this]() -> void {
+        Logger::Log("Ch2 OFF");
+        m_SoundOnOff &= 0xFD;
+    });
+
     if (SDL_Init(SDL_INIT_AUDIO))
     {
         Logger::LogError("[SDL] Failed to initialize: %s", SDL_GetError());
@@ -855,7 +872,8 @@ APU::AdditiveSquareWaveGenerator::AdditiveSquareWaveGenerator() :
     m_EnvelopeStepLengthSeconds(0.0),
     m_HarmonicsCount(0),
     m_Phase(0.0),
-    m_SoundLengthTimerSeconds(0.0)
+    m_SoundLengthTimerSeconds(0.0),
+    m_ChannelIsPlaying(false)
 {
     memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
 }
@@ -938,18 +956,34 @@ void APU::AdditiveSquareWaveGenerator::SetEnvelopeStep(double envelope_step_seco
     m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
 }
 
+void APU::AdditiveSquareWaveGenerator::SetOnChannelOn(std::function<void()> callback) {
+    m_OnChannelOn = callback;
+}
+
+void APU::AdditiveSquareWaveGenerator::SetOnChannelOff(std::function<void()> callback) {
+    m_OnChannelOff = callback;
+}
+
 void APU::AdditiveSquareWaveGenerator::RestartSound()
 {
     m_SoundLengthTimerSeconds = 0.0;
+    m_ChannelIsPlaying = true;
+    m_OnChannelOn();
 }
 
 float APU::AdditiveSquareWaveGenerator::NextSample()
 {
     float sample = 0.0;
+    bool is_sound_playing = !m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds;
+    bool is_sound_enabled = m_EnvelopeStartVolume != 0.0 && is_sound_playing;
+    
+    if (!is_sound_playing && m_ChannelIsPlaying) {
+        // sound has stopped playing, emit a channel off event
+        m_ChannelIsPlaying = false;
+        m_OnChannelOff();
+    }
 
-    bool sound_enabled = m_EnvelopeStartVolume != 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
-
-    if (sound_enabled)
+    if (is_sound_enabled)
     {
         for (int j = 0; j < m_HarmonicsCount; j++)
         {

@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <mutex>
+#include <functional>
 
 #define AudioSampleRate 48000
 #define AudioOutChannelCount 2
@@ -73,6 +74,8 @@ private:
             void SetEnvelopeStartVolume(double envelope_start_volume);
             void SetEnvelopeDirection(EnvelopeDirection direction);
             void SetEnvelopeStep(double envelope_step_seconds);
+            void SetOnChannelOn(std::function<void()> callback);
+            void SetOnChannelOff(std::function<void()> callback);
             
             void RestartSound();
             
@@ -93,6 +96,9 @@ private:
             double m_Coefficients[MaxHarmonicsCount];
             double m_Phase;
             double m_SoundLengthTimerSeconds;
+            bool m_ChannelIsPlaying;
+            std::function<void()> m_OnChannelOn;
+            std::function<void()> m_OnChannelOff;
 
             void RegenerateCoefficients();
     };
