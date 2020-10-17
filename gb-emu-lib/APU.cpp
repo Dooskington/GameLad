@@ -59,13 +59,14 @@
 
 #define Channel1SweepTime ((m_Channel1Sweep >> 4) & 7)
 #define Channel1SweepDirection ((m_Channel1Sweep >> 3) & 1)
-#define Channel1SweepNumber (m_Channel1Sweep & 7)
+#define Channel1SweepShiftNumber (m_Channel1Sweep & 7)
 #define Channel1WavePatternDuty ((m_Channel1SoundLength >> 6) & 3)
 #define Channel1SoundLength ((m_Channel1SoundLength) & 0x3F)
 #define Channel1VolumeEnvelopeStart ((m_Channel1VolumeEnvelope >> 4) & 0xF)
 #define Channel1VolumeEnvelopeDirection ((m_Channel1VolumeEnvelope >> 3) & 1)
 #define Channel1VolumeEnvelopeSweepNumber (m_Channel1VolumeEnvelope & 7)
 #define Channel1Initial ISBITSET(m_Channel1FrequencyHi, 7)
+#define ClearChannel1Initial CLEARBIT(m_Channel1FrequencyHi, 7)
 #define Channel1CounterConsecutive ((m_Channel1FrequencyHi >> 6) & 1)
 #define Channel1Frequency (((m_Channel1FrequencyHi << 8) | m_Channel1FrequencyLo) & 0x7FF)
 
@@ -171,19 +172,19 @@ APU::APU() :
     m_Channel3SoundGenerator.SetWaveRamLocation(m_WavePatternRAM);
 
     m_Channel1SoundGenerator.SetOnChannelOn([this]() -> void {
-        Logger::Log("Ch1 ON");
+        // Logger::Log("Ch1 ON");
         m_SoundOnOff |= 0x01;
     });
     m_Channel1SoundGenerator.SetOnChannelOff([this]() -> void {
-        Logger::Log("Ch1 OFF");
+        // Logger::Log("Ch1 OFF");
         m_SoundOnOff &= 0xFE;
     });
     m_Channel2SoundGenerator.SetOnChannelOn([this]() -> void {
-        Logger::Log("Ch2 ON");
+        // Logger::Log("Ch2 ON");
         m_SoundOnOff |= 0x02;
     });
     m_Channel2SoundGenerator.SetOnChannelOff([this]() -> void {
-        Logger::Log("Ch2 OFF");
+        // Logger::Log("Ch2 OFF");
         m_SoundOnOff &= 0xFD;
     });
 
@@ -219,7 +220,7 @@ void APU::Step(unsigned long cycles)
     // CHANNEL 1
     byte NewChannel1SweepTime = Channel1SweepTime;
     byte NewChannel1SweepDirection = Channel1SweepDirection;
-    byte NewChannel1SweepNumber = Channel1SweepNumber;
+    byte NewChannel1SweepNumber = Channel1SweepShiftNumber;
     byte NewChannel1WavePatternDuty = Channel1WavePatternDuty;
     byte NewChannel1SoundLength = Channel1SoundLength;
     byte NewChannel1VolumeEnvelopeStart = Channel1VolumeEnvelopeStart;
@@ -243,18 +244,18 @@ void APU::Step(unsigned long cycles)
         NewChannel1Frequency != PrevChannel1Frequency
     ) {
         // Debug: Print audio registers whenever a value change occurs
-        // printf("CHANNEL 1 -- SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
-        //     NewChannel1SweepTime,
-        //     NewChannel1SweepDirection,
-        //     NewChannel1SweepNumber,
-        //     NewChannel1WavePatternDuty,
-        //     NewChannel1SoundLength,
-        //     NewChannel1VolumeEnvelopeStart,
-        //     NewChannel1VolumeEnvelopeDirection,
-        //     NewChannel1VolumeEnvelopeSweepNumber,
-        //     NewChannel1Initial,
-        //     NewChannel1CounterConsecutive,
-        //     NewChannel1Frequency);
+        printf("CHANNEL 1 -- SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
+            NewChannel1SweepTime,
+            NewChannel1SweepDirection,
+            NewChannel1SweepNumber,
+            NewChannel1WavePatternDuty,
+            NewChannel1SoundLength,
+            NewChannel1VolumeEnvelopeStart,
+            NewChannel1VolumeEnvelopeDirection,
+            NewChannel1VolumeEnvelopeSweepNumber,
+            NewChannel1Initial,
+            NewChannel1CounterConsecutive,
+            NewChannel1Frequency);
 
         PrevChannel1SweepTime = NewChannel1SweepTime;
         PrevChannel1SweepDirection = NewChannel1SweepDirection;
@@ -272,6 +273,7 @@ void APU::Step(unsigned long cycles)
 
         if (Channel1Initial) {
             m_Channel1SoundGenerator.RestartSound();
+            ClearChannel1Initial;
         }
         
         // Counter/Consecutive modes
@@ -280,13 +282,22 @@ void APU::Step(unsigned long cycles)
         // Sound Length = (64-t1)*(1/256) seconds
         m_Channel1SoundGenerator.SetSoundLength((64.0 - (double)Channel1SoundLength) / 256.0);
 
+        // Length of a sweep step = n * (1/128)
+        m_Channel1SoundGenerator.SetSweepStepLength((double)Channel1SweepTime / 128.0);
+
+        // Sweep direction
+        m_Channel1SoundGenerator.SetSweepDirection(Channel1SweepDirection ? DOWN : UP);
+
+        // Shift value to calculate frequency step amount
+        m_Channel1SoundGenerator.SetSweepShiftFrequencyExponent(Channel1SweepShiftNumber);
+
         // Envelope start volume. 4 bits of precision = 16 volume levels.
         m_Channel1SoundGenerator.SetEnvelopeStartVolume((double)Channel1VolumeEnvelopeStart / 16.0);
 
         // Length of an envelope step = n * (1/64)
-        m_Channel1SoundGenerator.SetEnvelopeStep((double)Channel1VolumeEnvelopeSweepNumber / 64.0);
+        m_Channel1SoundGenerator.SetEnvelopeStepLength((double)Channel1VolumeEnvelopeSweepNumber / 64.0);
 
-        // Envelope direction: 0 = Decrease, 1 = Increase
+        // Envelope direction
         m_Channel1SoundGenerator.SetEnvelopeDirection(Channel1VolumeEnvelopeDirection ? UP : DOWN);
 
         // For x = the value in the frequency register, the actual frequency
@@ -375,7 +386,7 @@ void APU::Step(unsigned long cycles)
         m_Channel2SoundGenerator.SetEnvelopeStartVolume((double)Channel2VolumeEnvelopeStart / 16.0);
 
         // Length of an envelope step = n * (1/64)
-        m_Channel2SoundGenerator.SetEnvelopeStep((double)Channel2VolumeEnvelopeSweepNumber / 64.0);
+        m_Channel2SoundGenerator.SetEnvelopeStepLength((double)Channel2VolumeEnvelopeSweepNumber / 64.0);
 
         // Envelope direction: 0 = Decrease, 1 = Increase
         m_Channel2SoundGenerator.SetEnvelopeDirection(Channel2VolumeEnvelopeDirection ? UP : DOWN);
@@ -587,7 +598,7 @@ void APU::Step(unsigned long cycles)
         m_Channel4SoundGenerator.SetEnvelopeStartVolume((double)Channel4VolumeEnvelopeStart / 16.0);
 
         // Length of an envelope step = n * (1/64)
-        m_Channel4SoundGenerator.SetEnvelopeStep((double)Channel4VolumeEnvelopeSweepNumber / 64.0);
+        m_Channel4SoundGenerator.SetEnvelopeStepLength((double)Channel4VolumeEnvelopeSweepNumber / 64.0);
 
         // Envelope direction: 0 = Decrease, 1 = Increase
         m_Channel4SoundGenerator.SetEnvelopeDirection(Channel4VolumeEnvelopeDirection ? UP : DOWN);
@@ -611,17 +622,17 @@ void APU::Step(unsigned long cycles)
         // Left channel "SO1"
         float so1 = 0.0;
         if (OutputChannel1ToSO1) so1 += ch1_sample;
-        if (OutputChannel2ToSO1) so1 += ch2_sample;
-        if (OutputChannel3ToSO1) so1 += ch3_sample;
-        if (OutputChannel4ToSO1) so1 += ch4_sample;
+        // if (OutputChannel2ToSO1) so1 += ch2_sample;
+        // if (OutputChannel3ToSO1) so1 += ch3_sample;
+        // if (OutputChannel4ToSO1) so1 += ch4_sample;
         so1 *= ((float)OutputLevelSO1 / 7); // 0 = mute; 7 = max volume
 
         // Right channel "SO2"
         float so2 = 0.0;
         if (OutputChannel1ToSO2) so2 += ch1_sample;
-        if (OutputChannel2ToSO2) so2 += ch2_sample;
-        if (OutputChannel3ToSO2) so2 += ch3_sample;
-        if (OutputChannel4ToSO2) so2 += ch4_sample;
+        // if (OutputChannel2ToSO2) so2 += ch2_sample;
+        // if (OutputChannel3ToSO2) so2 += ch3_sample;
+        // if (OutputChannel4ToSO2) so2 += ch4_sample;
         so2 *= ((float)OutputLevelSO2 / 7); // 0 = mute; 7 = max volume
 
         float f_frame[2] = {so1, so2};
@@ -940,6 +951,22 @@ void APU::AdditiveSquareWaveGenerator::SetSoundLength(double sound_length_second
     m_SoundLengthSeconds = sound_length_seconds;
 }
 
+void APU::AdditiveSquareWaveGenerator::SetSweepDirection(EnvelopeDirection direction)
+{
+    m_SweepDirection = direction == UP ? 1.0 : -1.0;
+}
+
+void APU::AdditiveSquareWaveGenerator::SetSweepShiftFrequencyExponent(uint exponent)
+{
+    m_SweepShiftFrequencyExponent = exponent;
+}
+
+void APU::AdditiveSquareWaveGenerator::SetSweepStepLength(double sweep_step_seconds)
+{
+    m_SweepStepLengthSeconds = sweep_step_seconds;
+    m_SweepModeEnabled = !(sweep_step_seconds == 0.0);
+}
+
 void APU::AdditiveSquareWaveGenerator::SetEnvelopeStartVolume(double envelope_start_volume)
 {
     m_EnvelopeStartVolume = envelope_start_volume;
@@ -950,7 +977,7 @@ void APU::AdditiveSquareWaveGenerator::SetEnvelopeDirection(EnvelopeDirection di
     m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
 }
 
-void APU::AdditiveSquareWaveGenerator::SetEnvelopeStep(double envelope_step_seconds)
+void APU::AdditiveSquareWaveGenerator::SetEnvelopeStepLength(double envelope_step_seconds)
 {
     m_EnvelopeStepLengthSeconds = envelope_step_seconds;
     m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
@@ -1002,7 +1029,17 @@ float APU::AdditiveSquareWaveGenerator::NextSample()
         }
     }
 
-    m_Phase += (TWO_PI * m_FrequencyHz) / (double)AudioSampleRate;
+    double frequency = m_FrequencyHz;
+    if (m_SweepModeEnabled) 
+    {
+        int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
+        for (int i = 0; i < step_number; i++) {
+            // TODO Optimize
+            frequency += m_SweepDirection * (frequency / (1 << m_SweepShiftFrequencyExponent));
+        }
+    }
+
+    m_Phase += (TWO_PI * frequency) / (double)AudioSampleRate;
     while (m_Phase >= TWO_PI)
     {
         m_Phase -= TWO_PI;
@@ -1064,7 +1101,7 @@ void APU::NoiseGenerator::SetEnvelopeDirection(EnvelopeDirection direction) {
     m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
 }
 
-void APU::NoiseGenerator::SetEnvelopeStep(double envelope_step_seconds) {
+void APU::NoiseGenerator::SetEnvelopeStepLength(double envelope_step_seconds) {
     m_EnvelopeStepLengthSeconds = envelope_step_seconds;
     m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
 }

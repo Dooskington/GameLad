@@ -71,9 +71,12 @@ private:
             void SetDutyCycle(double duty_cycle);
             void SetCounterModeEnabled(bool is_enabled);
             void SetSoundLength(double sound_length_seconds);
+            void SetSweepDirection(EnvelopeDirection direction);
+            void SetSweepShiftFrequencyExponent(uint exponent);
+            void SetSweepStepLength(double sweep_step_seconds);
             void SetEnvelopeStartVolume(double envelope_start_volume);
             void SetEnvelopeDirection(EnvelopeDirection direction);
-            void SetEnvelopeStep(double envelope_step_seconds);
+            void SetEnvelopeStepLength(double envelope_step_seconds);
             void SetOnChannelOn(std::function<void()> callback);
             void SetOnChannelOff(std::function<void()> callback);
             
@@ -88,6 +91,11 @@ private:
             double m_DutyCycle;
             bool m_CounterModeEnabled;
             double m_SoundLengthSeconds;
+            bool m_SweepModeEnabled;
+            double m_SweepDirection;
+            double m_SweepStartFrequency; // TODO: Is it needed?
+            int m_SweepShiftFrequencyExponent;
+            double m_SweepStepLengthSeconds;
             bool m_EnvelopeModeEnabled;
             double m_EnvelopeDirection;
             double m_EnvelopeStartVolume;
@@ -113,7 +121,7 @@ private:
             void SetSoundLength(double sound_length_seconds);
             void SetEnvelopeStartVolume(double envelope_start_volume);
             void SetEnvelopeDirection(EnvelopeDirection direction);
-            void SetEnvelopeStep(double envelope_step_seconds);
+            void SetEnvelopeStepLength(double envelope_step_seconds);
 
             void RestartSound();
             
