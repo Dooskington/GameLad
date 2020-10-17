@@ -66,8 +66,7 @@
 #define Channel1VolumeEnvelopeDirection ((m_Channel1VolumeEnvelope >> 3) & 1)
 #define Channel1VolumeEnvelopeSweepNumber (m_Channel1VolumeEnvelope & 7)
 #define Channel1Initial ISBITSET(m_Channel1FrequencyHi, 7)
-#define ClearChannel1Initial CLEARBIT(m_Channel1FrequencyHi, 7)
-#define Channel1CounterConsecutive ((m_Channel1FrequencyHi >> 6) & 1)
+#define Channel1CounterConsecutive ISBITSET(m_Channel1FrequencyHi, 6)
 #define Channel1Frequency (((m_Channel1FrequencyHi << 8) | m_Channel1FrequencyLo) & 0x7FF)
 
 #define Channel2WavePatternDuty ((m_Channel2SoundLength >> 6) & 3)
@@ -76,14 +75,14 @@
 #define Channel2VolumeEnvelopeDirection ((m_Channel2VolumeEnvelope >> 3) & 1)
 #define Channel2VolumeEnvelopeSweepNumber (m_Channel2VolumeEnvelope & 7)
 #define Channel2Initial ISBITSET(m_Channel2FrequencyHi, 7)
-#define Channel2CounterConsecutive ((m_Channel2FrequencyHi >> 6) & 1)
+#define Channel2CounterConsecutive ISBITSET(m_Channel2FrequencyHi, 6)
 #define Channel2Frequency (((m_Channel2FrequencyHi << 8) | m_Channel2FrequencyLo) & 0x7FF)
 
 #define Channel3SoundOnOff ISBITSET(m_Channel3SoundOnOff, 7)
 #define Channel3SoundLength m_Channel3SoundLength
 #define Channel3SelectOutputLevel ((m_Channel3SelectOutputLevel >> 5) & 0x3)
 #define Channel3Initial ISBITSET(m_Channel3FrequencyHi, 7)
-#define Channel3CounterConsecutive ((m_Channel3FrequencyHi >> 6) & 1)
+#define Channel3CounterConsecutive ISBITSET(m_Channel3FrequencyHi, 6)
 #define Channel3Frequency (((m_Channel3FrequencyHi << 8) | m_Channel3FrequencyLo) & 0x7FF)
 
 #define Channel4SoundLength (m_Channel4SoundLength & 0x1F)
@@ -94,7 +93,7 @@
 #define Channel4CounterStep ((m_Channel4PolynomialCounter >> 3) & 1)
 #define Channel4FrequencyDivideRatio (m_Channel4PolynomialCounter & 7)
 #define Channel4Initial ISBITSET(m_Channel4Counter, 7)
-#define Channel4CounterConsecutive ((m_Channel4Counter >> 6) & 1)
+#define Channel4CounterConsecutive ISBITSET(m_Channel4Counter, 6)
 
 #define OutputLevelSO1 (m_ChannelControlOnOffVolume & 0x7)
 #define OutputLevelSO2 ((m_ChannelControlOnOffVolume >> 4) & 0x7)
@@ -273,7 +272,6 @@ void APU::Step(unsigned long cycles)
 
         if (Channel1Initial) {
             m_Channel1SoundGenerator.RestartSound();
-            ClearChannel1Initial;
         }
         
         // Counter/Consecutive modes
@@ -622,17 +620,17 @@ void APU::Step(unsigned long cycles)
         // Left channel "SO1"
         float so1 = 0.0;
         if (OutputChannel1ToSO1) so1 += ch1_sample;
-        // if (OutputChannel2ToSO1) so1 += ch2_sample;
-        // if (OutputChannel3ToSO1) so1 += ch3_sample;
-        // if (OutputChannel4ToSO1) so1 += ch4_sample;
+        if (OutputChannel2ToSO1) so1 += ch2_sample;
+        if (OutputChannel3ToSO1) so1 += ch3_sample;
+        if (OutputChannel4ToSO1) so1 += ch4_sample;
         so1 *= ((float)OutputLevelSO1 / 7); // 0 = mute; 7 = max volume
 
         // Right channel "SO2"
         float so2 = 0.0;
         if (OutputChannel1ToSO2) so2 += ch1_sample;
-        // if (OutputChannel2ToSO2) so2 += ch2_sample;
-        // if (OutputChannel3ToSO2) so2 += ch3_sample;
-        // if (OutputChannel4ToSO2) so2 += ch4_sample;
+        if (OutputChannel2ToSO2) so2 += ch2_sample;
+        if (OutputChannel3ToSO2) so2 += ch3_sample;
+        if (OutputChannel4ToSO2) so2 += ch4_sample;
         so2 *= ((float)OutputLevelSO2 / 7); // 0 = mute; 7 = max volume
 
         float f_frame[2] = {so1, so2};
@@ -877,6 +875,9 @@ APU::AdditiveSquareWaveGenerator::AdditiveSquareWaveGenerator() :
     m_DutyCycle(50.0),
     m_CounterModeEnabled(false),
     m_SoundLengthSeconds(0.0),
+    m_SweepModeEnabled(false),
+    m_SweepDirection(1.0),
+    m_SweepShiftFrequencyExponent(0),
     m_EnvelopeModeEnabled(false),
     m_EnvelopeDirection(1.0),
     m_EnvelopeStartVolume(0.0),

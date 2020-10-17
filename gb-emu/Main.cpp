@@ -159,12 +159,12 @@ int main(int argc, char** argv)
 
     //std::string romPath = "res/tests/oam_bug.gb";            // FAILED
 
-    //std::string romPath = "res/games/Pokemon - Blue Version.gb";
+    std::string romPath = "res/games/Pokemon.gb";
     //std::string romPath = "res/games/Tetris (World).gb";
     //std::string romPath = "res/games/Super Mario Land (World).gb";
     //std::string romPath = "res/games/Tamagotchi.gb";
     //std::string romPath = "res/games/Battletoads.gb";
-    std::string romPath = "res/games/Tetris.gb";
+    // std::string romPath = "res/games/Tetris.gb";
     //std::string romPath = "res/games/Zelda.gb";
     //std::string romPath = "res/games/plantboy.gb";
     //std::string romPath = "res/games/Metroid.gb";

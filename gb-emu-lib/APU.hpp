@@ -93,7 +93,6 @@ private:
             double m_SoundLengthSeconds;
             bool m_SweepModeEnabled;
             double m_SweepDirection;
-            double m_SweepStartFrequency; // TODO: Is it needed?
             int m_SweepShiftFrequencyExponent;
             double m_SweepStepLengthSeconds;
             bool m_EnvelopeModeEnabled;
