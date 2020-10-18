@@ -22,6 +22,11 @@ public:
 private:
     void LoadAudioDevice(SDL_AudioCallback callback);
 
+    void UpdateChannel1Generator();
+    void UpdateChannel2Generator();
+    void UpdateChannel3Generator();
+    void UpdateChannel4Generator();
+
     typedef enum
     {
         UP,
@@ -200,49 +205,15 @@ private:
     WaveformGenerator m_Channel3SoundGenerator;
     NoiseGenerator m_Channel4SoundGenerator;
 
+    // Update flags
+    bool m_Channel1RequiresUpdate;
+    bool m_Channel2RequiresUpdate;
+    bool m_Channel3RequiresUpdate;
+    bool m_Channel4RequiresUpdate;
+
     // Output
     bool m_Initialized;
     SDL_AudioDeviceID m_AudioDevice;
     double m_AudioFrameRemainder;
     Buffer m_OutputBuffer;
-
-    // For testing...
-    byte PrevChannel1SweepTime;
-    byte PrevChannel1SweepDirection;
-    byte PrevChannel1SweepNumber;
-    byte PrevChannel1WavePatternDuty;
-    byte PrevChannel1SoundLength;
-    byte PrevChannel1VolumeEnvelopeStart;
-    byte PrevChannel1VolumeEnvelopeDirection;
-    byte PrevChannel1VolumeEnvelopeSweepNumber;
-    byte PrevChannel1Initial;
-    byte PrevChannel1CounterConsecutive;
-    int PrevChannel1Frequency;
-
-    byte PrevChannel2WavePatternDuty;
-    byte PrevChannel2SoundLength;
-    byte PrevChannel2VolumeEnvelopeStart;
-    byte PrevChannel2VolumeEnvelopeDirection;
-    byte PrevChannel2VolumeEnvelopeSweepNumber;
-    byte PrevChannel2Initial;
-    byte PrevChannel2CounterConsecutive;
-    int PrevChannel2Frequency;
-
-    byte PrevChannel3SoundOnOff;
-    byte PrevChannel3SoundLength;
-    byte PrevChannel3SelectOutputLevel;
-    byte PrevChannel3Initial;
-    byte PrevChannel3CounterConsecutive;
-    int PrevChannel3Frequency;
-    byte PrevWavePatternRAM[0x0F + 1];
-
-    byte PrevChannel4SoundLength;
-    byte PrevChannel4VolumeEnvelopeStart;
-    byte PrevChannel4VolumeEnvelopeDirection;
-    byte PrevChannel4VolumeEnvelopeSweepNumber;
-    byte PrevChannel4ShiftClockFrequency;
-    byte PrevChannel4CounterStep;
-    byte PrevChannel4FrequencyDivideRatio;
-    byte PrevChannel4Initial;
-    byte PrevChannel4CounterConsecutive;
 };
