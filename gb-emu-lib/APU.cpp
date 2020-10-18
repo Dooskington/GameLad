@@ -99,10 +99,10 @@
 #define OutputLevelSO2 ((m_ChannelControlOnOffVolume >> 4) & 0x7)
 
 #define OutputChannel1ToSO1 ISBITSET(m_OutputTerminal, 0)
-#define OutputChannel2ToSO1 ISBITSET(m_OutputTerminal, 1) 
+#define OutputChannel2ToSO1 ISBITSET(m_OutputTerminal, 1)
 #define OutputChannel3ToSO1 ISBITSET(m_OutputTerminal, 2)
 #define OutputChannel4ToSO1 ISBITSET(m_OutputTerminal, 3)
-#define OutputChannel1ToSO2 ISBITSET(m_OutputTerminal, 4) 
+#define OutputChannel1ToSO2 ISBITSET(m_OutputTerminal, 4)
 #define OutputChannel2ToSO2 ISBITSET(m_OutputTerminal, 5)
 #define OutputChannel3ToSO2 ISBITSET(m_OutputTerminal, 6)
 #define OutputChannel4ToSO2 ISBITSET(m_OutputTerminal, 7)
@@ -167,7 +167,7 @@ APU::APU() :
     memset(m_Initialized, false, ARRAYSIZE(m_Initialized));
     memset(m_DeviceChannel, 0, ARRAYSIZE(m_DeviceChannel));
     memset(m_WavePatternRAM, 0x00, ARRAYSIZE(m_WavePatternRAM));
-    
+
     m_Channel3SoundGenerator.SetWaveRamLocation(m_WavePatternRAM);
 
     m_Channel1SoundGenerator.SetOnChannelOn([this]() -> void {
@@ -240,21 +240,21 @@ void APU::Step(unsigned long cycles)
         NewChannel1VolumeEnvelopeSweepNumber != PrevChannel1VolumeEnvelopeSweepNumber ||
         NewChannel1Initial != PrevChannel1Initial ||
         NewChannel1CounterConsecutive != PrevChannel1CounterConsecutive ||
-        NewChannel1Frequency != PrevChannel1Frequency
-    ) {
+        NewChannel1Frequency != PrevChannel1Frequency)
+    {
         // Debug: Print audio registers whenever a value change occurs
         printf("CHANNEL 1 -- SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
-            NewChannel1SweepTime,
-            NewChannel1SweepDirection,
-            NewChannel1SweepNumber,
-            NewChannel1WavePatternDuty,
-            NewChannel1SoundLength,
-            NewChannel1VolumeEnvelopeStart,
-            NewChannel1VolumeEnvelopeDirection,
-            NewChannel1VolumeEnvelopeSweepNumber,
-            NewChannel1Initial,
-            NewChannel1CounterConsecutive,
-            NewChannel1Frequency);
+               NewChannel1SweepTime,
+               NewChannel1SweepDirection,
+               NewChannel1SweepNumber,
+               NewChannel1WavePatternDuty,
+               NewChannel1SoundLength,
+               NewChannel1VolumeEnvelopeStart,
+               NewChannel1VolumeEnvelopeDirection,
+               NewChannel1VolumeEnvelopeSweepNumber,
+               NewChannel1Initial,
+               NewChannel1CounterConsecutive,
+               NewChannel1Frequency);
 
         PrevChannel1SweepTime = NewChannel1SweepTime;
         PrevChannel1SweepDirection = NewChannel1SweepDirection;
@@ -270,10 +270,11 @@ void APU::Step(unsigned long cycles)
 
         // Do anything that requires recaculation based on these values
 
-        if (Channel1Initial) {
+        if (Channel1Initial)
+        {
             m_Channel1SoundGenerator.RestartSound();
         }
-        
+
         // Counter/Consecutive modes
         m_Channel1SoundGenerator.SetCounterModeEnabled(Channel1CounterConsecutive);
 
@@ -307,22 +308,23 @@ void APU::Step(unsigned long cycles)
         // 01: 25%
         // 10: 50%
         // 11: 75%
-        switch (Channel1WavePatternDuty) {
-            case 0:
-                m_Channel1SoundGenerator.SetDutyCycle(0.125);
-                break;
-            case 1:
-                m_Channel1SoundGenerator.SetDutyCycle(0.25);
-                break;
-            case 2:
-                m_Channel1SoundGenerator.SetDutyCycle(0.5);
-                break;
-            case 3:
-                m_Channel1SoundGenerator.SetDutyCycle(0.75);
-                break;
-            default:
-                Logger::LogError("Invalid duty cycle %x", Channel1WavePatternDuty);
-                assert(false);
+        switch (Channel1WavePatternDuty)
+        {
+        case 0:
+            m_Channel1SoundGenerator.SetDutyCycle(0.125);
+            break;
+        case 1:
+            m_Channel1SoundGenerator.SetDutyCycle(0.25);
+            break;
+        case 2:
+            m_Channel1SoundGenerator.SetDutyCycle(0.5);
+            break;
+        case 3:
+            m_Channel1SoundGenerator.SetDutyCycle(0.75);
+            break;
+        default:
+            Logger::LogError("Invalid duty cycle %x", Channel1WavePatternDuty);
+            assert(false);
         }
 
         // m_Channel1SoundGenerator.DebugLog();
@@ -346,8 +348,8 @@ void APU::Step(unsigned long cycles)
         NewChannel2VolumeEnvelopeSweepNumber != PrevChannel2VolumeEnvelopeSweepNumber ||
         NewChannel2Initial != PrevChannel2Initial ||
         NewChannel2CounterConsecutive != PrevChannel2CounterConsecutive ||
-        NewChannel2Frequency != PrevChannel2Frequency
-    ) {
+        NewChannel2Frequency != PrevChannel2Frequency)
+    {
         // Debug: Print audio registers whenever a value change occurs
         // printf("CHANNEL 2 -- DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x\n",
         //     NewChannel2WavePatternDuty,
@@ -370,10 +372,11 @@ void APU::Step(unsigned long cycles)
 
         // Do anything that requires recaculation based on these values
 
-        if (Channel2Initial) {
+        if (Channel2Initial)
+        {
             m_Channel2SoundGenerator.RestartSound();
         }
-        
+
         // Counter/Consecutive modes
         m_Channel2SoundGenerator.SetCounterModeEnabled(Channel2CounterConsecutive);
 
@@ -398,22 +401,23 @@ void APU::Step(unsigned long cycles)
         // 01: 25%
         // 10: 50%
         // 11: 75%
-        switch (Channel2WavePatternDuty) {
-            case 0:
-                m_Channel2SoundGenerator.SetDutyCycle(0.125);
-                break;
-            case 1:
-                m_Channel2SoundGenerator.SetDutyCycle(0.25);
-                break;
-            case 2:
-                m_Channel2SoundGenerator.SetDutyCycle(0.5);
-                break;
-            case 3:
-                m_Channel2SoundGenerator.SetDutyCycle(0.75);
-                break;
-            default:
-                Logger::LogError("Invalid duty cycle %x", Channel2WavePatternDuty);
-                assert(false);
+        switch (Channel2WavePatternDuty)
+        {
+        case 0:
+            m_Channel2SoundGenerator.SetDutyCycle(0.125);
+            break;
+        case 1:
+            m_Channel2SoundGenerator.SetDutyCycle(0.25);
+            break;
+        case 2:
+            m_Channel2SoundGenerator.SetDutyCycle(0.5);
+            break;
+        case 3:
+            m_Channel2SoundGenerator.SetDutyCycle(0.75);
+            break;
+        default:
+            Logger::LogError("Invalid duty cycle %x", Channel2WavePatternDuty);
+            assert(false);
         }
 
         // m_Channel2SoundGenerator.DebugLog();
@@ -428,8 +432,10 @@ void APU::Step(unsigned long cycles)
     int NewChannel3Frequency = Channel3Frequency;
     bool IsWaveRamUpdate = false;
 
-    for (int i = 0; i < 0x0F + 1; i++) {
-        if (m_WavePatternRAM[i] != PrevWavePatternRAM[i]) {
+    for (int i = 0; i < 0x0F + 1; i++)
+    {
+        if (m_WavePatternRAM[i] != PrevWavePatternRAM[i])
+        {
             IsWaveRamUpdate = true;
             break;
         }
@@ -441,7 +447,8 @@ void APU::Step(unsigned long cycles)
         NewChannel3Initial != PrevChannel3Initial ||
         NewChannel3CounterConsecutive != PrevChannel3CounterConsecutive ||
         NewChannel3Frequency != PrevChannel3Frequency ||
-        IsWaveRamUpdate) {
+        IsWaveRamUpdate)
+    {
 
         // Debug: Print audio registers whenever a value change occurs
         // printf("CHANNEL 3 -- ON/OFF:0x%02x LEN:0x%01x LVL:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x DATA:0x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n",
@@ -490,19 +497,24 @@ void APU::Step(unsigned long cycles)
         PrevChannel3Initial = NewChannel3Initial;
         PrevChannel3CounterConsecutive = NewChannel3CounterConsecutive;
         PrevChannel3Frequency = NewChannel3Frequency;
-        for (int i = 0; i < 0x0F + 1; i++) {
+        for (int i = 0; i < 0x0F + 1; i++)
+        {
             PrevWavePatternRAM[i] = m_WavePatternRAM[i];
         }
 
         // Do anything that requires recaculation based on these values
 
-        if (Channel3SoundOnOff) {
+        if (Channel3SoundOnOff)
+        {
             m_Channel3SoundGenerator.Enable();
-        } else {
+        }
+        else
+        {
             m_Channel3SoundGenerator.Disable();
         }
 
-        if (Channel3Initial) {
+        if (Channel3Initial)
+        {
             m_Channel3SoundGenerator.RestartSound();
         }
 
@@ -513,28 +525,28 @@ void APU::Step(unsigned long cycles)
         m_Channel3SoundGenerator.SetSoundLength((256.0 - (double)Channel3SoundLength) / 256.0);
 
         // Sound output level
-        switch (Channel3SelectOutputLevel) {
-            case 0:
-                m_Channel3SoundGenerator.SetOutputLevel(0.0);
-                break;
-            case 1:
-                m_Channel3SoundGenerator.SetOutputLevel(1.0);
-                break;
-            case 2:
-                m_Channel3SoundGenerator.SetOutputLevel(0.5);
-                break;
-            case 3:
-                m_Channel3SoundGenerator.SetOutputLevel(0.25);
-                break;
-            default:
-                Logger::LogError("Invalid output level %x", Channel3SelectOutputLevel);
-                assert(false);
+        switch (Channel3SelectOutputLevel)
+        {
+        case 0:
+            m_Channel3SoundGenerator.SetOutputLevel(0.0);
+            break;
+        case 1:
+            m_Channel3SoundGenerator.SetOutputLevel(1.0);
+            break;
+        case 2:
+            m_Channel3SoundGenerator.SetOutputLevel(0.5);
+            break;
+        case 3:
+            m_Channel3SoundGenerator.SetOutputLevel(0.25);
+            break;
+        default:
+            Logger::LogError("Invalid output level %x", Channel3SelectOutputLevel);
+            assert(false);
         }
 
         // 65536/(2048-x) Hz
         m_Channel3SoundGenerator.SetFrequency(65536.0 / (2048.0 - Channel3Frequency));
-                
-    }       
+    }
 
     // CHANNEL 4
     byte NewChannel4SoundLength = Channel4SoundLength;
@@ -556,19 +568,19 @@ void APU::Step(unsigned long cycles)
         NewChannel4CounterStep != PrevChannel4CounterStep ||
         NewChannel4FrequencyDivideRatio != PrevChannel4FrequencyDivideRatio ||
         NewChannel4Initial != PrevChannel4Initial ||
-        NewChannel4CounterConsecutive != PrevChannel4CounterConsecutive
-    ) {
+        NewChannel4CounterConsecutive != PrevChannel4CounterConsecutive)
+    {
         // Debug: Print audio registers whenever a value change occurs
         // printf("CHANNEL 4 -- LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x SHIFT:0x%01x STEP:0x%01x RATIO:0x%01x INIT:0x%01x CC:0x%01x\n",
-            // NewChannel4SoundLength,
-            // NewChannel4VolumeEnvelopeStart,
-            // NewChannel4VolumeEnvelopeDirection,
-            // NewChannel4VolumeEnvelopeSweepNumber,
-            // NewChannel4ShiftClockFrequency,
-            // NewChannel4CounterStep,
-            // NewChannel4FrequencyDivideRatio,
-            // NewChannel4Initial,
-            // NewChannel4CounterConsecutive);
+        // NewChannel4SoundLength,
+        // NewChannel4VolumeEnvelopeStart,
+        // NewChannel4VolumeEnvelopeDirection,
+        // NewChannel4VolumeEnvelopeSweepNumber,
+        // NewChannel4ShiftClockFrequency,
+        // NewChannel4CounterStep,
+        // NewChannel4FrequencyDivideRatio,
+        // NewChannel4Initial,
+        // NewChannel4CounterConsecutive);
 
         PrevChannel4SoundLength = NewChannel4SoundLength;
         PrevChannel4VolumeEnvelopeStart = NewChannel4VolumeEnvelopeStart;
@@ -582,7 +594,8 @@ void APU::Step(unsigned long cycles)
 
         // Do anything that requires recaculation based on these values
 
-        if (Channel4Initial) {
+        if (Channel4Initial)
+        {
             m_Channel4SoundGenerator.RestartSound();
         }
 
@@ -611,7 +624,8 @@ void APU::Step(unsigned long cycles)
     double int_part = 0.0;
     m_AudioFrameRemainder = modf(sample_count, &int_part);
 
-    for (int i = 0; i < int_part; i++) {
+    for (int i = 0; i < int_part; i++)
+    {
         float ch1_sample = m_Channel1SoundGenerator.NextSample();
         float ch2_sample = m_Channel2SoundGenerator.NextSample();
         float ch3_sample = m_Channel3SoundGenerator.NextSample();
@@ -619,22 +633,30 @@ void APU::Step(unsigned long cycles)
 
         // Left channel "SO1"
         float so1 = 0.0;
-        if (OutputChannel1ToSO1) so1 += ch1_sample;
-        if (OutputChannel2ToSO1) so1 += ch2_sample;
-        if (OutputChannel3ToSO1) so1 += ch3_sample;
-        if (OutputChannel4ToSO1) so1 += ch4_sample;
+        if (OutputChannel1ToSO1)
+            so1 += ch1_sample;
+        if (OutputChannel2ToSO1)
+            so1 += ch2_sample;
+        if (OutputChannel3ToSO1)
+            so1 += ch3_sample;
+        if (OutputChannel4ToSO1)
+            so1 += ch4_sample;
         so1 *= ((float)OutputLevelSO1 / 7); // 0 = mute; 7 = max volume
 
         // Right channel "SO2"
         float so2 = 0.0;
-        if (OutputChannel1ToSO2) so2 += ch1_sample;
-        if (OutputChannel2ToSO2) so2 += ch2_sample;
-        if (OutputChannel3ToSO2) so2 += ch3_sample;
-        if (OutputChannel4ToSO2) so2 += ch4_sample;
+        if (OutputChannel1ToSO2)
+            so2 += ch1_sample;
+        if (OutputChannel2ToSO2)
+            so2 += ch2_sample;
+        if (OutputChannel3ToSO2)
+            so2 += ch3_sample;
+        if (OutputChannel4ToSO2)
+            so2 += ch4_sample;
         so2 *= ((float)OutputLevelSO2 / 7); // 0 = mute; 7 = max volume
 
         float f_frame[2] = {so1, so2};
-        m_OutputBuffer.Put((Uint8*) f_frame);
+        m_OutputBuffer.Put((Uint8 *)f_frame);
     }
 }
 
@@ -890,13 +912,14 @@ APU::AdditiveSquareWaveGenerator::AdditiveSquareWaveGenerator() :
     memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
 }
 
-void APU::AdditiveSquareWaveGenerator::DebugLog() {
+void APU::AdditiveSquareWaveGenerator::DebugLog()
+{
     Logger::Log("Freq %f Duty %f Phase %f TimeRemain %f EnvStVol %f",
-        m_FrequencyHz,
-        m_DutyCycle,
-        m_Phase,
-        (m_SoundLengthSeconds - m_SoundLengthTimerSeconds),
-        m_EnvelopeStartVolume);
+                m_FrequencyHz,
+                m_DutyCycle,
+                m_Phase,
+                (m_SoundLengthSeconds - m_SoundLengthTimerSeconds),
+                m_EnvelopeStartVolume);
 }
 
 void APU::AdditiveSquareWaveGenerator::RegenerateCoefficients()
@@ -984,11 +1007,13 @@ void APU::AdditiveSquareWaveGenerator::SetEnvelopeStepLength(double envelope_ste
     m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
 }
 
-void APU::AdditiveSquareWaveGenerator::SetOnChannelOn(std::function<void()> callback) {
+void APU::AdditiveSquareWaveGenerator::SetOnChannelOn(std::function<void()> callback)
+{
     m_OnChannelOn = callback;
 }
 
-void APU::AdditiveSquareWaveGenerator::SetOnChannelOff(std::function<void()> callback) {
+void APU::AdditiveSquareWaveGenerator::SetOnChannelOff(std::function<void()> callback)
+{
     m_OnChannelOff = callback;
 }
 
@@ -1004,8 +1029,9 @@ float APU::AdditiveSquareWaveGenerator::NextSample()
     float sample = 0.0;
     bool is_sound_playing = !m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds;
     bool is_sound_enabled = m_EnvelopeStartVolume != 0.0 && is_sound_playing;
-    
-    if (!is_sound_playing && m_ChannelIsPlaying) {
+
+    if (!is_sound_playing && m_ChannelIsPlaying)
+    {
         // sound has stopped playing, emit a channel off event
         m_ChannelIsPlaying = false;
         m_OnChannelOff();
@@ -1031,10 +1057,11 @@ float APU::AdditiveSquareWaveGenerator::NextSample()
     }
 
     double frequency = m_FrequencyHz;
-    if (m_SweepModeEnabled) 
+    if (m_SweepModeEnabled)
     {
         int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
-        for (int i = 0; i < step_number; i++) {
+        for (int i = 0; i < step_number; i++)
+        {
             // TODO Optimize
             frequency += m_SweepDirection * (frequency / (1 << m_SweepShiftFrequencyExponent));
         }
@@ -1072,13 +1099,15 @@ APU::NoiseGenerator::NoiseGenerator() :
     // TODO
 }
 
-void APU::NoiseGenerator::DebugLog() {
+void APU::NoiseGenerator::DebugLog()
+{
     // TODO
 }
 
-void APU::NoiseGenerator::SetFrequency(double frequency_hz) {
-    m_FrequencyHz = frequency_hz;    
-    
+void APU::NoiseGenerator::SetFrequency(double frequency_hz)
+{
+    m_FrequencyHz = frequency_hz;
+
     if (m_FrequencyHz <= 0)
     {
         Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
@@ -1086,43 +1115,52 @@ void APU::NoiseGenerator::SetFrequency(double frequency_hz) {
     }
 }
 
-void APU::NoiseGenerator::SetCounterModeEnabled(bool is_enabled) {
+void APU::NoiseGenerator::SetCounterModeEnabled(bool is_enabled)
+{
     m_CounterModeEnabled = is_enabled;
 }
 
-void APU::NoiseGenerator::SetSoundLength(double sound_length_seconds) {
+void APU::NoiseGenerator::SetSoundLength(double sound_length_seconds)
+{
     m_SoundLengthSeconds = sound_length_seconds;
 }
 
-void APU::NoiseGenerator::SetEnvelopeStartVolume(double envelope_start_volume) {
+void APU::NoiseGenerator::SetEnvelopeStartVolume(double envelope_start_volume)
+{
     m_EnvelopeStartVolume = envelope_start_volume;
 }
 
-void APU::NoiseGenerator::SetEnvelopeDirection(EnvelopeDirection direction) {
+void APU::NoiseGenerator::SetEnvelopeDirection(EnvelopeDirection direction)
+{
     m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
 }
 
-void APU::NoiseGenerator::SetEnvelopeStepLength(double envelope_step_seconds) {
+void APU::NoiseGenerator::SetEnvelopeStepLength(double envelope_step_seconds)
+{
     m_EnvelopeStepLengthSeconds = envelope_step_seconds;
     m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
 }
 
-void APU::NoiseGenerator::RestartSound() {
+void APU::NoiseGenerator::RestartSound()
+{
     m_SoundLengthTimerSeconds = 0.0;
 }
 
-float APU::NoiseGenerator::NextSample() {
+float APU::NoiseGenerator::NextSample()
+{
     float sample = 0.0;
 
     bool sound_enabled = m_EnvelopeStartVolume != 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
-    
-    if (m_Phase >= 1.0) {
+
+    if (m_Phase >= 1.0)
+    {
         m_Phase -= 1.0;
         float r = rand() / (RAND_MAX + 1.0);
         m_Signal = r > 0.5 ? 0.5 : -0.5;
     }
 
-    if (sound_enabled) {
+    if (sound_enabled)
+    {
         sample = m_Signal;
 
         if (m_EnvelopeModeEnabled)
@@ -1157,14 +1195,13 @@ APU::WaveformGenerator::WaveformGenerator() :
     // TODO   
 }
 
-void APU::WaveformGenerator::DebugLog() 
+void APU::WaveformGenerator::DebugLog()
 {
-
 }
-    
-void APU::WaveformGenerator::SetFrequency(double frequency_hz) 
+
+void APU::WaveformGenerator::SetFrequency(double frequency_hz)
 {
-    m_FrequencyHz = frequency_hz;    
+    m_FrequencyHz = frequency_hz;
 
     if (m_FrequencyHz <= 0)
     {
@@ -1173,54 +1210,57 @@ void APU::WaveformGenerator::SetFrequency(double frequency_hz)
     }
 }
 
-void APU::WaveformGenerator::SetOutputLevel(double level) 
+void APU::WaveformGenerator::SetOutputLevel(double level)
 {
     m_OutputLevel = level;
 
-    if (m_OutputLevel > 1.0 || m_OutputLevel < 0.0) {
+    if (m_OutputLevel > 1.0 || m_OutputLevel < 0.0)
+    {
         Logger::LogError("Invalid Output Level %f", m_OutputLevel);
         assert(false);
     }
 }
 
-void APU::WaveformGenerator::SetCounterModeEnabled(bool is_enabled) 
+void APU::WaveformGenerator::SetCounterModeEnabled(bool is_enabled)
 {
     m_CounterModeEnabled = is_enabled;
 }
 
-void APU::WaveformGenerator::SetSoundLength(double sound_length_seconds) 
+void APU::WaveformGenerator::SetSoundLength(double sound_length_seconds)
 {
     m_SoundLengthSeconds = sound_length_seconds;
 }
 
-void APU::WaveformGenerator::SetWaveRamLocation(byte* wave_buffer) 
+void APU::WaveformGenerator::SetWaveRamLocation(byte *wave_buffer)
 {
     m_WaveBuffer = wave_buffer;
 }
 
-void APU::WaveformGenerator::Enable() 
+void APU::WaveformGenerator::Enable()
 {
     m_Enabled = true;
 }
 
-void APU::WaveformGenerator::Disable() 
+void APU::WaveformGenerator::Disable()
 {
     m_Enabled = false;
 }
 
-void APU::WaveformGenerator::RestartSound() 
+void APU::WaveformGenerator::RestartSound()
 {
     m_SoundLengthTimerSeconds = 0.0;
 }
 
-float APU::WaveformGenerator::NextSample() 
+float APU::WaveformGenerator::NextSample()
 {
     float sample = 0.0;
 
-    if (m_Enabled) {
+    if (m_Enabled)
+    {
         bool sound_enabled = m_OutputLevel != 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
-        
-        if (sound_enabled) {
+
+        if (sound_enabled)
+        {
             // Wave is made up of 32 4-bit samples
             int wave_ram_sample_number = (int)(m_Phase * 32.0);
             int wave_ram_byte_offset = wave_ram_sample_number / 2;
@@ -1234,7 +1274,8 @@ float APU::WaveformGenerator::NextSample()
 
         m_Phase += m_FrequencyHz / (double)AudioSampleRate;
 
-        if (m_Phase >= 1.0) {
+        if (m_Phase >= 1.0)
+        {
             m_Phase -= 1.0;
         }
     }
@@ -1244,58 +1285,71 @@ float APU::WaveformGenerator::NextSample()
     return sample;
 }
 
-APU::Buffer::Buffer(size_t element_count, size_t element_size) {
+APU::Buffer::Buffer(size_t element_count, size_t element_size)
+{
     m_ElementCount = element_count + 1;
     m_ElementSize = element_size;
     m_BufferSize = m_ElementCount * m_ElementSize;
-    m_Bytes = (Uint8*) malloc(m_BufferSize * sizeof(Uint8));
-    if (m_Bytes == nullptr) {
+    m_Bytes = (Uint8 *)malloc(m_BufferSize * sizeof(Uint8));
+    if (m_Bytes == nullptr)
+    {
         // TODO handle error
     }
-    m_DefaultBytes = (Uint8*) malloc(m_ElementSize * sizeof(Uint8));
-     if (m_DefaultBytes == nullptr) {
+    m_DefaultBytes = (Uint8 *)malloc(m_ElementSize * sizeof(Uint8));
+    if (m_DefaultBytes == nullptr)
+    {
         // TODO handle error
     }
     memset(m_DefaultBytes, SILENCE, m_ElementSize);
     Reset();
 }
 
-APU::Buffer::~Buffer() {
+APU::Buffer::~Buffer()
+{
     free(m_Bytes);
     free(m_DefaultBytes);
 }
 
-void APU::Buffer::Reset() {
+void APU::Buffer::Reset()
+{
     m_ReadIndex = 0;
     m_WriteIndex = 0;
     memset(m_Bytes, SILENCE, m_BufferSize * sizeof(Uint8));
 }
 
-void APU::Buffer::Put(Uint8* element) {
+void APU::Buffer::Put(Uint8 *element)
+{
     memcpy(&m_Bytes[m_WriteIndex], element, m_ElementSize);
     AdvanceWriteIndex();
-    if (m_WriteIndex == m_ReadIndex) {
+    if (m_WriteIndex == m_ReadIndex)
+    {
         AdvanceReadIndex();
     }
 }
 
-Uint8* APU::Buffer::Get() {
-    Uint8* data;
-    if (m_WriteIndex == m_ReadIndex) {
+Uint8 *APU::Buffer::Get()
+{
+    Uint8 *data;
+    if (m_WriteIndex == m_ReadIndex)
+    {
         data = m_DefaultBytes;
-    } else {
+    }
+    else
+    {
         data = &m_Bytes[m_ReadIndex];
         AdvanceReadIndex();
     }
     return data;
 }
 
-void APU::Buffer::AdvanceReadIndex() {
+void APU::Buffer::AdvanceReadIndex()
+{
     mutex.lock();
     m_ReadIndex = (m_ReadIndex + m_ElementSize) % m_BufferSize;
     mutex.unlock();
 }
 
-void APU::Buffer::AdvanceWriteIndex() {
+void APU::Buffer::AdvanceWriteIndex()
+{
     m_WriteIndex = (m_WriteIndex + m_ElementSize) % m_BufferSize;
 }

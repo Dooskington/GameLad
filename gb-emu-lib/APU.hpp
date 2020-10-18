@@ -34,111 +34,116 @@ public:
 private:
     void LoadChannel(int index, SDL_AudioCallback callback);
 
-    typedef enum {
-        UP, DOWN
+    typedef enum
+    {
+        UP,
+        DOWN
     } EnvelopeDirection;
 
     // Ring buffer for streaming audio data
-    class Buffer {
-        public:
-            Buffer(size_t element_count, size_t element_size);
-            ~Buffer();
+    class Buffer
+    {
+    public:
+        Buffer(size_t element_count, size_t element_size);
+        ~Buffer();
 
-            void Reset();
-            void Put(Uint8* element);
-            Uint8* Get();
+        void Reset();
+        void Put(Uint8 *element);
+        Uint8 *Get();
 
-        private:
-            size_t m_ElementCount;
-            size_t m_ElementSize;
-            size_t m_BufferSize;
-            Uint8* m_Bytes;
-            Uint8* m_DefaultBytes;
-            size_t m_ReadIndex;
-            size_t m_WriteIndex;
-            std::mutex mutex;
+    private:
+        size_t m_ElementCount;
+        size_t m_ElementSize;
+        size_t m_BufferSize;
+        Uint8 *m_Bytes;
+        Uint8 *m_DefaultBytes;
+        size_t m_ReadIndex;
+        size_t m_WriteIndex;
+        std::mutex mutex;
 
-            void AdvanceReadIndex();
-            void AdvanceWriteIndex();
+        void AdvanceReadIndex();
+        void AdvanceWriteIndex();
     };
 
-    class AdditiveSquareWaveGenerator {
-        public:
-            AdditiveSquareWaveGenerator();
-            ~AdditiveSquareWaveGenerator() = default;
+    class AdditiveSquareWaveGenerator
+    {
+    public:
+        AdditiveSquareWaveGenerator();
+        ~AdditiveSquareWaveGenerator() = default;
 
-            void SetFrequency(double frequency_hz);
-            void SetDutyCycle(double duty_cycle);
-            void SetCounterModeEnabled(bool is_enabled);
-            void SetSoundLength(double sound_length_seconds);
-            void SetSweepDirection(EnvelopeDirection direction);
-            void SetSweepShiftFrequencyExponent(uint exponent);
-            void SetSweepStepLength(double sweep_step_seconds);
-            void SetEnvelopeStartVolume(double envelope_start_volume);
-            void SetEnvelopeDirection(EnvelopeDirection direction);
-            void SetEnvelopeStepLength(double envelope_step_seconds);
-            void SetOnChannelOn(std::function<void()> callback);
-            void SetOnChannelOff(std::function<void()> callback);
-            
-            void RestartSound();
-            
-            float NextSample();
+        void SetFrequency(double frequency_hz);
+        void SetDutyCycle(double duty_cycle);
+        void SetCounterModeEnabled(bool is_enabled);
+        void SetSoundLength(double sound_length_seconds);
+        void SetSweepDirection(EnvelopeDirection direction);
+        void SetSweepShiftFrequencyExponent(uint exponent);
+        void SetSweepStepLength(double sweep_step_seconds);
+        void SetEnvelopeStartVolume(double envelope_start_volume);
+        void SetEnvelopeDirection(EnvelopeDirection direction);
+        void SetEnvelopeStepLength(double envelope_step_seconds);
+        void SetOnChannelOn(std::function<void()> callback);
+        void SetOnChannelOff(std::function<void()> callback);
 
-            void DebugLog();
+        void RestartSound();
 
-        private:
-            double m_FrequencyHz;
-            double m_DutyCycle;
-            bool m_CounterModeEnabled;
-            double m_SoundLengthSeconds;
-            bool m_SweepModeEnabled;
-            double m_SweepDirection;
-            int m_SweepShiftFrequencyExponent;
-            double m_SweepStepLengthSeconds;
-            bool m_EnvelopeModeEnabled;
-            double m_EnvelopeDirection;
-            double m_EnvelopeStartVolume;
-            double m_EnvelopeStepLengthSeconds; 
-            int m_HarmonicsCount;
-            double m_Coefficients[MaxHarmonicsCount];
-            double m_Phase;
-            double m_SoundLengthTimerSeconds;
-            bool m_ChannelIsPlaying;
-            std::function<void()> m_OnChannelOn;
-            std::function<void()> m_OnChannelOff;
+        float NextSample();
 
-            void RegenerateCoefficients();
+        void DebugLog();
+
+    private:
+        double m_FrequencyHz;
+        double m_DutyCycle;
+        bool m_CounterModeEnabled;
+        double m_SoundLengthSeconds;
+        bool m_SweepModeEnabled;
+        double m_SweepDirection;
+        int m_SweepShiftFrequencyExponent;
+        double m_SweepStepLengthSeconds;
+        bool m_EnvelopeModeEnabled;
+        double m_EnvelopeDirection;
+        double m_EnvelopeStartVolume;
+        double m_EnvelopeStepLengthSeconds;
+        int m_HarmonicsCount;
+        double m_Coefficients[MaxHarmonicsCount];
+        double m_Phase;
+        double m_SoundLengthTimerSeconds;
+        bool m_ChannelIsPlaying;
+        std::function<void()> m_OnChannelOn;
+        std::function<void()> m_OnChannelOff;
+
+        void RegenerateCoefficients();
     };
 
-    class NoiseGenerator {
-        public:
-            NoiseGenerator();
-            ~NoiseGenerator() = default;
+    class NoiseGenerator
+    {
+    public:
+        NoiseGenerator();
+        ~NoiseGenerator() = default;
 
-            void SetFrequency(double frequency_hz);
-            void SetCounterModeEnabled(bool is_enabled);
-            void SetSoundLength(double sound_length_seconds);
-            void SetEnvelopeStartVolume(double envelope_start_volume);
-            void SetEnvelopeDirection(EnvelopeDirection direction);
-            void SetEnvelopeStepLength(double envelope_step_seconds);
+        void SetFrequency(double frequency_hz);
+        void SetCounterModeEnabled(bool is_enabled);
+        void SetSoundLength(double sound_length_seconds);
+        void SetEnvelopeStartVolume(double envelope_start_volume);
+        void SetEnvelopeDirection(EnvelopeDirection direction);
+        void SetEnvelopeStepLength(double envelope_step_seconds);
 
-            void RestartSound();
-            
-            float NextSample();
+        void RestartSound();
 
-            void DebugLog();
+        float NextSample();
 
-        private:
-            double m_FrequencyHz;
-            bool m_CounterModeEnabled;
-            double m_SoundLengthSeconds;
-            bool m_EnvelopeModeEnabled;
-            double m_EnvelopeDirection;
-            double m_EnvelopeStartVolume;
-            double m_EnvelopeStepLengthSeconds;
-            double m_Phase;
-            double m_Signal;
-            double m_SoundLengthTimerSeconds;
+        void DebugLog();
+
+    private:
+        double m_FrequencyHz;
+        bool m_CounterModeEnabled;
+        double m_SoundLengthSeconds;
+        bool m_EnvelopeModeEnabled;
+        double m_EnvelopeDirection;
+        double m_EnvelopeStartVolume;
+        double m_EnvelopeStepLengthSeconds;
+        double m_Phase;
+        double m_Signal;
+        double m_SoundLengthTimerSeconds;
     };
 
     class WaveformGenerator
@@ -151,8 +156,8 @@ private:
         void SetOutputLevel(double level);
         void SetCounterModeEnabled(bool is_enabled);
         void SetSoundLength(double sound_length_seconds);
-        void SetWaveRamLocation(byte* wave_buffer);
-        
+        void SetWaveRamLocation(byte *wave_buffer);
+
         void Enable();
         void Disable();
         void RestartSound();
@@ -169,9 +174,9 @@ private:
         double m_OutputLevel;
         double m_Phase;
         double m_SoundLengthTimerSeconds;
-        byte* m_WaveBuffer;
+        byte *m_WaveBuffer;
     };
-    
+
 private:
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
