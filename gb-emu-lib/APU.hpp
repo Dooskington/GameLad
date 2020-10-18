@@ -4,15 +4,6 @@
 #include <mutex>
 #include <functional>
 
-#define AudioSampleRate 48000
-#define AudioOutChannelCount 2
-#define FrameSizeBytes 8 // 32 bit samples * 2 channels
-
-// Based on 60Hz screen refresh rate
-#define AudioBufferSize ((AudioSampleRate * AudioOutChannelCount)) // 1 sec TODO: This is pretty big
-#define CyclesPerFrame 70224 // TODO: Can we import this?
-#define CyclesPerSecond 4213440 // CyclesPerFrame * 60
-
 #define MaxHarmonicsCount 52
 
 class APU : public IMemoryUnit
@@ -22,17 +13,14 @@ public:
     ~APU();
 
     void Step(unsigned long cycles);
-    void Channel1Callback(Uint8* pStream, int length);
-    void Channel2Callback(Uint8* pStream, int length);
-    void Channel3Callback(Uint8* pStream, int length);
-    void Channel4Callback(Uint8* pStream, int length);
+    void AudioDeviceCallback(Uint8* pStream, int length);
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
 
 private:
-    void LoadChannel(int index, SDL_AudioCallback callback);
+    void LoadAudioDevice(SDL_AudioCallback callback);
 
     typedef enum
     {
@@ -213,8 +201,8 @@ private:
     NoiseGenerator m_Channel4SoundGenerator;
 
     // Output
-    bool m_Initialized[4];
-    SDL_AudioDeviceID m_DeviceChannel[4];
+    bool m_Initialized;
+    SDL_AudioDeviceID m_AudioDevice;
     double m_AudioFrameRemainder;
     Buffer m_OutputBuffer;
 

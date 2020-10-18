@@ -2,12 +2,17 @@
 #include "APU.hpp"
 #include <cmath>
 
-#define SILENCE 0x80
-#define HIGH 0xFF
-#define LOW 0x00
+#define AudioSampleRate 48000
+#define AudioOutChannelCount 2
+#define FrameSizeBytes 8 // 32 bit samples * 2 channels
 
-#define PI 3.141592653589793
-#define TWO_PI 6.283185307179586
+// Based on 60Hz screen refresh rate
+#define AudioBufferSize ((AudioSampleRate * AudioOutChannelCount)) // 1 sec TODO: This is pretty big
+#define CyclesPerFrame 70224 // TODO: Can we import this somehow?
+#define CyclesPerSecond 4213440 // CyclesPerFrame * 60
+
+#define Pi 3.141592653589793
+#define TwoPi 6.283185307179586
 
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
@@ -51,11 +56,6 @@
 #define ChannelControl 0xFF24
 #define OutputTerminalSelection 0xFF25
 #define SoundOnOff 0xFF26
-
-#define CHANNEL1 0
-#define CHANNEL2 1
-#define CHANNEL3 2
-#define CHANNEL4 3
 
 #define Channel1SweepTime ((m_Channel1Sweep >> 4) & 7)
 #define Channel1SweepDirection ((m_Channel1Sweep >> 3) & 1)
@@ -107,30 +107,9 @@
 #define OutputChannel3ToSO2 ISBITSET(m_OutputTerminal, 6)
 #define OutputChannel4ToSO2 ISBITSET(m_OutputTerminal, 7)
 
-void Channel1CallbackStatic(void* pUserdata, Uint8* pStream, int length)
+void AudioDeviceCallbackStatic(void* pUserdata, Uint8* pStream, int length)
 {
-    reinterpret_cast<APU*>(pUserdata)->Channel1Callback(
-        pStream,
-        length);
-}
-
-void Channel2CallbackStatic(void* pUserdata, Uint8* pStream, int length)
-{
-    reinterpret_cast<APU*>(pUserdata)->Channel2Callback(
-        pStream,
-        length);
-}
-
-void Channel3CallbackStatic(void* pUserdata, Uint8* pStream, int length)
-{
-    reinterpret_cast<APU*>(pUserdata)->Channel3Callback(
-        pStream,
-        length);
-}
-
-void Channel4CallbackStatic(void* pUserdata, Uint8* pStream, int length)
-{
-    reinterpret_cast<APU*>(pUserdata)->Channel4Callback(
+    reinterpret_cast<APU*>(pUserdata)->AudioDeviceCallback(
         pStream,
         length);
 }
@@ -161,11 +140,11 @@ APU::APU() :
     m_Channel2SoundGenerator(),
     m_Channel3SoundGenerator(),
     m_Channel4SoundGenerator(),
+    m_Initialized(false),
+    m_AudioDevice(0),
     m_OutputBuffer(AudioBufferSize, FrameSizeBytes),
     m_AudioFrameRemainder(0.0)
 {
-    memset(m_Initialized, false, ARRAYSIZE(m_Initialized));
-    memset(m_DeviceChannel, 0, ARRAYSIZE(m_DeviceChannel));
     memset(m_WavePatternRAM, 0x00, ARRAYSIZE(m_WavePatternRAM));
 
     m_Channel3SoundGenerator.SetWaveRamLocation(m_WavePatternRAM);
@@ -193,22 +172,16 @@ APU::APU() :
     }
     else
     {
-        LoadChannel(CHANNEL1, Channel1CallbackStatic);
-        LoadChannel(CHANNEL2, Channel2CallbackStatic);
-        LoadChannel(CHANNEL3, Channel3CallbackStatic);
-        LoadChannel(CHANNEL4, Channel4CallbackStatic);
+        LoadAudioDevice(AudioDeviceCallbackStatic);
     }
 }
 
 APU::~APU()
 {
-    for (int index = CHANNEL1; index <= CHANNEL4; index++)
+    if (m_Initialized)
     {
-        if (m_Initialized[index])
-        {
-            SDL_PauseAudioDevice(m_DeviceChannel[index], 1);
-            SDL_CloseAudioDevice(m_DeviceChannel[index]);
-        }
+        SDL_PauseAudioDevice(m_AudioDevice, 1);
+        SDL_CloseAudioDevice(m_AudioDevice);
     }
 
     SDL_Quit();
@@ -660,7 +633,7 @@ void APU::Step(unsigned long cycles)
     }
 }
 
-void APU::Channel1Callback(Uint8* pStream, int length)
+void APU::AudioDeviceCallback(Uint8* pStream, int length)
 {
     SDL_memset(pStream, 0x00, length);
 
@@ -675,51 +648,6 @@ void APU::Channel1Callback(Uint8* pStream, int length)
             pStream[index + i] = frame[i];
         }
     }
-}
-
-void APU::Channel2Callback(Uint8* pStream, int length)
-{
-    SDL_memset(pStream, 0x00, length);
-
-    if (!ISBITSET(m_SoundOnOff, 7))
-        return;
-
-    /*int v = 0;
-    for (int index = 0; index < length; index++)
-    {
-        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
-        v += 400;
-    }*/
-}
-
-void APU::Channel3Callback(Uint8* pStream, int length)
-{
-    SDL_memset(pStream, 0x00, length);
-
-    if (!ISBITSET(m_SoundOnOff, 7))
-        return;
-
-    /*int v = 0;
-    for (int index = 0; index < length; index++)
-    {
-        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
-        v += 500;
-    }*/
-}
-
-void APU::Channel4Callback(Uint8* pStream, int length)
-{
-    SDL_memset(pStream, 0x00, length);
-
-    if (!ISBITSET(m_SoundOnOff, 7))
-        return;
-
-    /*int v = 0;
-    for (int index = 0; index < length; index++)
-    {
-        pStream[index] = (Uint8)(0xFF * std::sin(v * 2 * M_PI / 44100));
-        v += 600;
-    }*/
 }
 
 // IMemoryUnit
@@ -869,7 +797,7 @@ bool APU::WriteByte(const ushort& address, const byte val)
     }
 }
 
-void APU::LoadChannel(int index, SDL_AudioCallback callback)
+void APU::LoadAudioDevice(SDL_AudioCallback callback)
 {
     SDL_AudioSpec want, have;
 
@@ -881,15 +809,15 @@ void APU::LoadChannel(int index, SDL_AudioCallback callback)
     want.callback = callback;
     want.userdata = this;
 
-    m_DeviceChannel[index] = SDL_OpenAudioDevice(nullptr, 0, &want, &have, 0);
-    if (m_DeviceChannel[index] == 0)
+    m_AudioDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &have, 0);
+    if (m_AudioDevice == 0)
     {
-        Logger::Log("[SDL] Failed to open audio device for channel %d - %s", index + 1, SDL_GetError());
+        Logger::Log("[SDL] Failed to open audio device - %s", SDL_GetError());
         return;
     }
 
-    SDL_PauseAudioDevice(m_DeviceChannel[index], 0);
-    m_Initialized[index] = true;
+    SDL_PauseAudioDevice(m_AudioDevice, 0);
+    m_Initialized = true;
 }
 
 APU::AdditiveSquareWaveGenerator::AdditiveSquareWaveGenerator() : 
@@ -935,7 +863,7 @@ void APU::AdditiveSquareWaveGenerator::RegenerateCoefficients()
     m_Coefficients[0] = m_DutyCycle - 0.5;
     for (int i = 1; i < m_HarmonicsCount; i++)
     {
-        m_Coefficients[i] = (sin(i * m_DutyCycle * PI) * 2) / (i * PI);
+        m_Coefficients[i] = (sin(i * m_DutyCycle * Pi) * 2) / (i * Pi);
     }
 }
 
@@ -1067,13 +995,13 @@ float APU::AdditiveSquareWaveGenerator::NextSample()
         }
     }
 
-    m_Phase += (TWO_PI * frequency) / (double)AudioSampleRate;
-    while (m_Phase >= TWO_PI)
+    m_Phase += (TwoPi * frequency) / (double)AudioSampleRate;
+    while (m_Phase >= TwoPi)
     {
-        m_Phase -= TWO_PI;
+        m_Phase -= TwoPi;
     }
 
-    if (m_Phase < 0 || m_Phase >= TWO_PI)
+    if (m_Phase < 0 || m_Phase >= TwoPi)
     {
         Logger::LogError("Invalid phase %f", m_Phase);
         assert(false);
@@ -1096,12 +1024,10 @@ APU::NoiseGenerator::NoiseGenerator() :
     m_Signal(0.0),
     m_SoundLengthTimerSeconds(0.0)
 {
-    // TODO
 }
 
 void APU::NoiseGenerator::DebugLog()
 {
-    // TODO
 }
 
 void APU::NoiseGenerator::SetFrequency(double frequency_hz)
@@ -1192,7 +1118,6 @@ APU::WaveformGenerator::WaveformGenerator() :
     m_SoundLengthTimerSeconds(0.0),
     m_WaveBuffer(nullptr)
 {
-    // TODO   
 }
 
 void APU::WaveformGenerator::DebugLog()
@@ -1300,7 +1225,7 @@ APU::Buffer::Buffer(size_t element_count, size_t element_size)
     {
         // TODO handle error
     }
-    memset(m_DefaultBytes, SILENCE, m_ElementSize);
+    memset(m_DefaultBytes, 0, m_ElementSize);
     Reset();
 }
 
@@ -1314,7 +1239,7 @@ void APU::Buffer::Reset()
 {
     m_ReadIndex = 0;
     m_WriteIndex = 0;
-    memset(m_Bytes, SILENCE, m_BufferSize * sizeof(Uint8));
+    memset(m_Bytes, 0, m_BufferSize * sizeof(Uint8));
 }
 
 void APU::Buffer::Put(Uint8 *element)
