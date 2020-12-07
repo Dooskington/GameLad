@@ -136,8 +136,24 @@ APU::APU() :
     m_ChannelControlOnOffVolume(0x00),
     m_OutputTerminal(0x00),
     m_SoundOnOff(0x00),
-    m_Channel1SoundGenerator(),
-    m_Channel2SoundGenerator(),
+    m_Channel1SoundGenerator(
+        CHANNEL_1,
+        &m_Channel1Sweep,
+        &m_Channel1SoundLength,
+        &m_Channel1VolumeEnvelope,
+        &m_Channel1FrequencyLo,
+        &m_Channel1FrequencyHi,
+        &m_SoundOnOff
+    ),
+    m_Channel2SoundGenerator(
+        CHANNEL_2,
+        nullptr, // No sweep register on CH2
+        &m_Channel2SoundLength,
+        &m_Channel2VolumeEnvelope,
+        &m_Channel2FrequencyLo,
+        &m_Channel2FrequencyHi,
+        &m_SoundOnOff
+    ),
     m_Channel3SoundGenerator(),
     m_Channel4SoundGenerator(),
     m_Channel1RequiresUpdate(false),
@@ -153,22 +169,22 @@ APU::APU() :
 
     m_Channel3SoundGenerator.SetWaveRamLocation(m_WavePatternRAM);
 
-    m_Channel1SoundGenerator.SetOnChannelOn([this]() -> void {
-        // Logger::Log("Ch1 ON");
-        m_SoundOnOff |= 0x01;
-    });
-    m_Channel1SoundGenerator.SetOnChannelOff([this]() -> void {
-        // Logger::Log("Ch1 OFF");
-        m_SoundOnOff &= 0xFE;
-    });
-    m_Channel2SoundGenerator.SetOnChannelOn([this]() -> void {
-        // Logger::Log("Ch2 ON");
-        m_SoundOnOff |= 0x02;
-    });
-    m_Channel2SoundGenerator.SetOnChannelOff([this]() -> void {
-        // Logger::Log("Ch2 OFF");
-        m_SoundOnOff &= 0xFD;
-    });
+    // m_Channel1SoundGenerator.SetOnChannelOn([this]() -> void {
+    //     // Logger::Log("Ch1 ON");
+    //     m_SoundOnOff |= 0x01;
+    // });
+    // m_Channel1SoundGenerator.SetOnChannelOff([this]() -> void {
+    //     // Logger::Log("Ch1 OFF");
+    //     m_SoundOnOff &= 0xFE;
+    // });
+    // m_Channel2SoundGenerator.SetOnChannelOn([this]() -> void {
+    //     // Logger::Log("Ch2 ON");
+    //     m_SoundOnOff |= 0x02;
+    // });
+    // m_Channel2SoundGenerator.SetOnChannelOff([this]() -> void {
+    //     // Logger::Log("Ch2 OFF");
+    //     m_SoundOnOff &= 0xFD;
+    // });
 
     if (SDL_Init(SDL_INIT_AUDIO))
     {
@@ -193,8 +209,8 @@ APU::~APU()
 
 void APU::Step(unsigned long cycles)
 {
-    if (m_Channel1RequiresUpdate) UpdateChannel1Generator();
-    if (m_Channel2RequiresUpdate) UpdateChannel2Generator();
+    // if (m_Channel1RequiresUpdate) UpdateChannel1Generator();
+    // if (m_Channel2RequiresUpdate) UpdateChannel2Generator();
     if (m_Channel3RequiresUpdate) UpdateChannel3Generator();
     if (m_Channel4RequiresUpdate) UpdateChannel4Generator();
 
@@ -240,143 +256,144 @@ void APU::Step(unsigned long cycles)
     }
 }
 
-void APU::UpdateChannel1Generator()
-{
-    if (Channel1Initial)
-    {
-        m_Channel1SoundGenerator.RestartSound();
-    }
+// void APU::UpdateChannel1Generator()
+// {
+//     if (m_Channel1Reset)
+//     {
+//         m_Channel1SoundGenerator.RestartSound();
+//         m_Channel1Reset = false;
+//     }
 
-    // Counter/Consecutive modes
-    m_Channel1SoundGenerator.SetCounterModeEnabled(Channel1CounterConsecutive);
+//     // Counter/Consecutive modes
+//     m_Channel1SoundGenerator.SetCounterModeEnabled(Channel1CounterConsecutive);
 
-    // Sound Length = (64-t1)*(1/256) seconds
-    m_Channel1SoundGenerator.SetSoundLength((64.0 - (double)Channel1SoundLength) / 256.0);
+//     // Sound Length = (64-t1)*(1/256) seconds
+//     m_Channel1SoundGenerator.SetSoundLength((64.0 - (double)Channel1SoundLength) / 256.0);
 
-    // Length of a sweep step = n * (1/128)
-    m_Channel1SoundGenerator.SetSweepStepLength((double)Channel1SweepTime / 128.0);
+//     // Length of a sweep step = n * (1/128)
+//     m_Channel1SoundGenerator.SetSweepStepLength((double)Channel1SweepTime / 128.0);
 
-    // Sweep direction: 0 = Up, 1 = Down
-    m_Channel1SoundGenerator.SetSweepDirection(Channel1SweepDirection ? DOWN : UP);
+//     // Sweep direction: 0 = Up, 1 = Down
+//     m_Channel1SoundGenerator.SetSweepDirection(Channel1SweepDirection ? DOWN : UP);
 
-    // Shift value to calculate frequency step amount
-    m_Channel1SoundGenerator.SetSweepShiftFrequencyExponent(Channel1SweepShiftNumber);
+//     // Shift value to calculate frequency step amount
+//     m_Channel1SoundGenerator.SetSweepShiftFrequencyExponent(Channel1SweepShiftNumber);
 
-    // Envelope start volume. 4 bits of precision = 16 volume levels.
-    m_Channel1SoundGenerator.SetEnvelopeStartVolume((double)Channel1VolumeEnvelopeStart / 16.0);
+//     // Envelope start volume. 4 bits of precision = 16 volume levels.
+//     m_Channel1SoundGenerator.SetEnvelopeStartVolume((double)Channel1VolumeEnvelopeStart / 16.0);
 
-    // Length of an envelope step = n * (1/64)
-    m_Channel1SoundGenerator.SetEnvelopeStepLength((double)Channel1VolumeEnvelopeSweepNumber / 64.0);
+//     // Length of an envelope step = n * (1/64)
+//     m_Channel1SoundGenerator.SetEnvelopeStepLength((double)Channel1VolumeEnvelopeSweepNumber / 64.0);
 
-    // Envelope direction: 0 = Decrease, 1 = Increase
-    m_Channel1SoundGenerator.SetEnvelopeDirection(Channel1VolumeEnvelopeDirection ? UP : DOWN);
+//     // Envelope direction: 0 = Decrease, 1 = Increase
+//     m_Channel1SoundGenerator.SetEnvelopeDirection(Channel1VolumeEnvelopeDirection ? UP : DOWN);
 
-    // For x = the value in the frequency register, the actual frequency
-    // in Hz is 131072/(2048-x) Hz
-    m_Channel1SoundGenerator.SetFrequency(131072.0 / (double)(2048 - Channel1Frequency));
+//     // For x = the value in the frequency register, the actual frequency
+//     // in Hz is 131072/(2048-x) Hz
+//     m_Channel1SoundGenerator.SetFrequency(131072.0 / (double)(2048 - Channel1Frequency));
 
-    // Wave Duty
-    // 00: 12.5%
-    // 01: 25%
-    // 10: 50%
-    // 11: 75%
-    switch (Channel1WavePatternDuty)
-    {
-    case 0:
-        m_Channel1SoundGenerator.SetDutyCycle(0.125);
-        break;
-    case 1:
-        m_Channel1SoundGenerator.SetDutyCycle(0.25);
-        break;
-    case 2:
-        m_Channel1SoundGenerator.SetDutyCycle(0.5);
-        break;
-    case 3:
-        m_Channel1SoundGenerator.SetDutyCycle(0.75);
-        break;
-    default:
-        Logger::LogError("Invalid duty cycle %x", Channel1WavePatternDuty);
-        assert(false);
-    }
+//     // Wave Duty
+//     // 00: 12.5%
+//     // 01: 25%
+//     // 10: 50%
+//     // 11: 75%
+//     switch (Channel1WavePatternDuty)
+//     {
+//     case 0:
+//         m_Channel1SoundGenerator.SetDutyCycle(0.125);
+//         break;
+//     case 1:
+//         m_Channel1SoundGenerator.SetDutyCycle(0.25);
+//         break;
+//     case 2:
+//         m_Channel1SoundGenerator.SetDutyCycle(0.5);
+//         break;
+//     case 3:
+//         m_Channel1SoundGenerator.SetDutyCycle(0.75);
+//         break;
+//     default:
+//         Logger::LogError("Invalid duty cycle %x", Channel1WavePatternDuty);
+//         assert(false);
+//     }
 
-    m_Channel1RequiresUpdate = false;
+//     m_Channel1RequiresUpdate = false;
 
-    Logger::Log("CHANNEL 1 -- SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x",
-            Channel1SweepTime,
-            Channel1SweepDirection,
-            Channel1SweepShiftNumber,
-            Channel1WavePatternDuty,
-            Channel1SoundLength,
-            Channel1VolumeEnvelopeStart,
-            Channel1VolumeEnvelopeDirection,
-            Channel1VolumeEnvelopeSweepNumber,
-            Channel1Initial,
-            Channel1CounterConsecutive,
-            Channel1Frequency);
-}
+//     Logger::Log("CHANNEL 1 -- SWPTIME:0x%01x SWEDIR:0x%01x SWPNUM:0x%01x DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x",
+//             Channel1SweepTime,
+//             Channel1SweepDirection,
+//             Channel1SweepShiftNumber,
+//             Channel1WavePatternDuty,
+//             Channel1SoundLength,
+//             Channel1VolumeEnvelopeStart,
+//             Channel1VolumeEnvelopeDirection,
+//             Channel1VolumeEnvelopeSweepNumber,
+//             Channel1Initial,
+//             Channel1CounterConsecutive,
+//             Channel1Frequency);
+// }
 
-void APU::UpdateChannel2Generator()
-{
-    if (Channel2Initial)
-    {
-        m_Channel2SoundGenerator.RestartSound();
-    }
+// void APU::UpdateChannel2Generator()
+// {
+//     if (Channel2Initial)
+//     {
+//         m_Channel2SoundGenerator.RestartSound();
+//     }
 
-    // Counter/Consecutive modes
-    m_Channel2SoundGenerator.SetCounterModeEnabled(Channel2CounterConsecutive);
+//     // Counter/Consecutive modes
+//     m_Channel2SoundGenerator.SetCounterModeEnabled(Channel2CounterConsecutive);
 
-    // Sound Length = (64-t1)*(1/256) seconds
-    m_Channel2SoundGenerator.SetSoundLength((64.0 - (double)Channel2SoundLength) / 256.0);
+//     // Sound Length = (64-t1)*(1/256) seconds
+//     m_Channel2SoundGenerator.SetSoundLength((64.0 - (double)Channel2SoundLength) / 256.0);
 
-    // Envelope start volume. 4 bits of precision = 16 volume levels.
-    m_Channel2SoundGenerator.SetEnvelopeStartVolume((double)Channel2VolumeEnvelopeStart / 16.0);
+//     // Envelope start volume. 4 bits of precision = 16 volume levels.
+//     m_Channel2SoundGenerator.SetEnvelopeStartVolume((double)Channel2VolumeEnvelopeStart / 16.0);
 
-    // Length of an envelope step = n * (1/64)
-    m_Channel2SoundGenerator.SetEnvelopeStepLength((double)Channel2VolumeEnvelopeSweepNumber / 64.0);
+//     // Length of an envelope step = n * (1/64)
+//     m_Channel2SoundGenerator.SetEnvelopeStepLength((double)Channel2VolumeEnvelopeSweepNumber / 64.0);
 
-    // Envelope direction: 0 = Decrease, 1 = Increase
-    m_Channel2SoundGenerator.SetEnvelopeDirection(Channel2VolumeEnvelopeDirection ? UP : DOWN);
+//     // Envelope direction: 0 = Decrease, 1 = Increase
+//     m_Channel2SoundGenerator.SetEnvelopeDirection(Channel2VolumeEnvelopeDirection ? UP : DOWN);
 
-    // For x = the value in the frequency register, the actual frequency
-    // in Hz is 131072/(2048-x) Hz
-    m_Channel2SoundGenerator.SetFrequency(131072.0 / (double)(2048 - Channel2Frequency));
+//     // For x = the value in the frequency register, the actual frequency
+//     // in Hz is 131072/(2048-x) Hz
+//     m_Channel2SoundGenerator.SetFrequency(131072.0 / (double)(2048 - Channel2Frequency));
 
-    // Wave Duty
-    // 00: 12.5%
-    // 01: 25%
-    // 10: 50%
-    // 11: 75%
-    switch (Channel2WavePatternDuty)
-    {
-    case 0:
-        m_Channel2SoundGenerator.SetDutyCycle(0.125);
-        break;
-    case 1:
-        m_Channel2SoundGenerator.SetDutyCycle(0.25);
-        break;
-    case 2:
-        m_Channel2SoundGenerator.SetDutyCycle(0.5);
-        break;
-    case 3:
-        m_Channel2SoundGenerator.SetDutyCycle(0.75);
-        break;
-    default:
-        Logger::LogError("Invalid duty cycle %x", Channel2WavePatternDuty);
-        assert(false);
-    }
+//     // Wave Duty
+//     // 00: 12.5%
+//     // 01: 25%
+//     // 10: 50%
+//     // 11: 75%
+//     switch (Channel2WavePatternDuty)
+//     {
+//     case 0:
+//         m_Channel2SoundGenerator.SetDutyCycle(0.125);
+//         break;
+//     case 1:
+//         m_Channel2SoundGenerator.SetDutyCycle(0.25);
+//         break;
+//     case 2:
+//         m_Channel2SoundGenerator.SetDutyCycle(0.5);
+//         break;
+//     case 3:
+//         m_Channel2SoundGenerator.SetDutyCycle(0.75);
+//         break;
+//     default:
+//         Logger::LogError("Invalid duty cycle %x", Channel2WavePatternDuty);
+//         assert(false);
+//     }
 
-    m_Channel2RequiresUpdate = false;
+//     m_Channel2RequiresUpdate = false;
 
-    Logger::Log("CHANNEL 2 -- DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x",
-        Channel2WavePatternDuty,
-        Channel2SoundLength,
-        Channel2VolumeEnvelopeStart,
-        Channel2VolumeEnvelopeDirection,
-        Channel2VolumeEnvelopeSweepNumber,
-        Channel2Initial,
-        Channel2CounterConsecutive,
-        Channel2Frequency);
-}
+//     Logger::Log("CHANNEL 2 -- DUTY:0x%01x LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x",
+//         Channel2WavePatternDuty,
+//         Channel2SoundLength,
+//         Channel2VolumeEnvelopeStart,
+//         Channel2VolumeEnvelopeDirection,
+//         Channel2VolumeEnvelopeSweepNumber,
+//         Channel2Initial,
+//         Channel2CounterConsecutive,
+//         Channel2Frequency);
+// }
 
 void APU::UpdateChannel3Generator()
 {
@@ -589,27 +606,34 @@ bool APU::WriteByte(const ushort& address, const byte val)
     if ((address >= 0xFF30) && (address <= 0xFF3F))
     {
         m_WavePatternRAM[address - 0xFF30] = val;
+
+        // TODO: remove
         m_Channel3RequiresUpdate = true;
+
         return true;
     }
 
     if ((address >= 0xFF10) && (address <= 0xFF14))
     {
+        // TODO: remove
         m_Channel1RequiresUpdate = true;
     }
 
     if ((address >= 0xFF16) && (address <= 0xFF19))
     {
+        // TODO: remove
         m_Channel2RequiresUpdate = true;
     }
 
     if ((address >= 0xFF1A) && (address <= 0xFF1E))
     {
+        // TODO: remove
         m_Channel3RequiresUpdate = true;
     }
 
     if ((address >= 0xFF20) && (address <= 0xFF23))
     {
+        // TODO: remove
         m_Channel4RequiresUpdate = true;
     }
 
@@ -617,30 +641,43 @@ bool APU::WriteByte(const ushort& address, const byte val)
     {
     case Channel1Sweep:
         m_Channel1Sweep = val;
+        m_Channel1SoundGenerator.TriggerSweepRegisterUpdate();
         return true;
     case Channel1LengthWavePatternDuty:
         m_Channel1SoundLength = val;
+        m_Channel1SoundGenerator.TriggerSoundLengthRegisterUpdate();
         return true;
     case Channel1VolumeEnvelope:
         m_Channel1VolumeEnvelope = val;
+        m_Channel1SoundGenerator.TriggerVolumeEnvelopeRegisterUpdate();
         return true;
     case Channel1FrequencyLo:
         m_Channel1FrequencyLo = val;
+        m_Channel1SoundGenerator.TriggerFrequencyLoRegisterUpdate();
         return true;
     case Channel1FrequencyHi:
         m_Channel1FrequencyHi = val;
+        m_Channel1SoundGenerator.TriggerFrequencyHiRegisterUpdate();
+
+        // TODO: remove
+        m_Channel1Reset = Channel1Initial;
+
         return true;
     case Channel2LengthWavePatternDuty:
         m_Channel2SoundLength = val;
+        m_Channel2SoundGenerator.TriggerSoundLengthRegisterUpdate();
         return true;
     case Channel2VolumeEnvelope:
         m_Channel2VolumeEnvelope = val;
+        m_Channel2SoundGenerator.TriggerVolumeEnvelopeRegisterUpdate();
         return true;
     case Channel2FrequnecyLo:
         m_Channel2FrequencyLo = val;
+        m_Channel2SoundGenerator.TriggerFrequencyLoRegisterUpdate();
         return true;
     case Channel2FrequencyHi:
         m_Channel2FrequencyHi = val;
+        m_Channel2SoundGenerator.TriggerFrequencyHiRegisterUpdate();
         return true;
     case Channel3OnOff:
         m_Channel3SoundOnOff = val;
@@ -714,37 +751,184 @@ void APU::LoadAudioDevice(SDL_AudioCallback callback)
     m_Initialized = true;
 }
 
-APU::AdditiveSquareWaveGenerator::AdditiveSquareWaveGenerator() : 
-    m_FrequencyHz(1.0),
-    m_DutyCycle(50.0),
-    m_CounterModeEnabled(false),
-    m_SoundLengthSeconds(0.0),
-    m_SweepModeEnabled(false),
-    m_SweepDirection(1.0),
-    m_SweepShiftFrequencyExponent(0),
-    m_EnvelopeModeEnabled(false),
-    m_EnvelopeDirection(1.0),
-    m_EnvelopeStartVolume(0.0),
-    m_EnvelopeStepLengthSeconds(0.0),
-    m_HarmonicsCount(0),
-    m_Phase(0.0),
-    m_SoundLengthTimerSeconds(0.0),
-    m_ChannelIsPlaying(false)
+APU::RegisterAwareSquareWaveGenerator::RegisterAwareSquareWaveGenerator(
+    const APUChannel channel,
+    const byte *sweepRegister,
+    const byte *soundLengthRegister,
+    const byte *volumeEnvelopeRegister,
+    const byte *frequencyLoRegister,
+    const byte *frequencyHiRegister,
+    const byte *soundOnOffRegister)
+    : m_Channel(channel),
+      m_SweepRegister(sweepRegister),
+      m_SoundLengthRegister(soundLengthRegister),
+      m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
+      m_FrequencyLoRegister(frequencyLoRegister),
+      m_FrequencyHiRegister(frequencyHiRegister),
+      m_SoundOnOffRegister(soundOnOffRegister),
+      m_FrequencyHz(1.0),
+      m_DutyCycle(50.0),
+      m_CounterModeEnabled(false),
+      m_SoundLengthSeconds(0.0),
+      m_SweepModeEnabled(false),
+      m_SweepDirection(1.0),
+      m_SweepShiftFrequencyExponent(0),
+      m_EnvelopeModeEnabled(false),
+      m_EnvelopeDirection(1.0),
+      m_EnvelopeStartVolume(0.0),
+      m_EnvelopeStepLengthSeconds(0.0),
+      m_HarmonicsCount(0),
+      m_Phase(0.0),
+      m_SoundLengthTimerSeconds(0.0),
+      m_ChannelIsPlaying(false)
 {
     memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
 }
 
-void APU::AdditiveSquareWaveGenerator::DebugLog()
+void APU::RegisterAwareSquareWaveGenerator::TriggerSweepRegisterUpdate()
 {
-    Logger::Log("Freq %f Duty %f Phase %f TimeRemain %f EnvStVol %f",
-                m_FrequencyHz,
-                m_DutyCycle,
-                m_Phase,
-                (m_SoundLengthSeconds - m_SoundLengthTimerSeconds),
-                m_EnvelopeStartVolume);
+    byte sweep_register = *m_SweepRegister;
+    
+    // Bit 2-0 Sweep shift number
+    // Shift value to calculate frequency step amount
+    m_SweepShiftFrequencyExponent = sweep_register & 7;
+
+    // Bit 3 - Sweep Direction - 0 = Up, 1 = Down
+    m_SweepDirection = ISBITSET(sweep_register, 3) ? -1.0 : 1.0;
+
+    // Bit 6-4 - Sweep Time - When sweep time is zero, disable sweep mode.
+    // Length of a sweep step = n * (1/128)
+    byte sweep_time = (sweep_register >> 4) & 7;
+    m_SweepStepLengthSeconds = (double)sweep_time / 128.0;
+    m_SweepModeEnabled = sweep_time != 0;
 }
 
-void APU::AdditiveSquareWaveGenerator::RegenerateCoefficients()
+void APU::RegisterAwareSquareWaveGenerator::TriggerSoundLengthRegisterUpdate()
+{
+    byte sound_length_register = *m_SoundLengthRegister;
+
+    // Bit 5-0 - Sound Length
+    // Sound Length = (64-n)*(1/256) seconds
+    byte sound_length = sound_length_register & 0x3F;
+    m_SoundLengthSeconds = (64.0 - (double)sound_length) / 256.0;
+
+    // Bit 7-6 - Wave Pattern Duty
+    // 00: 12.5%
+    // 01: 25%
+    // 10: 50%
+    // 11: 75%
+    byte wave_pattern_duty = (sound_length_register >> 6) & 3;
+    switch (wave_pattern_duty)
+    {
+    case 0:
+        m_DutyCycle = 0.125;
+        break;
+    case 1:
+        m_DutyCycle = 0.25;
+        break;
+    case 2:
+        m_DutyCycle = 0.5;
+        break;
+    case 3:
+        m_DutyCycle = 0.75;
+        break;
+    default:
+        Logger::LogError("Invalid duty cycle %x", wave_pattern_duty);
+        assert(false);
+    }
+
+    // Duty cycle update requires update of coefficients
+    RegenerateCoefficients();
+}
+
+void APU::RegisterAwareSquareWaveGenerator::TriggerVolumeEnvelopeRegisterUpdate()
+{
+    byte volume_envelope_register = *m_VolumeEnvelopeRegister;
+
+    // Bit 2-0 - Envelope step length number - When 0, disable envelope mode
+    // Length of an envelope step = n * (1/64)
+    byte envelope_step_length_number = volume_envelope_register & 7;
+    m_EnvelopeStepLengthSeconds = (double)envelope_step_length_number / 64.0;
+    m_EnvelopeModeEnabled = envelope_step_length_number != 0;
+
+    // Bit 3 - Envelope direction - 0 = Decrease, 1 = Increase
+    m_EnvelopeDirection = ISBITSET(volume_envelope_register, 3) ? 1.0 : -1.0;
+
+    // Bit 7-4 - Initial volume envelope - When 0, sound is muted
+    // Envelope start volume. 4 bits of precision = 16 volume levels.
+    byte initial_envelope_volume = (volume_envelope_register >> 4) & 0xF;
+    m_EnvelopeStartVolume = (double)initial_envelope_volume / 16.0;
+}
+
+void APU::RegisterAwareSquareWaveGenerator::TriggerFrequencyLoRegisterUpdate()
+{
+    // Bit 7-0 - Low 8 bits of the frequency data
+    UpdateFrequency();
+}
+
+void APU::RegisterAwareSquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
+{
+    // Bit 2-0 - High 3 bits of the frequency data
+    UpdateFrequency();
+
+    byte frequency_hi_register = *m_FrequencyHiRegister;
+
+    // Bit 6 - Counter/consecutive selection
+    m_CounterModeEnabled = ISBITSET(frequency_hi_register, 6);
+
+    // Bit 7 - Initial
+    if (ISBITSET(frequency_hi_register, 7))
+    {
+        RestartSound();
+    }
+}
+
+void APU::RegisterAwareSquareWaveGenerator::RestartSound()
+{
+    m_ChannelIsPlaying = true;
+
+    // Reset the sound length timer
+    m_SoundLengthTimerSeconds = 0.0;
+
+    // Set sound on/off flag for this register
+    byte sound_on_off_register = *m_SoundOnOffRegister;
+    switch(m_Channel) {
+        case CHANNEL_1:
+            sound_on_off_register |= 0b0001;
+            break;
+        case CHANNEL_2:
+            sound_on_off_register |= 0b0010;
+            break;
+        case CHANNEL_3:
+            sound_on_off_register |= 0b0100;
+            break;
+        case CHANNEL_4:
+            sound_on_off_register |= 0b1000;
+    }
+}
+
+void APU::RegisterAwareSquareWaveGenerator::UpdateFrequency()
+{
+    byte frequency_lo_register = *m_FrequencyLoRegister;
+    byte frequency_hi_register = *m_FrequencyHiRegister;
+
+    // Frequency data (11 bits total)
+    // Low 8 bits in Frequency Lo register
+    // High 3 bits in Frequency Hi register bits 2-0
+    // For x = the value in the frequency registers, the actual frequency
+    // in Hz is 131072/(2048-x) Hz
+    m_FrequencyHz = (131072.0 / (double)(2048 - (((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF)));
+
+    if (m_FrequencyHz <= 0)
+    {
+        Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
+        assert(false);
+    }
+
+    RegenerateCoefficients();
+}
+
+void APU::RegisterAwareSquareWaveGenerator::RegenerateCoefficients()
 {
     // Keep the upper harmonic below the Nyquist frequency
     m_HarmonicsCount = AudioSampleRate / (m_FrequencyHz * 2);
@@ -761,103 +945,34 @@ void APU::AdditiveSquareWaveGenerator::RegenerateCoefficients()
     }
 }
 
-void APU::AdditiveSquareWaveGenerator::SetFrequency(double frequency_hz)
+float APU::RegisterAwareSquareWaveGenerator::NextSample()
 {
-    m_FrequencyHz = frequency_hz;
-
-    if (m_FrequencyHz <= 0)
-    {
-        Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
-        assert(false);
-    }
-
-    RegenerateCoefficients();
-}
-
-void APU::AdditiveSquareWaveGenerator::SetDutyCycle(double duty_cycle)
-{
-    m_DutyCycle = duty_cycle;
-
-    if (m_DutyCycle < 0.0 || m_DutyCycle > 1.0)
-    {
-        Logger::LogError("Invalid Duty Cycle %f", m_DutyCycle);
-        assert(false);
-    }
-
-    RegenerateCoefficients();
-}
-
-void APU::AdditiveSquareWaveGenerator::SetCounterModeEnabled(bool is_enabled)
-{
-    m_CounterModeEnabled = is_enabled;
-}
-
-void APU::AdditiveSquareWaveGenerator::SetSoundLength(double sound_length_seconds)
-{
-    m_SoundLengthSeconds = sound_length_seconds;
-}
-
-void APU::AdditiveSquareWaveGenerator::SetSweepDirection(EnvelopeDirection direction)
-{
-    m_SweepDirection = direction == UP ? 1.0 : -1.0;
-}
-
-void APU::AdditiveSquareWaveGenerator::SetSweepShiftFrequencyExponent(uint exponent)
-{
-    m_SweepShiftFrequencyExponent = exponent;
-}
-
-void APU::AdditiveSquareWaveGenerator::SetSweepStepLength(double sweep_step_seconds)
-{
-    m_SweepStepLengthSeconds = sweep_step_seconds;
-    m_SweepModeEnabled = !(sweep_step_seconds == 0.0);
-}
-
-void APU::AdditiveSquareWaveGenerator::SetEnvelopeStartVolume(double envelope_start_volume)
-{
-    m_EnvelopeStartVolume = envelope_start_volume;
-}
-
-void APU::AdditiveSquareWaveGenerator::SetEnvelopeDirection(EnvelopeDirection direction)
-{
-    m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
-}
-
-void APU::AdditiveSquareWaveGenerator::SetEnvelopeStepLength(double envelope_step_seconds)
-{
-    m_EnvelopeStepLengthSeconds = envelope_step_seconds;
-    m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
-}
-
-void APU::AdditiveSquareWaveGenerator::SetOnChannelOn(std::function<void()> callback)
-{
-    m_OnChannelOn = callback;
-}
-
-void APU::AdditiveSquareWaveGenerator::SetOnChannelOff(std::function<void()> callback)
-{
-    m_OnChannelOff = callback;
-}
-
-void APU::AdditiveSquareWaveGenerator::RestartSound()
-{
-    m_SoundLengthTimerSeconds = 0.0;
-    m_ChannelIsPlaying = true;
-    m_OnChannelOn();
-}
-
-float APU::AdditiveSquareWaveGenerator::NextSample()
-{
-    float sample = 0.0;
     bool is_sound_playing = !m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds;
     bool is_sound_enabled = m_EnvelopeStartVolume != 0.0 && is_sound_playing;
 
     if (!is_sound_playing && m_ChannelIsPlaying)
     {
-        // sound has stopped playing, emit a channel off event
+        // sound has stopped playing
         m_ChannelIsPlaying = false;
-        m_OnChannelOff();
+
+        // Reset sound on/off flag for this register
+        byte sound_on_off_register = *m_SoundOnOffRegister;
+        switch(m_Channel) {
+            case CHANNEL_1:
+                sound_on_off_register &= ~0b0001;
+                break;
+            case CHANNEL_2:
+                sound_on_off_register &= ~0b0010;
+                break;
+            case CHANNEL_3:
+                sound_on_off_register &= ~0b0100;
+                break;
+            case CHANNEL_4:
+                sound_on_off_register &= ~0b1000;
+        }
     }
+
+    float sample = 0.0;
 
     if (is_sound_enabled)
     {
@@ -882,12 +997,16 @@ float APU::AdditiveSquareWaveGenerator::NextSample()
     if (m_SweepModeEnabled)
     {
         int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
+
         for (int i = 0; i < step_number; i++)
         {
-            // TODO Optimize
-            frequency += m_SweepDirection * (frequency / (1 << m_SweepShiftFrequencyExponent));
+            // TODO
         }
     }
+
+    // TODO - Remove
+    assert(frequency > 0.0);
+    assert(frequency < 999999999999999.0);
 
     m_Phase += (TwoPi * frequency) / (double)AudioSampleRate;
     while (m_Phase >= TwoPi)
@@ -905,6 +1024,208 @@ float APU::AdditiveSquareWaveGenerator::NextSample()
 
     return sample;
 }
+
+// APU::AdditiveSquareWaveGenerator::AdditiveSquareWaveGenerator() : 
+//     m_FrequencyHz(1.0),
+//     m_DutyCycle(50.0),
+//     m_CounterModeEnabled(false),
+//     m_SoundLengthSeconds(0.0),
+//     m_SweepModeEnabled(false),
+//     m_SweepDirection(1.0),
+//     m_SweepShiftFrequencyExponent(0),
+//     m_EnvelopeModeEnabled(false),
+//     m_EnvelopeDirection(1.0),
+//     m_EnvelopeStartVolume(0.0),
+//     m_EnvelopeStepLengthSeconds(0.0),
+//     m_HarmonicsCount(0),
+//     m_Phase(0.0),
+//     m_SoundLengthTimerSeconds(0.0),
+//     m_ChannelIsPlaying(false)
+// {
+//     memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
+// }
+
+// void APU::AdditiveSquareWaveGenerator::DebugLog()
+// {
+//     Logger::Log("Freq %f Duty %f Phase %f TimeRemain %f EnvStVol %f",
+//                 m_FrequencyHz,
+//                 m_DutyCycle,
+//                 m_Phase,
+//                 (m_SoundLengthSeconds - m_SoundLengthTimerSeconds),
+//                 m_EnvelopeStartVolume);
+// }
+
+// void APU::AdditiveSquareWaveGenerator::RegenerateCoefficients()
+// {
+//     // Keep the upper harmonic below the Nyquist frequency
+//     m_HarmonicsCount = AudioSampleRate / (m_FrequencyHz * 2);
+//     if (m_HarmonicsCount > MaxHarmonicsCount)
+//     {
+//         m_HarmonicsCount = MaxHarmonicsCount;
+//     }
+
+//     // Generate the coefficients for each harmonic
+//     m_Coefficients[0] = m_DutyCycle - 0.5;
+//     for (int i = 1; i < m_HarmonicsCount; i++)
+//     {
+//         m_Coefficients[i] = (sin(i * m_DutyCycle * Pi) * 2) / (i * Pi);
+//     }
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetFrequency(double frequency_hz)
+// {
+//     m_FrequencyHz = frequency_hz;
+
+//     if (m_FrequencyHz <= 0)
+//     {
+//         Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
+//         assert(false);
+//     }
+
+//     RegenerateCoefficients();
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetDutyCycle(double duty_cycle)
+// {
+//     m_DutyCycle = duty_cycle;
+
+//     if (m_DutyCycle < 0.0 || m_DutyCycle > 1.0)
+//     {
+//         Logger::LogError("Invalid Duty Cycle %f", m_DutyCycle);
+//         assert(false);
+//     }
+
+//     RegenerateCoefficients();
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetCounterModeEnabled(bool is_enabled)
+// {
+//     m_CounterModeEnabled = is_enabled;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetSoundLength(double sound_length_seconds)
+// {
+//     m_SoundLengthSeconds = sound_length_seconds;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetSweepDirection(EnvelopeDirection direction)
+// {
+//     m_SweepDirection = direction == UP ? 1.0 : -1.0;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetSweepShiftFrequencyExponent(uint exponent)
+// {
+//     m_SweepShiftFrequencyExponent = exponent;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetSweepStepLength(double sweep_step_seconds)
+// {
+//     m_SweepStepLengthSeconds = sweep_step_seconds;
+//     m_SweepModeEnabled = !(sweep_step_seconds == 0.0);
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetEnvelopeStartVolume(double envelope_start_volume)
+// {
+//     m_EnvelopeStartVolume = envelope_start_volume;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetEnvelopeDirection(EnvelopeDirection direction)
+// {
+//     m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetEnvelopeStepLength(double envelope_step_seconds)
+// {
+//     m_EnvelopeStepLengthSeconds = envelope_step_seconds;
+//     m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetOnChannelOn(std::function<void()> callback)
+// {
+//     m_OnChannelOn = callback;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::SetOnChannelOff(std::function<void()> callback)
+// {
+//     m_OnChannelOff = callback;
+// }
+
+// void APU::AdditiveSquareWaveGenerator::RestartSound()
+// {
+//     m_SoundLengthTimerSeconds = 0.0;
+//     m_ChannelIsPlaying = true;
+//     m_OnChannelOn();
+// }
+
+// float APU::AdditiveSquareWaveGenerator::NextSample()
+// {
+//     float sample = 0.0;
+//     bool is_sound_playing = !m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds;
+//     bool is_sound_enabled = m_EnvelopeStartVolume != 0.0 && is_sound_playing;
+
+//     if (!is_sound_playing && m_ChannelIsPlaying)
+//     {
+//         // sound has stopped playing, emit a channel off event
+//         m_ChannelIsPlaying = false;
+//         m_OnChannelOff();
+//     }
+
+//     if (is_sound_enabled)
+//     {
+//         for (int j = 0; j < m_HarmonicsCount; j++)
+//         {
+//             sample += m_Coefficients[j] * cos(j * m_Phase);
+//         }
+
+//         if (m_EnvelopeModeEnabled)
+//         {
+//             int step_number = m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds;
+//             double volume = m_EnvelopeStartVolume + (m_EnvelopeDirection * ((double)step_number / 16.0));
+//             if (volume < 0.0)
+//                 volume = 0.0;
+//             if (volume > 1.0)
+//                 volume = 1.0;
+//             sample *= volume;
+//         }
+//     }
+
+//     double frequency = m_FrequencyHz;
+//     if (m_SweepModeEnabled)
+//     {
+//         int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
+//         double original_frequency = frequency;
+
+//         for (int i = 0; i < step_number; i++)
+//         {
+//             // TODO Optimize
+//             //frequency += m_SweepDirection * (frequency / (1 << m_SweepShiftFrequencyExponent));
+//             // frequency += m_SweepDirection * (frequency / m_SweepShiftFrequencyExponent);
+//             // frequency += m_SweepDirection * (frequency * 0.25);
+//             //frequency *= (1.0 - (1.0 / 8.0));
+//             //frequency -= m_SweepDirection * (1.0 / (frequency / (double)(1 << m_SweepShiftFrequencyExponent)));
+//             // frequency += m_SweepDirection
+//         }
+//     }
+
+//     assert(frequency > 0.0);
+//     assert(frequency < 999999999999999.0);
+
+//     m_Phase += (TwoPi * frequency) / (double)AudioSampleRate;
+//     while (m_Phase >= TwoPi)
+//     {
+//         m_Phase -= TwoPi;
+//     }
+
+//     if (m_Phase < 0 || m_Phase >= TwoPi)
+//     {
+//         Logger::LogError("Invalid phase %f", m_Phase);
+//         assert(false);
+//     }
+
+//     m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
+
+//     return sample;
+// }
 
 APU::NoiseGenerator::NoiseGenerator() : 
     m_FrequencyHz(1.0),

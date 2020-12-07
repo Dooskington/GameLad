@@ -33,6 +33,14 @@ private:
         DOWN
     } EnvelopeDirection;
 
+    typedef enum
+    {
+        CHANNEL_1,
+        CHANNEL_2,
+        CHANNEL_3,
+        CHANNEL_4
+    } APUChannel;
+
     // Ring buffer for streaming audio data
     class Buffer
     {
@@ -58,32 +66,86 @@ private:
         void AdvanceWriteIndex();
     };
 
-    class AdditiveSquareWaveGenerator
+    // class AdditiveSquareWaveGenerator
+    // {
+    // public:
+    //     AdditiveSquareWaveGenerator();
+    //     ~AdditiveSquareWaveGenerator() = default;
+
+    //     void SetFrequency(double frequency_hz);
+    //     void SetDutyCycle(double duty_cycle);
+    //     void SetCounterModeEnabled(bool is_enabled);
+    //     void SetSoundLength(double sound_length_seconds);
+    //     void SetSweepDirection(EnvelopeDirection direction);
+    //     void SetSweepShiftFrequencyExponent(uint exponent);
+    //     void SetSweepStepLength(double sweep_step_seconds);
+    //     void SetEnvelopeStartVolume(double envelope_start_volume);
+    //     void SetEnvelopeDirection(EnvelopeDirection direction);
+    //     void SetEnvelopeStepLength(double envelope_step_seconds);
+    //     void SetOnChannelOn(std::function<void()> callback);
+    //     void SetOnChannelOff(std::function<void()> callback);
+
+    //     void RestartSound();
+
+    //     float NextSample();
+
+    //     void DebugLog();
+
+    // private:
+    //     double m_FrequencyHz;
+    //     double m_DutyCycle;
+    //     bool m_CounterModeEnabled;
+    //     double m_SoundLengthSeconds;
+    //     bool m_SweepModeEnabled;
+    //     double m_SweepDirection;
+    //     int m_SweepShiftFrequencyExponent;
+    //     double m_SweepStepLengthSeconds;
+    //     bool m_EnvelopeModeEnabled;
+    //     double m_EnvelopeDirection;
+    //     double m_EnvelopeStartVolume;
+    //     double m_EnvelopeStepLengthSeconds;
+    //     int m_HarmonicsCount;
+    //     double m_Coefficients[MaxHarmonicsCount];
+    //     double m_Phase;
+    //     double m_SoundLengthTimerSeconds;
+    //     bool m_ChannelIsPlaying;
+    //     std::function<void()> m_OnChannelOn;
+    //     std::function<void()> m_OnChannelOff;
+
+    //     void RegenerateCoefficients();
+    // };
+
+    class RegisterAwareSquareWaveGenerator
     {
     public:
-        AdditiveSquareWaveGenerator();
-        ~AdditiveSquareWaveGenerator() = default;
-
-        void SetFrequency(double frequency_hz);
-        void SetDutyCycle(double duty_cycle);
-        void SetCounterModeEnabled(bool is_enabled);
-        void SetSoundLength(double sound_length_seconds);
-        void SetSweepDirection(EnvelopeDirection direction);
-        void SetSweepShiftFrequencyExponent(uint exponent);
-        void SetSweepStepLength(double sweep_step_seconds);
-        void SetEnvelopeStartVolume(double envelope_start_volume);
-        void SetEnvelopeDirection(EnvelopeDirection direction);
-        void SetEnvelopeStepLength(double envelope_step_seconds);
-        void SetOnChannelOn(std::function<void()> callback);
-        void SetOnChannelOff(std::function<void()> callback);
-
-        void RestartSound();
+        RegisterAwareSquareWaveGenerator(
+            const APUChannel channel,
+            const byte* sweepRegister,
+            const byte* soundLengthRegister,
+            const byte* volumeEnvelopeRegister,
+            const byte* frequencyLoRegister,
+            const byte* frequencyHiRegister,
+            const byte* soundOnOffRegister
+        );
+        ~RegisterAwareSquareWaveGenerator() = default;
 
         float NextSample();
-
-        void DebugLog();
+        void Reset();
+        void TriggerSweepRegisterUpdate();
+        void TriggerSoundLengthRegisterUpdate();
+        void TriggerVolumeEnvelopeRegisterUpdate();
+        void TriggerFrequencyLoRegisterUpdate();
+        void TriggerFrequencyHiRegisterUpdate();
 
     private:
+        const APUChannel m_Channel;
+        const byte* m_SweepRegister;
+        const byte* m_SoundLengthRegister;
+        const byte* m_VolumeEnvelopeRegister;
+        const byte* m_FrequencyLoRegister;
+        const byte* m_FrequencyHiRegister;
+        const byte* m_SoundOnOffRegister;
+
         double m_FrequencyHz;
         double m_DutyCycle;
         bool m_CounterModeEnabled;
@@ -101,10 +163,10 @@ private:
         double m_Phase;
         double m_SoundLengthTimerSeconds;
         bool m_ChannelIsPlaying;
-        std::function<void()> m_OnChannelOn;
-        std::function<void()> m_OnChannelOff;
 
         void RegenerateCoefficients();
+        void UpdateFrequency();
+        void RestartSound();
     };
 
     class NoiseGenerator
@@ -200,8 +262,8 @@ private:
     byte m_SoundOnOff;
 
     // Synthesis
-    AdditiveSquareWaveGenerator m_Channel1SoundGenerator;
-    AdditiveSquareWaveGenerator m_Channel2SoundGenerator;
+    RegisterAwareSquareWaveGenerator m_Channel1SoundGenerator;
+    RegisterAwareSquareWaveGenerator m_Channel2SoundGenerator;
     WaveformGenerator m_Channel3SoundGenerator;
     NoiseGenerator m_Channel4SoundGenerator;
 
@@ -210,6 +272,8 @@ private:
     bool m_Channel2RequiresUpdate;
     bool m_Channel3RequiresUpdate;
     bool m_Channel4RequiresUpdate;
+
+    bool m_Channel1Reset;
 
     // Output
     bool m_Initialized;
