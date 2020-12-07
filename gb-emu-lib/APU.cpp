@@ -801,6 +801,8 @@ void APU::RegisterAwareSquareWaveGenerator::TriggerSweepRegisterUpdate()
     byte sweep_time = (sweep_register >> 4) & 7;
     m_SweepStepLengthSeconds = (double)sweep_time / 128.0;
     m_SweepModeEnabled = sweep_time != 0;
+
+    // TODO: I believe the sweep function has it's own timer separate from the sound length timer - add that.
 }
 
 void APU::RegisterAwareSquareWaveGenerator::TriggerSoundLengthRegisterUpdate()
@@ -996,12 +998,27 @@ float APU::RegisterAwareSquareWaveGenerator::NextSample()
     double frequency = m_FrequencyHz;
     if (m_SweepModeEnabled)
     {
+        byte frequency_lo_register = *m_FrequencyLoRegister;
+        byte frequency_hi_register = *m_FrequencyHiRegister;
+        uint frequency_shadow = (((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF);
         int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
 
+        // uint new_frequency = frequency_shadow;
         for (int i = 0; i < step_number; i++)
         {
-            // TODO
+            frequency_shadow -= (frequency_shadow >> m_SweepShiftFrequencyExponent);
         }
+
+        // Recalculate the frequency - TODO: figure out how to de-duplicate this
+        m_FrequencyHz = (131072.0 / (double)(2048 - frequency_shadow));
+
+        if (m_FrequencyHz <= 0)
+        {
+            Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
+            assert(false);
+        }
+
+        RegenerateCoefficients();
     }
 
     // TODO - Remove
