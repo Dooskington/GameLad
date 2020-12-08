@@ -982,18 +982,19 @@ float APU::RegisterAwareSquareWaveGenerator::NextSample()
         {
             sample += m_Coefficients[j] * cos(j * m_Phase);
         }
-
-        if (m_EnvelopeModeEnabled)
-        {
-            int step_number = m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds;
-            double volume = m_EnvelopeStartVolume + (m_EnvelopeDirection * ((double)step_number / 16.0));
-            if (volume < 0.0)
-                volume = 0.0;
-            if (volume > 1.0)
-                volume = 1.0;
-            sample *= volume;
-        }
     }
+
+    double volume = m_EnvelopeStartVolume;
+    if (m_EnvelopeModeEnabled)
+    {
+        int step_number = (int)(m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds);
+        volume += m_EnvelopeDirection * ((double)step_number / 16.0);
+        if (volume < 0.0)
+            volume = 0.0;
+        if (volume > 1.0)
+            volume = 1.0;
+    }
+    sample *= volume;
 
     double frequency = m_FrequencyHz;
     if (m_SweepModeEnabled)
