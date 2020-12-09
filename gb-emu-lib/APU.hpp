@@ -66,55 +66,6 @@ private:
         void AdvanceWriteIndex();
     };
 
-    // class AdditiveSquareWaveGenerator
-    // {
-    // public:
-    //     AdditiveSquareWaveGenerator();
-    //     ~AdditiveSquareWaveGenerator() = default;
-
-    //     void SetFrequency(double frequency_hz);
-    //     void SetDutyCycle(double duty_cycle);
-    //     void SetCounterModeEnabled(bool is_enabled);
-    //     void SetSoundLength(double sound_length_seconds);
-    //     void SetSweepDirection(EnvelopeDirection direction);
-    //     void SetSweepShiftFrequencyExponent(uint exponent);
-    //     void SetSweepStepLength(double sweep_step_seconds);
-    //     void SetEnvelopeStartVolume(double envelope_start_volume);
-    //     void SetEnvelopeDirection(EnvelopeDirection direction);
-    //     void SetEnvelopeStepLength(double envelope_step_seconds);
-    //     void SetOnChannelOn(std::function<void()> callback);
-    //     void SetOnChannelOff(std::function<void()> callback);
-
-    //     void RestartSound();
-
-    //     float NextSample();
-
-    //     void DebugLog();
-
-    // private:
-    //     double m_FrequencyHz;
-    //     double m_DutyCycle;
-    //     bool m_CounterModeEnabled;
-    //     double m_SoundLengthSeconds;
-    //     bool m_SweepModeEnabled;
-    //     double m_SweepDirection;
-    //     int m_SweepShiftFrequencyExponent;
-    //     double m_SweepStepLengthSeconds;
-    //     bool m_EnvelopeModeEnabled;
-    //     double m_EnvelopeDirection;
-    //     double m_EnvelopeStartVolume;
-    //     double m_EnvelopeStepLengthSeconds;
-    //     int m_HarmonicsCount;
-    //     double m_Coefficients[MaxHarmonicsCount];
-    //     double m_Phase;
-    //     double m_SoundLengthTimerSeconds;
-    //     bool m_ChannelIsPlaying;
-    //     std::function<void()> m_OnChannelOn;
-    //     std::function<void()> m_OnChannelOff;
-
-    //     void RegenerateCoefficients();
-    // };
-
     class RegisterAwareSquareWaveGenerator
     {
     public:
