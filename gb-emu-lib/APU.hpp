@@ -55,10 +55,10 @@ private:
         void AdvanceWriteIndex();
     };
 
-    class RegisterAwareSquareWaveGenerator
+    class SquareWaveGenerator
     {
     public:
-        RegisterAwareSquareWaveGenerator(
+        SquareWaveGenerator(
             const APUChannel channel,
             const byte* sweepRegister,
             const byte* soundLengthRegister,
@@ -67,7 +67,7 @@ private:
             const byte* frequencyHiRegister,
             const byte* soundOnOffRegister
         );
-        ~RegisterAwareSquareWaveGenerator() = default;
+        ~SquareWaveGenerator() = default;
 
         float NextSample();
         void Reset();
@@ -109,10 +109,10 @@ private:
         void RestartSound();
     };
 
-    class RegisterAwareNoiseGenerator
+    class NoiseGenerator
     {
     public:
-        RegisterAwareNoiseGenerator(
+        NoiseGenerator(
             const APUChannel channel,
             const byte* soundLengthRegister,
             const byte* volumeEnvelopeRegister,
@@ -120,7 +120,7 @@ private:
             const byte* counterRegister,
             const byte* soundOnOffRegister
         );
-        ~RegisterAwareNoiseGenerator() = default;
+        ~NoiseGenerator() = default;
 
         float NextSample();
         void Reset();
@@ -151,10 +151,10 @@ private:
         void RestartSound();
     };
 
-    class RegisterAwareWaveformGenerator
+    class WaveformGenerator
     {
     public:
-        RegisterAwareWaveformGenerator(
+        WaveformGenerator(
             const APUChannel channel,
             const byte* channelSoundOnOffRegister,
             const byte* soundLengthRegister,
@@ -164,7 +164,7 @@ private:
             const byte* waveBuffer,
             const byte* soundOnOffRegister
         );
-        ~RegisterAwareWaveformGenerator() = default;
+        ~WaveformGenerator() = default;
 
         float NextSample();
         void Reset();
@@ -226,10 +226,10 @@ private:
     byte m_SoundOnOff;
 
     // Synthesis
-    RegisterAwareSquareWaveGenerator m_Channel1SoundGenerator;
-    RegisterAwareSquareWaveGenerator m_Channel2SoundGenerator;
-    RegisterAwareWaveformGenerator m_Channel3SoundGenerator;
-    RegisterAwareNoiseGenerator m_Channel4SoundGenerator;
+    SquareWaveGenerator m_Channel1SoundGenerator;
+    SquareWaveGenerator m_Channel2SoundGenerator;
+    WaveformGenerator m_Channel3SoundGenerator;
+    NoiseGenerator m_Channel4SoundGenerator;
 
     // Output
     bool m_Initialized;

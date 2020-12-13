@@ -410,7 +410,7 @@ void APU::LoadAudioDevice(SDL_AudioCallback callback)
     m_Initialized = true;
 }
 
-APU::RegisterAwareSquareWaveGenerator::RegisterAwareSquareWaveGenerator(
+APU::SquareWaveGenerator::SquareWaveGenerator(
     const APUChannel channel,
     const byte *sweepRegister,
     const byte *soundLengthRegister,
@@ -444,7 +444,7 @@ APU::RegisterAwareSquareWaveGenerator::RegisterAwareSquareWaveGenerator(
     memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
 }
 
-void APU::RegisterAwareSquareWaveGenerator::TriggerSweepRegisterUpdate()
+void APU::SquareWaveGenerator::TriggerSweepRegisterUpdate()
 {
     byte sweep_register = *m_SweepRegister;
     
@@ -464,7 +464,7 @@ void APU::RegisterAwareSquareWaveGenerator::TriggerSweepRegisterUpdate()
     // TODO: I believe the sweep function has it's own timer separate from the sound length timer - add that.
 }
 
-void APU::RegisterAwareSquareWaveGenerator::TriggerSoundLengthRegisterUpdate()
+void APU::SquareWaveGenerator::TriggerSoundLengthRegisterUpdate()
 {
     byte sound_length_register = *m_SoundLengthRegister;
 
@@ -502,7 +502,7 @@ void APU::RegisterAwareSquareWaveGenerator::TriggerSoundLengthRegisterUpdate()
     RegenerateCoefficients();
 }
 
-void APU::RegisterAwareSquareWaveGenerator::TriggerVolumeEnvelopeRegisterUpdate()
+void APU::SquareWaveGenerator::TriggerVolumeEnvelopeRegisterUpdate()
 {
     byte volume_envelope_register = *m_VolumeEnvelopeRegister;
 
@@ -521,13 +521,13 @@ void APU::RegisterAwareSquareWaveGenerator::TriggerVolumeEnvelopeRegisterUpdate(
     m_EnvelopeStartVolume = (double)initial_envelope_volume / 16.0;
 }
 
-void APU::RegisterAwareSquareWaveGenerator::TriggerFrequencyLoRegisterUpdate()
+void APU::SquareWaveGenerator::TriggerFrequencyLoRegisterUpdate()
 {
     // Bit 7-0 - Low 8 bits of the frequency data
     UpdateFrequency();
 }
 
-void APU::RegisterAwareSquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
+void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
 {
     // Bit 2-0 - High 3 bits of the frequency data
     UpdateFrequency();
@@ -544,7 +544,7 @@ void APU::RegisterAwareSquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
     }
 }
 
-void APU::RegisterAwareSquareWaveGenerator::RestartSound()
+void APU::SquareWaveGenerator::RestartSound()
 {
     m_ChannelIsPlaying = true;
 
@@ -568,7 +568,7 @@ void APU::RegisterAwareSquareWaveGenerator::RestartSound()
     }
 }
 
-void APU::RegisterAwareSquareWaveGenerator::UpdateFrequency()
+void APU::SquareWaveGenerator::UpdateFrequency()
 {
     byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
@@ -583,7 +583,7 @@ void APU::RegisterAwareSquareWaveGenerator::UpdateFrequency()
     RegenerateCoefficients();
 }
 
-void APU::RegisterAwareSquareWaveGenerator::RegenerateCoefficients()
+void APU::SquareWaveGenerator::RegenerateCoefficients()
 {
     // Keep the upper harmonic below the Nyquist frequency
     m_HarmonicsCount = AudioSampleRate / (m_FrequencyHz * 2);
@@ -600,7 +600,7 @@ void APU::RegisterAwareSquareWaveGenerator::RegenerateCoefficients()
     }
 }
 
-float APU::RegisterAwareSquareWaveGenerator::NextSample()
+float APU::SquareWaveGenerator::NextSample()
 {
     bool is_sound_playing = !m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds;
     bool is_sound_enabled = m_EnvelopeStartVolume != 0.0 && is_sound_playing;
@@ -696,7 +696,7 @@ float APU::RegisterAwareSquareWaveGenerator::NextSample()
     return sample;
 }
 
-APU::RegisterAwareNoiseGenerator::RegisterAwareNoiseGenerator(
+APU::NoiseGenerator::NoiseGenerator(
     const APUChannel channel,
     const byte* soundLengthRegister,
     const byte* volumeEnvelopeRegister,
@@ -723,7 +723,7 @@ APU::RegisterAwareNoiseGenerator::RegisterAwareNoiseGenerator(
 {
 }
 
-float APU::RegisterAwareNoiseGenerator::NextSample()
+float APU::NoiseGenerator::NextSample()
 {
     float sample = 0.0;
 
@@ -759,12 +759,12 @@ float APU::RegisterAwareNoiseGenerator::NextSample()
     return sample;
 }
 
-void APU::RegisterAwareNoiseGenerator::Reset()
+void APU::NoiseGenerator::Reset()
 {
     // TODO
 }
 
-void APU::RegisterAwareNoiseGenerator::TriggerSoundLengthRegisterUpdate()
+void APU::NoiseGenerator::TriggerSoundLengthRegisterUpdate()
 {
     byte sound_length_register = *m_SoundLengthRegister;
 
@@ -774,7 +774,7 @@ void APU::RegisterAwareNoiseGenerator::TriggerSoundLengthRegisterUpdate()
     m_SoundLengthSeconds = (64.0 - (double)sound_length) / 256.0;
 }
 
-void APU::RegisterAwareNoiseGenerator::TriggerVolumeEnvelopeRegisterUpdate()
+void APU::NoiseGenerator::TriggerVolumeEnvelopeRegisterUpdate()
 {
     byte volume_envelope_register = *m_VolumeEnvelopeRegister;
 
@@ -793,7 +793,7 @@ void APU::RegisterAwareNoiseGenerator::TriggerVolumeEnvelopeRegisterUpdate()
     m_EnvelopeStartVolume = (double)initial_envelope_volume / 16.0;
 }
 
-void APU::RegisterAwareNoiseGenerator::TriggerPolynomialCounterRegisterUpdate()
+void APU::NoiseGenerator::TriggerPolynomialCounterRegisterUpdate()
 {
     byte polynomial_counter_register = *m_PolynomialCounterRegister;
 
@@ -813,7 +813,7 @@ void APU::RegisterAwareNoiseGenerator::TriggerPolynomialCounterRegisterUpdate()
     // TODO - where to use this?
 }
 
-void APU::RegisterAwareNoiseGenerator::TriggerCounterRegisterUpdate()
+void APU::NoiseGenerator::TriggerCounterRegisterUpdate()
 {
     byte counter_register = *m_CounterRegister;
 
@@ -827,7 +827,7 @@ void APU::RegisterAwareNoiseGenerator::TriggerCounterRegisterUpdate()
     }
 }
 
-void APU::RegisterAwareNoiseGenerator::RestartSound()
+void APU::NoiseGenerator::RestartSound()
 {
     m_SoundLengthTimerSeconds = 0.0;
 
@@ -848,7 +848,7 @@ void APU::RegisterAwareNoiseGenerator::RestartSound()
     }
 }
 
-APU::RegisterAwareWaveformGenerator::RegisterAwareWaveformGenerator(
+APU::WaveformGenerator::WaveformGenerator(
     const APUChannel channel,
     const byte* channelSoundOnOffRegister,
     const byte* soundLengthRegister,
@@ -876,7 +876,7 @@ APU::RegisterAwareWaveformGenerator::RegisterAwareWaveformGenerator(
 {
 }
 
-float APU::RegisterAwareWaveformGenerator::NextSample()
+float APU::WaveformGenerator::NextSample()
 {
     float sample = 0.0;
 
@@ -910,18 +910,18 @@ float APU::RegisterAwareWaveformGenerator::NextSample()
     return sample;
 }
 
-void APU::RegisterAwareWaveformGenerator::Reset()
+void APU::WaveformGenerator::Reset()
 {
     // TODO
 }
 
-void APU::RegisterAwareWaveformGenerator::TriggerChannelSoundOnOffRegisterUpdate()
+void APU::WaveformGenerator::TriggerChannelSoundOnOffRegisterUpdate()
 {
     // Bit 7 - Sound Channel 3 Off (0=Stop, 1=Playback)
     m_Enabled = ISBITSET(*m_ChannelSoundOnOffRegister, 7);
 }
 
-void APU::RegisterAwareWaveformGenerator::TriggerSoundLengthRegisterUpdate()
+void APU::WaveformGenerator::TriggerSoundLengthRegisterUpdate()
 {
     byte sound_length_register = *m_SoundLengthRegister;
 
@@ -930,7 +930,7 @@ void APU::RegisterAwareWaveformGenerator::TriggerSoundLengthRegisterUpdate()
     m_SoundLengthSeconds = (256.0 - (double)sound_length_register) / 256.0;
 }
 
-void APU::RegisterAwareWaveformGenerator::TriggerSelectOutputLevelRegisterUpdate()
+void APU::WaveformGenerator::TriggerSelectOutputLevelRegisterUpdate()
 {
     // Bit 6-5 - Select output level
     byte sound_output_level = ((*m_SelectOutputLevelRegister) >> 5) & 0x3;
@@ -955,13 +955,13 @@ void APU::RegisterAwareWaveformGenerator::TriggerSelectOutputLevelRegisterUpdate
     }
 }
 
-void APU::RegisterAwareWaveformGenerator::TriggerFrequencyLoRegisterUpdate()
+void APU::WaveformGenerator::TriggerFrequencyLoRegisterUpdate()
 {
     // Bit 7-0 - Low 8 bits of the frequency data
     UpdateFrequency();
 }
 
-void APU::RegisterAwareWaveformGenerator::TriggerFrequencyHiRegisterUpdate()
+void APU::WaveformGenerator::TriggerFrequencyHiRegisterUpdate()
 {
     // Bit 2-0 - High 3 bits of the frequency data
     UpdateFrequency();
@@ -978,7 +978,7 @@ void APU::RegisterAwareWaveformGenerator::TriggerFrequencyHiRegisterUpdate()
     }
 }
 
-void APU::RegisterAwareWaveformGenerator::UpdateFrequency() 
+void APU::WaveformGenerator::UpdateFrequency() 
 {
     byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
@@ -991,7 +991,7 @@ void APU::RegisterAwareWaveformGenerator::UpdateFrequency()
     m_FrequencyHz = 65536.0 / (double)(2048 - (((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF));
 }
 
-void APU::RegisterAwareWaveformGenerator::RestartSound()
+void APU::WaveformGenerator::RestartSound()
 {
     m_SoundLengthTimerSeconds = 0.0;
 
