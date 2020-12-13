@@ -8,7 +8,6 @@
 
 // Based on 60Hz screen refresh rate
 #define AudioBufferSize ((AudioSampleRate * AudioOutChannelCount)) // 1 sec TODO: This is pretty big
-#define CyclesPerFrame 70224 // TODO: Can we import this somehow?
 #define CyclesPerSecond 4213440 // CyclesPerFrame * 60
 
 #define Pi 3.141592653589793
@@ -56,44 +55,6 @@
 #define ChannelControl 0xFF24
 #define OutputTerminalSelection 0xFF25
 #define SoundOnOff 0xFF26
-
-#define Channel1SweepTime ((m_Channel1Sweep >> 4) & 7)
-#define Channel1SweepDirection ((m_Channel1Sweep >> 3) & 1)
-#define Channel1SweepShiftNumber (m_Channel1Sweep & 7)
-#define Channel1WavePatternDuty ((m_Channel1SoundLength >> 6) & 3)
-#define Channel1SoundLength ((m_Channel1SoundLength) & 0x3F)
-#define Channel1VolumeEnvelopeStart ((m_Channel1VolumeEnvelope >> 4) & 0xF)
-#define Channel1VolumeEnvelopeDirection ((m_Channel1VolumeEnvelope >> 3) & 1)
-#define Channel1VolumeEnvelopeSweepNumber (m_Channel1VolumeEnvelope & 7)
-#define Channel1Initial ISBITSET(m_Channel1FrequencyHi, 7)
-#define Channel1CounterConsecutive ISBITSET(m_Channel1FrequencyHi, 6)
-#define Channel1Frequency (((m_Channel1FrequencyHi << 8) | m_Channel1FrequencyLo) & 0x7FF)
-
-#define Channel2WavePatternDuty ((m_Channel2SoundLength >> 6) & 3)
-#define Channel2SoundLength ((m_Channel2SoundLength) & 0x3F)
-#define Channel2VolumeEnvelopeStart ((m_Channel2VolumeEnvelope >> 4) & 0xF)
-#define Channel2VolumeEnvelopeDirection ((m_Channel2VolumeEnvelope >> 3) & 1)
-#define Channel2VolumeEnvelopeSweepNumber (m_Channel2VolumeEnvelope & 7)
-#define Channel2Initial ISBITSET(m_Channel2FrequencyHi, 7)
-#define Channel2CounterConsecutive ISBITSET(m_Channel2FrequencyHi, 6)
-#define Channel2Frequency (((m_Channel2FrequencyHi << 8) | m_Channel2FrequencyLo) & 0x7FF)
-
-#define Channel3SoundOnOff ISBITSET(m_Channel3SoundOnOff, 7)
-#define Channel3SoundLength m_Channel3SoundLength
-#define Channel3SelectOutputLevel ((m_Channel3SelectOutputLevel >> 5) & 0x3)
-#define Channel3Initial ISBITSET(m_Channel3FrequencyHi, 7)
-#define Channel3CounterConsecutive ISBITSET(m_Channel3FrequencyHi, 6)
-#define Channel3Frequency (((m_Channel3FrequencyHi << 8) | m_Channel3FrequencyLo) & 0x7FF)
-
-#define Channel4SoundLength (m_Channel4SoundLength & 0x1F)
-#define Channel4VolumeEnvelopeStart ((m_Channel4VolumeEnvelope >> 4) & 0xF)
-#define Channel4VolumeEnvelopeDirection ((m_Channel4VolumeEnvelope >> 3) & 1)
-#define Channel4VolumeEnvelopeSweepNumber (m_Channel4VolumeEnvelope & 7)
-#define Channel4ShiftClockFrequency ((m_Channel4PolynomialCounter >> 4) & 0xF)
-#define Channel4CounterStep ((m_Channel4PolynomialCounter >> 3) & 1)
-#define Channel4FrequencyDivideRatio (m_Channel4PolynomialCounter & 7)
-#define Channel4Initial ISBITSET(m_Channel4Counter, 7)
-#define Channel4CounterConsecutive ISBITSET(m_Channel4Counter, 6)
 
 #define OutputLevelSO1 (m_ChannelControlOnOffVolume & 0x7)
 #define OutputLevelSO2 ((m_ChannelControlOnOffVolume >> 4) & 0x7)
@@ -172,10 +133,6 @@ APU::APU() :
         &m_Channel4Counter,
         &m_SoundOnOff
     ),
-    m_Channel1RequiresUpdate(false),
-    m_Channel2RequiresUpdate(false),
-    m_Channel3RequiresUpdate(false),
-    m_Channel4RequiresUpdate(false),
     m_Initialized(false),
     m_AudioDevice(0),
     m_AudioFrameRemainder(0.0),
@@ -247,134 +204,6 @@ void APU::Step(unsigned long cycles)
         m_OutputBuffer.Put((Uint8 *)f_frame);
     }
 }
-
-// void APU::UpdateChannel3Generator()
-// {
-//     if (Channel3SoundOnOff)
-//     {
-//         m_Channel3SoundGenerator.Enable();
-//     }
-//     else
-//     {
-//         m_Channel3SoundGenerator.Disable();
-//     }
-
-//     if (Channel3Initial)
-//     {
-//         m_Channel3SoundGenerator.RestartSound();
-//     }
-
-//     // Counter/Consecutive modes
-//     m_Channel3SoundGenerator.SetCounterModeEnabled(Channel3CounterConsecutive);
-
-//     // Sound Length = (256-t1)*(1/256) seconds
-//     m_Channel3SoundGenerator.SetSoundLength((256.0 - (double)Channel3SoundLength) / 256.0);
-
-//     // Sound output level
-//     switch (Channel3SelectOutputLevel)
-//     {
-//     case 0:
-//         m_Channel3SoundGenerator.SetOutputLevel(0.0);
-//         break;
-//     case 1:
-//         m_Channel3SoundGenerator.SetOutputLevel(1.0);
-//         break;
-//     case 2:
-//         m_Channel3SoundGenerator.SetOutputLevel(0.5);
-//         break;
-//     case 3:
-//         m_Channel3SoundGenerator.SetOutputLevel(0.25);
-//         break;
-//     default:
-//         Logger::LogError("Invalid output level %x", Channel3SelectOutputLevel);
-//         assert(false);
-//     }
-
-//     // 65536/(2048-x) Hz
-//     m_Channel3SoundGenerator.SetFrequency(65536.0 / (2048.0 - Channel3Frequency));   
-    
-//     m_Channel3RequiresUpdate = false;
-
-//     Logger::Log("CHANNEL 3 -- ON/OFF:0x%02x LEN:0x%01x LVL:0x%01x INIT:0x%01x CC:0x%01x FREQ:0x%03x DATA:0x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x",
-//         Channel3SoundOnOff,
-//         Channel3SoundLength,
-//         Channel3SelectOutputLevel,
-//         Channel3Initial,
-//         Channel3CounterConsecutive,
-//         Channel3Frequency,
-//         (m_WavePatternRAM[0] >> 4) & 0xF,
-//         m_WavePatternRAM[0] & 0xF,
-//         (m_WavePatternRAM[1] >> 4) & 0xF,
-//         m_WavePatternRAM[1] & 0xF,
-//         (m_WavePatternRAM[2] >> 4) & 0xF,
-//         m_WavePatternRAM[2] & 0xF,
-//         (m_WavePatternRAM[3] >> 4) & 0xF,
-//         m_WavePatternRAM[3] & 0xF,
-//         (m_WavePatternRAM[4] >> 4) & 0xF,
-//         m_WavePatternRAM[4] & 0xF,
-//         (m_WavePatternRAM[5] >> 4) & 0xF,
-//         m_WavePatternRAM[5] & 0xF,
-//         (m_WavePatternRAM[6] >> 4) & 0xF,
-//         m_WavePatternRAM[6] & 0xF,
-//         (m_WavePatternRAM[7] >> 4) & 0xF,
-//         m_WavePatternRAM[7] & 0xF,
-//         (m_WavePatternRAM[8] >> 4) & 0xF,
-//         m_WavePatternRAM[8] & 0xF,
-//         (m_WavePatternRAM[9] >> 4) & 0xF,
-//         m_WavePatternRAM[9] & 0xF,
-//         (m_WavePatternRAM[10] >> 4) & 0xF,
-//         m_WavePatternRAM[10] & 0xF,
-//         (m_WavePatternRAM[11] >> 4) & 0xF,
-//         m_WavePatternRAM[11] & 0xF,
-//         (m_WavePatternRAM[12] >> 4) & 0xF,
-//         m_WavePatternRAM[12] & 0xF,
-//         (m_WavePatternRAM[13] >> 4) & 0xF,
-//         m_WavePatternRAM[13] & 0xF,
-//         (m_WavePatternRAM[14] >> 4) & 0xF,
-//         m_WavePatternRAM[14] & 0xF,
-//         (m_WavePatternRAM[15] >> 4) & 0xF,
-//         m_WavePatternRAM[15] & 0xF);
-// }
-
-// void APU::UpdateChannel4Generator()
-// {
-//     if (Channel4Initial)
-//     {
-//         m_Channel4SoundGenerator.RestartSound();
-//     }
-
-//     // Counter/Consecutive modes
-//     m_Channel4SoundGenerator.SetCounterModeEnabled(Channel4CounterConsecutive);
-
-//     // Sound Length = (64-t1)*(1/256) seconds
-//     m_Channel4SoundGenerator.SetSoundLength((64.0 - (double)Channel4SoundLength) / 256.0);
-
-//     // Envelope start volume. 4 bits of precision = 16 volume levels.
-//     m_Channel4SoundGenerator.SetEnvelopeStartVolume((double)Channel4VolumeEnvelopeStart / 16.0);
-
-//     // Length of an envelope step = n * (1/64)
-//     m_Channel4SoundGenerator.SetEnvelopeStepLength((double)Channel4VolumeEnvelopeSweepNumber / 64.0);
-
-//     // Envelope direction: 0 = Decrease, 1 = Increase
-//     m_Channel4SoundGenerator.SetEnvelopeDirection(Channel4VolumeEnvelopeDirection ? UP : DOWN);
-
-//     // 524288 Hz / r / 2^(s+1)
-//     double divide_ratio = Channel4FrequencyDivideRatio == 0 ? 0.5 : (double)Channel4FrequencyDivideRatio;
-//     m_Channel4SoundGenerator.SetFrequency(524288.0 / divide_ratio / (double)(2 << Channel4ShiftClockFrequency));
-
-//     m_Channel4RequiresUpdate = false;
-
-//     Logger::Log("CHANNEL 4 -- LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x SHIFT:0x%01x STEP:0x%01x RATIO:0x%01x INIT:0x%01x CC:0x%01x",
-//     Channel4SoundLength,
-//     Channel4VolumeEnvelopeStart,
-//     Channel4VolumeEnvelopeDirection,
-//     Channel4VolumeEnvelopeSweepNumber,
-//     Channel4ShiftClockFrequency,
-//     Channel4CounterStep,
-//     Channel4FrequencyDivideRatio,
-//     Channel4Initial,
-//     Channel4CounterConsecutive);
-// }
 
 void APU::AudioDeviceCallback(Uint8* pStream, int length)
 {
@@ -459,35 +288,7 @@ bool APU::WriteByte(const ushort& address, const byte val)
     if ((address >= 0xFF30) && (address <= 0xFF3F))
     {
         m_WavePatternRAM[address - 0xFF30] = val;
-
-        // TODO: remove
-        m_Channel3RequiresUpdate = true;
-
         return true;
-    }
-
-    if ((address >= 0xFF10) && (address <= 0xFF14))
-    {
-        // TODO: remove
-        m_Channel1RequiresUpdate = true;
-    }
-
-    if ((address >= 0xFF16) && (address <= 0xFF19))
-    {
-        // TODO: remove
-        m_Channel2RequiresUpdate = true;
-    }
-
-    if ((address >= 0xFF1A) && (address <= 0xFF1E))
-    {
-        // TODO: remove
-        m_Channel3RequiresUpdate = true;
-    }
-
-    if ((address >= 0xFF20) && (address <= 0xFF23))
-    {
-        // TODO: remove
-        m_Channel4RequiresUpdate = true;
     }
 
     switch (address)
@@ -511,10 +312,6 @@ bool APU::WriteByte(const ushort& address, const byte val)
     case Channel1FrequencyHi:
         m_Channel1FrequencyHi = val;
         m_Channel1SoundGenerator.TriggerFrequencyHiRegisterUpdate();
-
-        // TODO: remove
-        m_Channel1Reset = Channel1Initial;
-
         return true;
     case Channel2LengthWavePatternDuty:
         m_Channel2SoundLength = val;
@@ -1050,108 +847,6 @@ void APU::RegisterAwareNoiseGenerator::RestartSound()
             sound_on_off_register |= 0b1000;
     }
 }
-
-// APU::WaveformGenerator::WaveformGenerator() : 
-//     m_Enabled(true),
-//     m_FrequencyHz(1.0),
-//     m_CounterModeEnabled(false),
-//     m_SoundLengthSeconds(0.0),
-//     m_OutputLevel(1.0),
-//     m_Phase(0.0),
-//     m_SoundLengthTimerSeconds(0.0),
-//     m_WaveBuffer(nullptr)
-// {
-// }
-
-// void APU::WaveformGenerator::DebugLog()
-// {
-// }
-
-// void APU::WaveformGenerator::SetFrequency(double frequency_hz)
-// {
-//     m_FrequencyHz = frequency_hz;
-
-//     if (m_FrequencyHz <= 0)
-//     {
-//         Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
-//         assert(false);
-//     }
-// }
-
-// void APU::WaveformGenerator::SetOutputLevel(double level)
-// {
-//     m_OutputLevel = level;
-
-//     if (m_OutputLevel > 1.0 || m_OutputLevel < 0.0)
-//     {
-//         Logger::LogError("Invalid Output Level %f", m_OutputLevel);
-//         assert(false);
-//     }
-// }
-
-// void APU::WaveformGenerator::SetCounterModeEnabled(bool is_enabled)
-// {
-//     m_CounterModeEnabled = is_enabled;
-// }
-
-// void APU::WaveformGenerator::SetSoundLength(double sound_length_seconds)
-// {
-//     m_SoundLengthSeconds = sound_length_seconds;
-// }
-
-// void APU::WaveformGenerator::SetWaveRamLocation(byte *wave_buffer)
-// {
-//     m_WaveBuffer = wave_buffer;
-// }
-
-// void APU::WaveformGenerator::Enable()
-// {
-//     m_Enabled = true;
-// }
-
-// void APU::WaveformGenerator::Disable()
-// {
-//     m_Enabled = false;
-// }
-
-// void APU::WaveformGenerator::RestartSound()
-// {
-//     m_SoundLengthTimerSeconds = 0.0;
-// }
-
-// float APU::WaveformGenerator::NextSample()
-// {
-//     float sample = 0.0;
-
-//     if (m_Enabled)
-//     {
-//         bool sound_enabled = m_OutputLevel != 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
-
-//         if (sound_enabled)
-//         {
-//             // Wave is made up of 32 4-bit samples
-//             int wave_ram_sample_number = (int)(m_Phase * 32.0);
-//             int wave_ram_byte_offset = wave_ram_sample_number / 2;
-//             int shift = ((1 + wave_ram_sample_number) % 2) * 4; // shift 0 or 4 bits.
-//             int wave_ram_sample = (m_WaveBuffer[wave_ram_byte_offset] >> shift) & 0xF;
-//             sample = ((double)wave_ram_sample / 16.0) - 0.5;
-
-//             // TODO: Emulate bit-shift rather than scaling based sound level
-//             sample *= m_OutputLevel;
-//         }
-
-//         m_Phase += m_FrequencyHz / (double)AudioSampleRate;
-
-//         if (m_Phase >= 1.0)
-//         {
-//             m_Phase -= 1.0;
-//         }
-//     }
-
-//     m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
-
-//     return sample;
-// }
 
 APU::RegisterAwareWaveformGenerator::RegisterAwareWaveformGenerator(
     const APUChannel channel,

@@ -22,14 +22,6 @@ public:
 private:
     void LoadAudioDevice(SDL_AudioCallback callback);
 
-    void UpdateChannel3Generator();
-
-    typedef enum
-    {
-        UP,
-        DOWN
-    } EnvelopeDirection;
-
     typedef enum
     {
         CHANNEL_1,
@@ -159,37 +151,6 @@ private:
         void RestartSound();
     };
 
-    // class WaveformGenerator
-    // {
-    // public:
-    //     WaveformGenerator();
-    //     ~WaveformGenerator() = default;
-
-    //     void SetFrequency(double frequency_hz);
-    //     void SetOutputLevel(double level);
-    //     void SetCounterModeEnabled(bool is_enabled);
-    //     void SetSoundLength(double sound_length_seconds);
-    //     void SetWaveRamLocation(byte *wave_buffer);
-
-    //     void Enable();
-    //     void Disable();
-    //     void RestartSound();
-
-    //     float NextSample();
-
-    //     void DebugLog();
-
-    // private:
-    //     bool m_Enabled;
-    //     double m_FrequencyHz;
-    //     bool m_CounterModeEnabled;
-    //     double m_SoundLengthSeconds;
-    //     double m_OutputLevel;
-    //     double m_Phase;
-    //     double m_SoundLengthTimerSeconds;
-    //     byte *m_WaveBuffer;
-    // };
-
     class RegisterAwareWaveformGenerator
     {
     public:
@@ -269,14 +230,6 @@ private:
     RegisterAwareSquareWaveGenerator m_Channel2SoundGenerator;
     RegisterAwareWaveformGenerator m_Channel3SoundGenerator;
     RegisterAwareNoiseGenerator m_Channel4SoundGenerator;
-
-    // Update flags
-    bool m_Channel1RequiresUpdate;
-    bool m_Channel2RequiresUpdate;
-    bool m_Channel3RequiresUpdate;
-    bool m_Channel4RequiresUpdate;
-
-    bool m_Channel1Reset;
 
     // Output
     bool m_Initialized;
