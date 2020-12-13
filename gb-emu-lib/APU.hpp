@@ -121,6 +121,7 @@ private:
     {
     public:
         RegisterAwareNoiseGenerator(
+            const APUChannel channel,
             const byte* soundLengthRegister,
             const byte* volumeEnvelopeRegister,
             const byte* polynomialCounterRegister,
@@ -137,6 +138,7 @@ private:
         void TriggerCounterRegisterUpdate();
 
     private:
+        const APUChannel m_Channel;
         const byte* m_SoundLengthRegister;
         const byte* m_VolumeEnvelopeRegister;
         const byte* m_PolynomialCounterRegister;
@@ -157,27 +159,70 @@ private:
         void RestartSound();
     };
 
-    class WaveformGenerator
+    // class WaveformGenerator
+    // {
+    // public:
+    //     WaveformGenerator();
+    //     ~WaveformGenerator() = default;
+
+    //     void SetFrequency(double frequency_hz);
+    //     void SetOutputLevel(double level);
+    //     void SetCounterModeEnabled(bool is_enabled);
+    //     void SetSoundLength(double sound_length_seconds);
+    //     void SetWaveRamLocation(byte *wave_buffer);
+
+    //     void Enable();
+    //     void Disable();
+    //     void RestartSound();
+
+    //     float NextSample();
+
+    //     void DebugLog();
+
+    // private:
+    //     bool m_Enabled;
+    //     double m_FrequencyHz;
+    //     bool m_CounterModeEnabled;
+    //     double m_SoundLengthSeconds;
+    //     double m_OutputLevel;
+    //     double m_Phase;
+    //     double m_SoundLengthTimerSeconds;
+    //     byte *m_WaveBuffer;
+    // };
+
+    class RegisterAwareWaveformGenerator
     {
     public:
-        WaveformGenerator();
-        ~WaveformGenerator() = default;
-
-        void SetFrequency(double frequency_hz);
-        void SetOutputLevel(double level);
-        void SetCounterModeEnabled(bool is_enabled);
-        void SetSoundLength(double sound_length_seconds);
-        void SetWaveRamLocation(byte *wave_buffer);
-
-        void Enable();
-        void Disable();
-        void RestartSound();
+        RegisterAwareWaveformGenerator(
+            const APUChannel channel,
+            const byte* channelSoundOnOffRegister,
+            const byte* soundLengthRegister,
+            const byte* selectOutputLevelRegister,
+            const byte* frequencyLoRegister,
+            const byte* frequencyHiRegister,
+            const byte* waveBuffer,
+            const byte* soundOnOffRegister
+        );
+        ~RegisterAwareWaveformGenerator() = default;
 
         float NextSample();
-
-        void DebugLog();
+        void Reset();
+        void TriggerChannelSoundOnOffRegisterUpdate();
+        void TriggerSoundLengthRegisterUpdate();
+        void TriggerSelectOutputLevelRegisterUpdate();
+        void TriggerFrequencyLoRegisterUpdate();
+        void TriggerFrequencyHiRegisterUpdate();
 
     private:
+        const APUChannel m_Channel;
+        const byte* m_ChannelSoundOnOffRegister;
+        const byte* m_SoundLengthRegister;
+        const byte* m_SelectOutputLevelRegister;
+        const byte* m_FrequencyLoRegister;
+        const byte* m_FrequencyHiRegister;
+        const byte* m_WaveBuffer;
+        const byte* m_SoundOnOffRegister;
+
         bool m_Enabled;
         double m_FrequencyHz;
         bool m_CounterModeEnabled;
@@ -185,7 +230,9 @@ private:
         double m_OutputLevel;
         double m_Phase;
         double m_SoundLengthTimerSeconds;
-        byte *m_WaveBuffer;
+
+        void RestartSound();
+        void UpdateFrequency();
     };
 
 private:
@@ -220,7 +267,7 @@ private:
     // Synthesis
     RegisterAwareSquareWaveGenerator m_Channel1SoundGenerator;
     RegisterAwareSquareWaveGenerator m_Channel2SoundGenerator;
-    WaveformGenerator m_Channel3SoundGenerator;
+    RegisterAwareWaveformGenerator m_Channel3SoundGenerator;
     RegisterAwareNoiseGenerator m_Channel4SoundGenerator;
 
     // Update flags
