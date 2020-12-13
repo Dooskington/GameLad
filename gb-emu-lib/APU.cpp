@@ -155,7 +155,13 @@ APU::APU() :
         &m_SoundOnOff
     ),
     m_Channel3SoundGenerator(),
-    m_Channel4SoundGenerator(),
+    m_Channel4SoundGenerator(
+        &m_Channel4SoundLength,
+        &m_Channel4VolumeEnvelope,
+        &m_Channel4PolynomialCounter,
+        &m_Channel4Counter,
+        &m_SoundOnOff
+    ),
     m_Channel1RequiresUpdate(false),
     m_Channel2RequiresUpdate(false),
     m_Channel3RequiresUpdate(false),
@@ -193,7 +199,6 @@ APU::~APU()
 void APU::Step(unsigned long cycles)
 {
     if (m_Channel3RequiresUpdate) UpdateChannel3Generator();
-    if (m_Channel4RequiresUpdate) UpdateChannel4Generator();
 
     // Calculate the number of audio frames to generate for the elapsed CPU cycle count
     double sample_count = m_AudioFrameRemainder + (((double)AudioSampleRate / (double)CyclesPerSecond) * (double)cycles);
@@ -325,45 +330,45 @@ void APU::UpdateChannel3Generator()
         m_WavePatternRAM[15] & 0xF);
 }
 
-void APU::UpdateChannel4Generator()
-{
-    if (Channel4Initial)
-    {
-        m_Channel4SoundGenerator.RestartSound();
-    }
+// void APU::UpdateChannel4Generator()
+// {
+//     if (Channel4Initial)
+//     {
+//         m_Channel4SoundGenerator.RestartSound();
+//     }
 
-    // Counter/Consecutive modes
-    m_Channel4SoundGenerator.SetCounterModeEnabled(Channel4CounterConsecutive);
+//     // Counter/Consecutive modes
+//     m_Channel4SoundGenerator.SetCounterModeEnabled(Channel4CounterConsecutive);
 
-    // Sound Length = (64-t1)*(1/256) seconds
-    m_Channel4SoundGenerator.SetSoundLength((64.0 - (double)Channel4SoundLength) / 256.0);
+//     // Sound Length = (64-t1)*(1/256) seconds
+//     m_Channel4SoundGenerator.SetSoundLength((64.0 - (double)Channel4SoundLength) / 256.0);
 
-    // Envelope start volume. 4 bits of precision = 16 volume levels.
-    m_Channel4SoundGenerator.SetEnvelopeStartVolume((double)Channel4VolumeEnvelopeStart / 16.0);
+//     // Envelope start volume. 4 bits of precision = 16 volume levels.
+//     m_Channel4SoundGenerator.SetEnvelopeStartVolume((double)Channel4VolumeEnvelopeStart / 16.0);
 
-    // Length of an envelope step = n * (1/64)
-    m_Channel4SoundGenerator.SetEnvelopeStepLength((double)Channel4VolumeEnvelopeSweepNumber / 64.0);
+//     // Length of an envelope step = n * (1/64)
+//     m_Channel4SoundGenerator.SetEnvelopeStepLength((double)Channel4VolumeEnvelopeSweepNumber / 64.0);
 
-    // Envelope direction: 0 = Decrease, 1 = Increase
-    m_Channel4SoundGenerator.SetEnvelopeDirection(Channel4VolumeEnvelopeDirection ? UP : DOWN);
+//     // Envelope direction: 0 = Decrease, 1 = Increase
+//     m_Channel4SoundGenerator.SetEnvelopeDirection(Channel4VolumeEnvelopeDirection ? UP : DOWN);
 
-    // 524288 Hz / r / 2^(s+1)
-    double divide_ratio = Channel4FrequencyDivideRatio == 0 ? 0.5 : (double)Channel4FrequencyDivideRatio;
-    m_Channel4SoundGenerator.SetFrequency(524288.0 / divide_ratio / (double)(2 << Channel4ShiftClockFrequency));
+//     // 524288 Hz / r / 2^(s+1)
+//     double divide_ratio = Channel4FrequencyDivideRatio == 0 ? 0.5 : (double)Channel4FrequencyDivideRatio;
+//     m_Channel4SoundGenerator.SetFrequency(524288.0 / divide_ratio / (double)(2 << Channel4ShiftClockFrequency));
 
-    m_Channel4RequiresUpdate = false;
+//     m_Channel4RequiresUpdate = false;
 
-    Logger::Log("CHANNEL 4 -- LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x SHIFT:0x%01x STEP:0x%01x RATIO:0x%01x INIT:0x%01x CC:0x%01x",
-    Channel4SoundLength,
-    Channel4VolumeEnvelopeStart,
-    Channel4VolumeEnvelopeDirection,
-    Channel4VolumeEnvelopeSweepNumber,
-    Channel4ShiftClockFrequency,
-    Channel4CounterStep,
-    Channel4FrequencyDivideRatio,
-    Channel4Initial,
-    Channel4CounterConsecutive);
-}
+//     Logger::Log("CHANNEL 4 -- LEN:0x%02x ENVST:0x%01x ENVDIR:0x%01x ENVNUM:0x%01x SHIFT:0x%01x STEP:0x%01x RATIO:0x%01x INIT:0x%01x CC:0x%01x",
+//     Channel4SoundLength,
+//     Channel4VolumeEnvelopeStart,
+//     Channel4VolumeEnvelopeDirection,
+//     Channel4VolumeEnvelopeSweepNumber,
+//     Channel4ShiftClockFrequency,
+//     Channel4CounterStep,
+//     Channel4FrequencyDivideRatio,
+//     Channel4Initial,
+//     Channel4CounterConsecutive);
+// }
 
 void APU::AudioDeviceCallback(Uint8* pStream, int length)
 {
@@ -538,15 +543,19 @@ bool APU::WriteByte(const ushort& address, const byte val)
         return true;
     case Channel4Length:
         m_Channel4SoundLength = val;
+        m_Channel4SoundGenerator.TriggerSoundLengthRegisterUpdate();
         return true;
     case Channel4VolumeEnvelope:
         m_Channel4VolumeEnvelope = val;
+        m_Channel4SoundGenerator.TriggerVolumeEnvelopeRegisterUpdate();
         return true;
     case Channel4PolynomialCounter:
         m_Channel4PolynomialCounter = val;
+        m_Channel4SoundGenerator.TriggerPolynomialCounterRegisterUpdate();
         return true;
     case Channel4Counter:
         m_Channel4Counter = val;
+        m_Channel4SoundGenerator.TriggerCounterRegisterUpdate();
         return true;
     case ChannelControl:
         m_ChannelControlOnOffVolume = val;
@@ -885,7 +894,18 @@ float APU::RegisterAwareSquareWaveGenerator::NextSample()
     return sample;
 }
 
-APU::NoiseGenerator::NoiseGenerator() : 
+APU::RegisterAwareNoiseGenerator::RegisterAwareNoiseGenerator(
+    const byte* soundLengthRegister,
+    const byte* volumeEnvelopeRegister,
+    const byte* polynomialCounterRegister,
+    const byte* counterRegister,
+    const byte* soundOnOffRegister
+) :
+    m_SoundLengthRegister(soundLengthRegister),
+    m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
+    m_PolynomialCounterRegister(polynomialCounterRegister),
+    m_CounterRegister(counterRegister),
+    m_SoundOnOffRegister(soundOnOffRegister),
     m_FrequencyHz(1.0),
     m_CounterModeEnabled(false),
     m_SoundLengthSeconds(0.0),
@@ -899,53 +919,7 @@ APU::NoiseGenerator::NoiseGenerator() :
 {
 }
 
-void APU::NoiseGenerator::DebugLog()
-{
-}
-
-void APU::NoiseGenerator::SetFrequency(double frequency_hz)
-{
-    m_FrequencyHz = frequency_hz;
-
-    if (m_FrequencyHz <= 0)
-    {
-        Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
-        assert(false);
-    }
-}
-
-void APU::NoiseGenerator::SetCounterModeEnabled(bool is_enabled)
-{
-    m_CounterModeEnabled = is_enabled;
-}
-
-void APU::NoiseGenerator::SetSoundLength(double sound_length_seconds)
-{
-    m_SoundLengthSeconds = sound_length_seconds;
-}
-
-void APU::NoiseGenerator::SetEnvelopeStartVolume(double envelope_start_volume)
-{
-    m_EnvelopeStartVolume = envelope_start_volume;
-}
-
-void APU::NoiseGenerator::SetEnvelopeDirection(EnvelopeDirection direction)
-{
-    m_EnvelopeDirection = direction == UP ? 1.0 : -1.0;
-}
-
-void APU::NoiseGenerator::SetEnvelopeStepLength(double envelope_step_seconds)
-{
-    m_EnvelopeStepLengthSeconds = envelope_step_seconds;
-    m_EnvelopeModeEnabled = !(envelope_step_seconds == 0.0);
-}
-
-void APU::NoiseGenerator::RestartSound()
-{
-    m_SoundLengthTimerSeconds = 0.0;
-}
-
-float APU::NoiseGenerator::NextSample()
+float APU::RegisterAwareNoiseGenerator::NextSample()
 {
     float sample = 0.0;
 
@@ -979,6 +953,79 @@ float APU::NoiseGenerator::NextSample()
     m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
 
     return sample;
+}
+
+void APU::RegisterAwareNoiseGenerator::Reset()
+{
+    // TODO
+}
+
+void APU::RegisterAwareNoiseGenerator::TriggerSoundLengthRegisterUpdate()
+{
+    byte sound_length_register = *m_SoundLengthRegister;
+
+    // Bit 5-0 - Sound Length
+    // Sound Length = (64-n)*(1/256) seconds
+    byte sound_length = sound_length_register & 0x3F;
+    m_SoundLengthSeconds = (64.0 - (double)sound_length) / 256.0;
+}
+
+void APU::RegisterAwareNoiseGenerator::TriggerVolumeEnvelopeRegisterUpdate()
+{
+    byte volume_envelope_register = *m_VolumeEnvelopeRegister;
+
+    // Bit 2-0 - Envelope step length number - When 0, disable envelope mode
+    // Length of an envelope step = n * (1/64)
+    byte envelope_step_length_number = volume_envelope_register & 7;
+    m_EnvelopeStepLengthSeconds = (double)envelope_step_length_number / 64.0;
+    m_EnvelopeModeEnabled = envelope_step_length_number != 0;
+
+    // Bit 3 - Envelope direction - 0 = Decrease, 1 = Increase
+    m_EnvelopeDirection = ISBITSET(volume_envelope_register, 3) ? 1.0 : -1.0;
+
+    // Bit 7-4 - Initial volume envelope - When 0, sound is muted
+    // Envelope start volume. 4 bits of precision = 16 volume levels.
+    byte initial_envelope_volume = (volume_envelope_register >> 4) & 0xF;
+    m_EnvelopeStartVolume = (double)initial_envelope_volume / 16.0;
+}
+
+void APU::RegisterAwareNoiseGenerator::TriggerPolynomialCounterRegisterUpdate()
+{
+    byte polynomial_counter_register = *m_PolynomialCounterRegister;
+
+    // Bit 2-0 - Dividing ratio of frequency (r)
+    byte divide_ratio = polynomial_counter_register & 7;
+
+    // Bit 7-4 - Shift clock frequency (s)
+    byte shift_clock_frequency = (polynomial_counter_register >> 4) & 0xF;
+
+    // 524288 Hz / r / 2^(s+1)
+    // For r=0 assume r=0.5 instead
+    double r = divide_ratio == 0 ? 0.5 : (double)divide_ratio;
+    m_FrequencyHz = 524288.0 / r / (double)(2 << shift_clock_frequency);
+
+    // Bit 3 - Counter step (0=15 bits, 1=7 bits)
+    byte counter_step = ISBITSET(polynomial_counter_register, 3) ? 7 : 15;
+    // TODO - where to use this?
+}
+
+void APU::RegisterAwareNoiseGenerator::TriggerCounterRegisterUpdate()
+{
+    byte counter_register = *m_CounterRegister;
+
+    // Bit 6 - Counter/consecutive selection
+    m_CounterModeEnabled = ISBITSET(counter_register, 6);
+
+    // Bit 7 - Initial
+    if (ISBITSET(counter_register, 7))
+    {
+        RestartSound();
+    }
+}
+
+void APU::RegisterAwareNoiseGenerator::RestartSound()
+{
+    m_SoundLengthTimerSeconds = 0.0;
 }
 
 APU::WaveformGenerator::WaveformGenerator() : 

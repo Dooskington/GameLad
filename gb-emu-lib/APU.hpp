@@ -22,10 +22,7 @@ public:
 private:
     void LoadAudioDevice(SDL_AudioCallback callback);
 
-    void UpdateChannel1Generator();
-    void UpdateChannel2Generator();
     void UpdateChannel3Generator();
-    void UpdateChannel4Generator();
 
     typedef enum
     {
@@ -120,26 +117,32 @@ private:
         void RestartSound();
     };
 
-    class NoiseGenerator
+    class RegisterAwareNoiseGenerator
     {
     public:
-        NoiseGenerator();
-        ~NoiseGenerator() = default;
-
-        void SetFrequency(double frequency_hz);
-        void SetCounterModeEnabled(bool is_enabled);
-        void SetSoundLength(double sound_length_seconds);
-        void SetEnvelopeStartVolume(double envelope_start_volume);
-        void SetEnvelopeDirection(EnvelopeDirection direction);
-        void SetEnvelopeStepLength(double envelope_step_seconds);
-
-        void RestartSound();
+        RegisterAwareNoiseGenerator(
+            const byte* soundLengthRegister,
+            const byte* volumeEnvelopeRegister,
+            const byte* polynomialCounterRegister,
+            const byte* counterRegister,
+            const byte* soundOnOffRegister
+        );
+        ~RegisterAwareNoiseGenerator() = default;
 
         float NextSample();
-
-        void DebugLog();
+        void Reset();
+        void TriggerSoundLengthRegisterUpdate();
+        void TriggerVolumeEnvelopeRegisterUpdate();
+        void TriggerPolynomialCounterRegisterUpdate();
+        void TriggerCounterRegisterUpdate();
 
     private:
+        const byte* m_SoundLengthRegister;
+        const byte* m_VolumeEnvelopeRegister;
+        const byte* m_PolynomialCounterRegister;
+        const byte* m_CounterRegister;
+        const byte* m_SoundOnOffRegister;
+        
         double m_FrequencyHz;
         bool m_CounterModeEnabled;
         double m_SoundLengthSeconds;
@@ -150,6 +153,8 @@ private:
         double m_Phase;
         double m_Signal;
         double m_SoundLengthTimerSeconds;
+
+        void RestartSound();
     };
 
     class WaveformGenerator
@@ -216,7 +221,7 @@ private:
     RegisterAwareSquareWaveGenerator m_Channel1SoundGenerator;
     RegisterAwareSquareWaveGenerator m_Channel2SoundGenerator;
     WaveformGenerator m_Channel3SoundGenerator;
-    NoiseGenerator m_Channel4SoundGenerator;
+    RegisterAwareNoiseGenerator m_Channel4SoundGenerator;
 
     // Update flags
     bool m_Channel1RequiresUpdate;
