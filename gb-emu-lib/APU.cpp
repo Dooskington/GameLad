@@ -675,10 +675,6 @@ float APU::SquareWaveGenerator::NextSample()
         RegenerateCoefficients();
     }
 
-    // TODO - Remove
-    assert(frequency > 0.0);
-    assert(frequency < 999999999999999.0);
-
     m_Phase += (TwoPi * frequency) / (double)AudioSampleRate;
     while (m_Phase >= TwoPi)
     {
