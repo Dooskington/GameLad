@@ -7,7 +7,7 @@
 #define FrameSizeBytes 8 // 32 bit samples * 2 channels
 
 // Based on 60Hz screen refresh rate
-#define AudioBufferSize ((AudioSampleRate * AudioOutChannelCount)) // 1 sec TODO: This is pretty big
+#define AudioBufferSize (AudioSampleRate * AudioOutChannelCount) // 1 sec TODO: This is pretty big
 #define CyclesPerSecond 4213440 // CyclesPerFrame * 60
 
 #define Pi 3.141592653589793
