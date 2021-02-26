@@ -55,39 +55,23 @@ private:
         void AdvanceWriteIndex();
     };
 
-    class SquareWaveGenerator
+    class SoundGenerator
     {
     public:
-        SquareWaveGenerator(
+        SoundGenerator(
             const APUChannel channel,
-            const byte* sweepRegister,
-            const byte* soundLengthRegister,
-            const byte* volumeEnvelopeRegister,
-            const byte* frequencyLoRegister,
-            const byte* frequencyHiRegister,
             const byte* soundOnOffRegister
         );
-        ~SquareWaveGenerator() = default;
-
+        virtual ~SoundGenerator() = 0;
         float NextSample();
-        void Reset();
-        void TriggerSweepRegisterUpdate();
-        void TriggerSoundLengthRegisterUpdate();
-        void TriggerVolumeEnvelopeRegisterUpdate();
-        void TriggerFrequencyLoRegisterUpdate();
-        void TriggerFrequencyHiRegisterUpdate();
-
-    private:
+    
+    protected:
         const APUChannel m_Channel;
-        const byte* m_SweepRegister;
-        const byte* m_SoundLengthRegister;
-        const byte* m_VolumeEnvelopeRegister;
-        const byte* m_FrequencyLoRegister;
-        const byte* m_FrequencyHiRegister;
         const byte* m_SoundOnOffRegister;
 
+        bool m_Enabled;
         double m_FrequencyHz;
-        double m_DutyCycle;
+        double m_Phase;
         bool m_CounterModeEnabled;
         double m_SoundLengthSeconds;
         bool m_SweepModeEnabled;
@@ -98,76 +82,103 @@ private:
         double m_EnvelopeDirection;
         double m_EnvelopeStartVolume;
         double m_EnvelopeStepLengthSeconds;
-        int m_HarmonicsCount;
-        double m_Coefficients[MaxHarmonicsCount];
-        double m_Phase;
         double m_SoundLengthTimerSeconds;
-        bool m_ChannelIsPlaying;
+        bool m_SoundLengthExpired;
 
-        void RegenerateCoefficients();
-        void UpdateFrequency();
+        virtual float NextWaveformSample() = 0;
+        virtual uint GetFrequency();
+        virtual void UpdateFrequency(uint freqencyRegValue) = 0;
+
         void RestartSound();
+        void SetSoundOnOffFlag();
+        void ResetSoundOnOffFlag();
     };
 
-    class NoiseGenerator
+    class SquareWaveGenerator : public SoundGenerator
+    {
+    public:
+        SquareWaveGenerator(
+            const APUChannel channel,
+            const byte* soundOnOffRegister,
+            const byte* sweepRegister,
+            const byte* soundLengthRegister,
+            const byte* volumeEnvelopeRegister,
+            const byte* frequencyLoRegister,
+            const byte* frequencyHiRegister
+        );
+        ~SquareWaveGenerator() = default;
+
+        void TriggerSweepRegisterUpdate();
+        void TriggerSoundLengthRegisterUpdate();
+        void TriggerVolumeEnvelopeRegisterUpdate();
+        void TriggerFrequencyLoRegisterUpdate();
+        void TriggerFrequencyHiRegisterUpdate();
+
+    private:
+        const byte* m_SweepRegister;
+        const byte* m_SoundLengthRegister;
+        const byte* m_VolumeEnvelopeRegister;
+        const byte* m_FrequencyLoRegister;
+        const byte* m_FrequencyHiRegister;
+
+        double m_DutyCycle;
+        int m_HarmonicsCount;
+        double m_Coefficients[MaxHarmonicsCount];
+
+        float NextWaveformSample() override;
+        uint GetFrequency() override;
+        void UpdateFrequency(uint freqencyRegValue) override;
+        
+        void RegenerateCoefficients();
+    };
+
+    class NoiseGenerator : public SoundGenerator
     {
     public:
         NoiseGenerator(
             const APUChannel channel,
+            const byte* soundOnOffRegister,
             const byte* soundLengthRegister,
             const byte* volumeEnvelopeRegister,
             const byte* polynomialCounterRegister,
-            const byte* counterRegister,
-            const byte* soundOnOffRegister
+            const byte* counterRegister
         );
         ~NoiseGenerator() = default;
 
-        float NextSample();
-        void Reset();
         void TriggerSoundLengthRegisterUpdate();
         void TriggerVolumeEnvelopeRegisterUpdate();
         void TriggerPolynomialCounterRegisterUpdate();
         void TriggerCounterRegisterUpdate();
 
     private:
-        const APUChannel m_Channel;
         const byte* m_SoundLengthRegister;
         const byte* m_VolumeEnvelopeRegister;
         const byte* m_PolynomialCounterRegister;
         const byte* m_CounterRegister;
-        const byte* m_SoundOnOffRegister;
         
-        double m_FrequencyHz;
-        bool m_CounterModeEnabled;
-        double m_SoundLengthSeconds;
-        bool m_EnvelopeModeEnabled;
-        double m_EnvelopeDirection;
-        double m_EnvelopeStartVolume;
-        double m_EnvelopeStepLengthSeconds;
-        double m_Phase;
         double m_Signal;
-        double m_SoundLengthTimerSeconds;
+        double m_PreviousSamplePhase;
 
-        void RestartSound();
+        float NextWaveformSample() override;
+        uint GetFrequency() override;
+        void UpdateFrequency(uint freqencyRegValue) override;
     };
 
-    class WaveformGenerator
+    class WaveformGenerator : public SoundGenerator
     {
     public:
         WaveformGenerator(
             const APUChannel channel,
+            const byte* soundOnOffRegister,
             const byte* channelSoundOnOffRegister,
             const byte* soundLengthRegister,
             const byte* selectOutputLevelRegister,
             const byte* frequencyLoRegister,
             const byte* frequencyHiRegister,
-            const byte* waveBuffer,
-            const byte* soundOnOffRegister
+            const byte* waveBuffer
         );
         ~WaveformGenerator() = default;
 
-        float NextSample();
-        void Reset();
         void TriggerChannelSoundOnOffRegisterUpdate();
         void TriggerSoundLengthRegisterUpdate();
         void TriggerSelectOutputLevelRegisterUpdate();
@@ -175,25 +186,16 @@ private:
         void TriggerFrequencyHiRegisterUpdate();
 
     private:
-        const APUChannel m_Channel;
         const byte* m_ChannelSoundOnOffRegister;
         const byte* m_SoundLengthRegister;
         const byte* m_SelectOutputLevelRegister;
         const byte* m_FrequencyLoRegister;
         const byte* m_FrequencyHiRegister;
         const byte* m_WaveBuffer;
-        const byte* m_SoundOnOffRegister;
 
-        bool m_Enabled;
-        double m_FrequencyHz;
-        bool m_CounterModeEnabled;
-        double m_SoundLengthSeconds;
-        double m_OutputLevel;
-        double m_Phase;
-        double m_SoundLengthTimerSeconds;
-
-        void RestartSound();
-        void UpdateFrequency();
+        float NextWaveformSample() override;
+        uint GetFrequency() override;
+        void UpdateFrequency(uint freqencyRegValue) override;
     };
 
 private:

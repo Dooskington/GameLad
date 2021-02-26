@@ -99,39 +99,39 @@ APU::APU() :
     m_SoundOnOff(0x00),
     m_Channel1SoundGenerator(
         CHANNEL_1,
+        &m_SoundOnOff,
         &m_Channel1Sweep,
         &m_Channel1SoundLength,
         &m_Channel1VolumeEnvelope,
         &m_Channel1FrequencyLo,
-        &m_Channel1FrequencyHi,
-        &m_SoundOnOff
+        &m_Channel1FrequencyHi
     ),
     m_Channel2SoundGenerator(
         CHANNEL_2,
+        &m_SoundOnOff,
         nullptr, // No sweep register on CH2
         &m_Channel2SoundLength,
         &m_Channel2VolumeEnvelope,
         &m_Channel2FrequencyLo,
-        &m_Channel2FrequencyHi,
-        &m_SoundOnOff
+        &m_Channel2FrequencyHi
     ),
     m_Channel3SoundGenerator(
         CHANNEL_3,
+        &m_SoundOnOff,
         &m_Channel3SoundOnOff,
         &m_Channel3SoundLength,
         &m_Channel3SelectOutputLevel,
         &m_Channel3FrequencyLo,
         &m_Channel3FrequencyHi,
-        m_WavePatternRAM,
-        &m_SoundOnOff
+        m_WavePatternRAM
     ),
     m_Channel4SoundGenerator(
         CHANNEL_4,
+        &m_SoundOnOff,
         &m_Channel4SoundLength,
         &m_Channel4VolumeEnvelope,
         &m_Channel4PolynomialCounter,
-        &m_Channel4Counter,
-        &m_SoundOnOff
+        &m_Channel4Counter
     ),
     m_Initialized(false),
     m_AudioDevice(0),
@@ -410,36 +410,120 @@ void APU::LoadAudioDevice(SDL_AudioCallback callback)
     m_Initialized = true;
 }
 
+float APU::SoundGenerator::NextSample() {
+    bool is_sound_length_expired = m_CounterModeEnabled && m_SoundLengthTimerSeconds > m_SoundLengthSeconds;
+    bool is_sound_enabled = m_Enabled && m_EnvelopeStartVolume != 0.0 && !is_sound_length_expired;
+
+    if (is_sound_length_expired && !m_SoundLengthExpired)
+    {
+        m_SoundLengthExpired = true;
+        ResetSoundOnOffFlag();
+    }
+
+    float sample = 0.0;
+
+    if (is_sound_enabled)
+    {
+        sample = NextWaveformSample();
+    }
+
+    double volume = m_EnvelopeStartVolume;
+    if (m_EnvelopeModeEnabled)
+    {
+        int step_number = (int)(m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds);
+        volume += m_EnvelopeDirection * ((double)step_number / 16.0);
+        if (volume < 0.0)
+            volume = 0.0;
+        if (volume > 1.0)
+            volume = 1.0;
+    }
+    sample *= volume;
+
+    double frequency = m_FrequencyHz;
+    if (m_SweepModeEnabled)
+    {
+        uint frequency_shadow = GetFrequency();
+        int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
+
+        for (int i = 0; i < step_number; i++)
+        {
+            frequency_shadow -= (frequency_shadow >> m_SweepShiftFrequencyExponent);
+        }
+
+        // Recalculate the frequency
+        UpdateFrequency(frequency_shadow);
+    }
+
+    m_Phase += (TwoPi * frequency) / (double)AudioSampleRate;
+    while (m_Phase >= TwoPi)
+    {
+        m_Phase -= TwoPi;
+    }
+
+    m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
+
+    return sample;
+}
+
+void APU::SoundGenerator::RestartSound()
+{
+    m_SoundLengthExpired = false;
+    m_SoundLengthTimerSeconds = 0.0;
+    SetSoundOnOffFlag();
+}
+
+void APU::SoundGenerator::SetSoundOnOffFlag()
+{
+    byte sound_on_off_register = *m_SoundOnOffRegister;
+    switch(m_Channel) {
+        case CHANNEL_1:
+            sound_on_off_register |= 0b0001;
+            break;
+        case CHANNEL_2:
+            sound_on_off_register |= 0b0010;
+            break;
+        case CHANNEL_3:
+            sound_on_off_register |= 0b0100;
+            break;
+        case CHANNEL_4:
+            sound_on_off_register |= 0b1000;
+    }
+}
+
+void APU::SoundGenerator::ResetSoundOnOffFlag() 
+{
+    byte sound_on_off_register = *m_SoundOnOffRegister;
+    switch(m_Channel) {
+        case CHANNEL_1:
+            sound_on_off_register &= ~0b0001;
+            break;
+        case CHANNEL_2:
+            sound_on_off_register &= ~0b0010;
+            break;
+        case CHANNEL_3:
+            sound_on_off_register &= ~0b0100;
+            break;
+        case CHANNEL_4:
+            sound_on_off_register &= ~0b1000;
+    }
+}
+
 APU::SquareWaveGenerator::SquareWaveGenerator(
     const APUChannel channel,
+    const byte *soundOnOffRegister,
     const byte *sweepRegister,
     const byte *soundLengthRegister,
     const byte *volumeEnvelopeRegister,
     const byte *frequencyLoRegister,
-    const byte *frequencyHiRegister,
-    const byte *soundOnOffRegister)
-    : m_Channel(channel),
+    const byte *frequencyHiRegister)
+    : SoundGenerator(channel, soundOnOffRegister),
       m_SweepRegister(sweepRegister),
       m_SoundLengthRegister(soundLengthRegister),
       m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
       m_FrequencyLoRegister(frequencyLoRegister),
       m_FrequencyHiRegister(frequencyHiRegister),
-      m_SoundOnOffRegister(soundOnOffRegister),
-      m_FrequencyHz(1.0),
       m_DutyCycle(50.0),
-      m_CounterModeEnabled(false),
-      m_SoundLengthSeconds(0.0),
-      m_SweepModeEnabled(false),
-      m_SweepDirection(1.0),
-      m_SweepShiftFrequencyExponent(0),
-      m_EnvelopeModeEnabled(false),
-      m_EnvelopeDirection(1.0),
-      m_EnvelopeStartVolume(0.0),
-      m_EnvelopeStepLengthSeconds(0.0),
-      m_HarmonicsCount(0),
-      m_Phase(0.0),
-      m_SoundLengthTimerSeconds(0.0),
-      m_ChannelIsPlaying(false)
+      m_HarmonicsCount(0)
 {
     memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
 }
@@ -524,13 +608,15 @@ void APU::SquareWaveGenerator::TriggerVolumeEnvelopeRegisterUpdate()
 void APU::SquareWaveGenerator::TriggerFrequencyLoRegisterUpdate()
 {
     // Bit 7-0 - Low 8 bits of the frequency data
-    UpdateFrequency();
+    uint frequencyData = GetFrequency();
+    UpdateFrequency(frequencyData);
 }
 
 void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
 {
     // Bit 2-0 - High 3 bits of the frequency data
-    UpdateFrequency();
+    uint frequencyData = GetFrequency();
+    UpdateFrequency(frequencyData);
 
     byte frequency_hi_register = *m_FrequencyHiRegister;
 
@@ -544,42 +630,29 @@ void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
     }
 }
 
-void APU::SquareWaveGenerator::RestartSound()
-{
-    m_ChannelIsPlaying = true;
-
-    // Reset the sound length timer
-    m_SoundLengthTimerSeconds = 0.0;
-
-    // Set sound on/off flag for this register
-    byte sound_on_off_register = *m_SoundOnOffRegister;
-    switch(m_Channel) {
-        case CHANNEL_1:
-            sound_on_off_register |= 0b0001;
-            break;
-        case CHANNEL_2:
-            sound_on_off_register |= 0b0010;
-            break;
-        case CHANNEL_3:
-            sound_on_off_register |= 0b0100;
-            break;
-        case CHANNEL_4:
-            sound_on_off_register |= 0b1000;
+float APU::SquareWaveGenerator::NextWaveformSample() {
+    float sample = 0.0;
+    for (int j = 0; j < m_HarmonicsCount; j++)
+    {
+        sample += m_Coefficients[j] * cos(j * m_Phase);
     }
+    return sample;
 }
 
-void APU::SquareWaveGenerator::UpdateFrequency()
-{
+uint APU::SquareWaveGenerator::GetFrequency() {
     byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
+    return ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
+}
 
+void APU::SquareWaveGenerator::UpdateFrequency(uint frequencyRegValue)
+{
     // Frequency data (11 bits total)
-    // Low 8 bits in Frequency Lo register
-    // High 3 bits in Frequency Hi register bits 2-0
     // For x = the value in the frequency registers, the actual frequency
     // in Hz is 131072/(2048-x) Hz
-    m_FrequencyHz = (131072.0 / (double)(2048 - (((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF)));
+    m_FrequencyHz = (131072.0 / (double)(2048 - frequencyRegValue));
 
+    // Coefficients must be recalculated whenever the frequency is modified
     RegenerateCoefficients();
 }
 
@@ -600,164 +673,21 @@ void APU::SquareWaveGenerator::RegenerateCoefficients()
     }
 }
 
-float APU::SquareWaveGenerator::NextSample()
-{
-    bool is_sound_playing = !m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds;
-    bool is_sound_enabled = m_EnvelopeStartVolume != 0.0 && is_sound_playing;
-
-    if (!is_sound_playing && m_ChannelIsPlaying)
-    {
-        // sound has stopped playing
-        m_ChannelIsPlaying = false;
-
-        // Reset sound on/off flag for this register
-        byte sound_on_off_register = *m_SoundOnOffRegister;
-        switch(m_Channel) {
-            case CHANNEL_1:
-                sound_on_off_register &= ~0b0001;
-                break;
-            case CHANNEL_2:
-                sound_on_off_register &= ~0b0010;
-                break;
-            case CHANNEL_3:
-                sound_on_off_register &= ~0b0100;
-                break;
-            case CHANNEL_4:
-                sound_on_off_register &= ~0b1000;
-        }
-    }
-
-    float sample = 0.0;
-
-    if (is_sound_enabled)
-    {
-        for (int j = 0; j < m_HarmonicsCount; j++)
-        {
-            sample += m_Coefficients[j] * cos(j * m_Phase);
-        }
-    }
-
-    double volume = m_EnvelopeStartVolume;
-    if (m_EnvelopeModeEnabled)
-    {
-        int step_number = (int)(m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds);
-        volume += m_EnvelopeDirection * ((double)step_number / 16.0);
-        if (volume < 0.0)
-            volume = 0.0;
-        if (volume > 1.0)
-            volume = 1.0;
-    }
-    sample *= volume;
-
-    double frequency = m_FrequencyHz;
-    if (m_SweepModeEnabled)
-    {
-        byte frequency_lo_register = *m_FrequencyLoRegister;
-        byte frequency_hi_register = *m_FrequencyHiRegister;
-        uint frequency_shadow = (((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF);
-        int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
-
-        // uint new_frequency = frequency_shadow;
-        for (int i = 0; i < step_number; i++)
-        {
-            frequency_shadow -= (frequency_shadow >> m_SweepShiftFrequencyExponent);
-        }
-
-        // Recalculate the frequency - TODO: figure out how to de-duplicate this
-        m_FrequencyHz = (131072.0 / (double)(2048 - frequency_shadow));
-
-        if (m_FrequencyHz <= 0)
-        {
-            Logger::LogError("Invalid Frequency %f", m_FrequencyHz);
-            assert(false);
-        }
-
-        RegenerateCoefficients();
-    }
-
-    m_Phase += (TwoPi * frequency) / (double)AudioSampleRate;
-    while (m_Phase >= TwoPi)
-    {
-        m_Phase -= TwoPi;
-    }
-
-    if (m_Phase < 0 || m_Phase >= TwoPi)
-    {
-        Logger::LogError("Invalid phase %f", m_Phase);
-        assert(false);
-    }
-
-    m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
-
-    return sample;
-}
-
 APU::NoiseGenerator::NoiseGenerator(
     const APUChannel channel,
+    const byte* soundOnOffRegister,
     const byte* soundLengthRegister,
     const byte* volumeEnvelopeRegister,
     const byte* polynomialCounterRegister,
-    const byte* counterRegister,
-    const byte* soundOnOffRegister
+    const byte* counterRegister
 ) :
-    m_Channel(channel),
+    SoundGenerator(channel, soundOnOffRegister),
     m_SoundLengthRegister(soundLengthRegister),
     m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
     m_PolynomialCounterRegister(polynomialCounterRegister),
     m_CounterRegister(counterRegister),
-    m_SoundOnOffRegister(soundOnOffRegister),
-    m_FrequencyHz(1.0),
-    m_CounterModeEnabled(false),
-    m_SoundLengthSeconds(0.0),
-    m_EnvelopeModeEnabled(false),
-    m_EnvelopeDirection(1.0),
-    m_EnvelopeStartVolume(0.0),
-    m_EnvelopeStepLengthSeconds(0.0),
-    m_Phase(0.0),
-    m_Signal(0.0),
-    m_SoundLengthTimerSeconds(0.0)
+    m_Signal(0.0)
 {
-}
-
-float APU::NoiseGenerator::NextSample()
-{
-    float sample = 0.0;
-
-    bool sound_enabled = m_EnvelopeStartVolume != 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
-
-    if (m_Phase >= 1.0)
-    {
-        m_Phase -= 1.0;
-        float r = rand() / (RAND_MAX + 1.0);
-        m_Signal = r > 0.5 ? 0.5 : -0.5;
-    }
-
-    if (sound_enabled)
-    {
-        sample = m_Signal;
-
-        if (m_EnvelopeModeEnabled)
-        {
-            int step_number = m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds;
-            double volume = m_EnvelopeStartVolume + (m_EnvelopeDirection * ((double)step_number / 16.0));
-            if (volume < 0.0)
-                volume = 0.0;
-            if (volume > 1.0)
-                volume = 1.0;
-            sample *= volume;
-        }
-    }
-
-    m_Phase += m_FrequencyHz / (double)AudioSampleRate;
-
-    m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
-
-    return sample;
-}
-
-void APU::NoiseGenerator::Reset()
-{
-    // TODO
 }
 
 void APU::NoiseGenerator::TriggerSoundLengthRegisterUpdate()
@@ -823,92 +753,42 @@ void APU::NoiseGenerator::TriggerCounterRegisterUpdate()
     }
 }
 
-void APU::NoiseGenerator::RestartSound()
-{
-    m_SoundLengthTimerSeconds = 0.0;
-
-    // Set sound on/off flag for this register
-    byte sound_on_off_register = *m_SoundOnOffRegister;
-    switch(m_Channel) {
-        case CHANNEL_1:
-            sound_on_off_register |= 0b0001;
-            break;
-        case CHANNEL_2:
-            sound_on_off_register |= 0b0010;
-            break;
-        case CHANNEL_3:
-            sound_on_off_register |= 0b0100;
-            break;
-        case CHANNEL_4:
-            sound_on_off_register |= 0b1000;
+float APU::NoiseGenerator::NextWaveformSample() {
+    if (m_Phase < m_PreviousSamplePhase) // A wrap-around occurred
+    {
+        // TODO: Model real GB behavior
+        float r = rand() / (RAND_MAX + 1.0);
+        m_Signal = r > 0.5 ? 0.5 : -0.5;
     }
+    return m_Signal;
+}
+
+uint APU::NoiseGenerator::GetFrequency() {
+    // TODO: Refactor so this isn't needed
+}
+
+void APU::NoiseGenerator::UpdateFrequency(uint stuff) {
+    // TODO: Refactor so this isn't needed
 }
 
 APU::WaveformGenerator::WaveformGenerator(
     const APUChannel channel,
+    const byte* soundOnOffRegister,
     const byte* channelSoundOnOffRegister,
     const byte* soundLengthRegister,
     const byte* selectOutputLevelRegister,
     const byte* frequencyLoRegister,
     const byte* frequencyHiRegister,
-    const byte* waveBuffer,
-    const byte* soundOnOffRegister
+    const byte* waveBuffer
 ) :
-    m_Channel(channel),
+    SoundGenerator(channel, soundOnOffRegister),
     m_ChannelSoundOnOffRegister(channelSoundOnOffRegister),
     m_SoundLengthRegister(soundLengthRegister),
     m_SelectOutputLevelRegister(selectOutputLevelRegister),
     m_FrequencyLoRegister(frequencyLoRegister),
     m_FrequencyHiRegister(frequencyHiRegister),
-    m_WaveBuffer(waveBuffer),
-    m_SoundOnOffRegister(soundOnOffRegister),
-    m_Enabled(true),
-    m_FrequencyHz(1.0),
-    m_CounterModeEnabled(false),
-    m_SoundLengthSeconds(0.0),
-    m_OutputLevel(1.0),
-    m_Phase(0.0),
-    m_SoundLengthTimerSeconds(0.0)
+    m_WaveBuffer(waveBuffer)
 {
-}
-
-float APU::WaveformGenerator::NextSample()
-{
-    float sample = 0.0;
-
-    if (m_Enabled)
-    {
-        bool sound_enabled = m_OutputLevel != 0.0 && (!m_CounterModeEnabled || m_SoundLengthTimerSeconds < m_SoundLengthSeconds);
-
-        if (sound_enabled)
-        {
-            // Wave is made up of 32 4-bit samples
-            int wave_ram_sample_number = (int)(m_Phase * 32.0);
-            int wave_ram_byte_offset = wave_ram_sample_number / 2;
-            int shift = ((1 + wave_ram_sample_number) % 2) * 4; // shift 0 or 4 bits.
-            int wave_ram_sample = (m_WaveBuffer[wave_ram_byte_offset] >> shift) & 0xF;
-            sample = ((double)wave_ram_sample / 16.0) - 0.5;
-
-            // TODO: Emulate bit-shift rather than scaling based sound level
-            sample *= m_OutputLevel;
-        }
-
-        m_Phase += m_FrequencyHz / (double)AudioSampleRate;
-
-        if (m_Phase >= 1.0)
-        {
-            m_Phase -= 1.0;
-        }
-    }
-
-    m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
-
-    return sample;
-}
-
-void APU::WaveformGenerator::Reset()
-{
-    // TODO
 }
 
 void APU::WaveformGenerator::TriggerChannelSoundOnOffRegisterUpdate()
@@ -938,29 +818,31 @@ void APU::WaveformGenerator::TriggerSelectOutputLevelRegisterUpdate()
     switch (sound_output_level)
     {
     case 0:
-        m_OutputLevel = 0.0;
+        m_EnvelopeStartVolume = 0.0;
         break;
     case 1:
-        m_OutputLevel = 1.0;
+        m_EnvelopeStartVolume = 1.0;
         break;
     case 2:
-        m_OutputLevel = 0.5;
+        m_EnvelopeStartVolume = 0.5;
         break;
     case 3:
-        m_OutputLevel = 0.25;
+        m_EnvelopeStartVolume = 0.25;
     }
 }
 
 void APU::WaveformGenerator::TriggerFrequencyLoRegisterUpdate()
 {
     // Bit 7-0 - Low 8 bits of the frequency data
-    UpdateFrequency();
+    uint frequencyRegisterValue = GetFrequency();
+    UpdateFrequency(frequencyRegisterValue);
 }
 
 void APU::WaveformGenerator::TriggerFrequencyHiRegisterUpdate()
 {
     // Bit 2-0 - High 3 bits of the frequency data
-    UpdateFrequency();
+    uint frequencyRegisterValue = GetFrequency();
+    UpdateFrequency(frequencyRegisterValue);
 
     byte frequency_hi_register = *m_FrequencyHiRegister;
 
@@ -974,38 +856,33 @@ void APU::WaveformGenerator::TriggerFrequencyHiRegisterUpdate()
     }
 }
 
-void APU::WaveformGenerator::UpdateFrequency() 
+float APU::WaveformGenerator::NextWaveformSample() 
+{
+    // Wave is made up of 32 4-bit samples
+    int wave_ram_sample_number = (int)(m_Phase * 32.0);
+    int wave_ram_byte_offset = wave_ram_sample_number / 2;
+    int shift = ((1 + wave_ram_sample_number) % 2) * 4; // shift 0 or 4 bits.
+    int wave_ram_sample = (m_WaveBuffer[wave_ram_byte_offset] >> shift) & 0xF;
+    float sample = ((double)wave_ram_sample / 16.0) - 0.5;
+
+    // TODO: Emulate bit-shift sound level scaling rather than relying on the volume envelope
+
+    return sample;
+}
+
+uint APU::WaveformGenerator::GetFrequency()
 {
     byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
-
-    // Frequency data (11 bits total)
-    // Low 8 bits in Frequency Lo register
-    // High 3 bits in Frequency Hi register bits 2-0
-    // For x = the value in the frequency registers, the actual frequency
-    // is 65536/(2048-x) Hz
-    m_FrequencyHz = 65536.0 / (double)(2048 - (((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF));
+    return ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
 }
 
-void APU::WaveformGenerator::RestartSound()
+void APU::WaveformGenerator::UpdateFrequency(uint frequencyRegValue)
 {
-    m_SoundLengthTimerSeconds = 0.0;
-
-    // Set sound on/off flag for this register
-    byte sound_on_off_register = *m_SoundOnOffRegister;
-    switch(m_Channel) {
-        case CHANNEL_1:
-            sound_on_off_register |= 0b0001;
-            break;
-        case CHANNEL_2:
-            sound_on_off_register |= 0b0010;
-            break;
-        case CHANNEL_3:
-            sound_on_off_register |= 0b0100;
-            break;
-        case CHANNEL_4:
-            sound_on_off_register |= 0b1000;
-    }
+    // Frequency data (11 bits total)
+    // For x = the value in the frequency registers, the actual frequency
+    // is 65536/(2048-x) Hz
+    m_FrequencyHz = 65536.0 / (double)(2048 - frequencyRegValue);
 }
 
 APU::Buffer::Buffer(size_t element_count, size_t element_size)
