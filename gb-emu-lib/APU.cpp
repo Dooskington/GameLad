@@ -171,10 +171,10 @@ void APU::Step(unsigned long cycles)
     // Compute the next audio sample(s)
     for (int i = 0; i < int_part; i++)
     {
-        float ch1_sample = m_Channel1SoundGenerator.NextSample();
-        float ch2_sample = m_Channel2SoundGenerator.NextSample();
+        float ch1_sample = 0;// m_Channel1SoundGenerator.NextSample();
+        float ch2_sample = 0;// m_Channel2SoundGenerator.NextSample();
         float ch3_sample = m_Channel3SoundGenerator.NextSample();
-        float ch4_sample = m_Channel4SoundGenerator.NextSample();
+        float ch4_sample = 0;// m_Channel4SoundGenerator.NextSample();
 
         // Left channel "SO1"
         float so1 = 0.0;
@@ -410,6 +410,14 @@ void APU::LoadAudioDevice(SDL_AudioCallback callback)
     m_Initialized = true;
 }
 
+APU::SoundGenerator::SoundGenerator(
+    const APUChannel channel,
+    const byte *soundOnOffRegister)
+    : m_Channel(channel),
+      m_SoundOnOffRegister(soundOnOffRegister)
+{
+}
+
 float APU::SoundGenerator::NextSample() {
     bool is_sound_length_expired = m_CounterModeEnabled && m_SoundLengthTimerSeconds > m_SoundLengthSeconds;
     bool is_sound_enabled = m_Enabled && m_EnvelopeStartVolume != 0.0 && !is_sound_length_expired;
@@ -521,9 +529,7 @@ APU::SquareWaveGenerator::SquareWaveGenerator(
       m_SoundLengthRegister(soundLengthRegister),
       m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
       m_FrequencyLoRegister(frequencyLoRegister),
-      m_FrequencyHiRegister(frequencyHiRegister),
-      m_DutyCycle(50.0),
-      m_HarmonicsCount(0)
+      m_FrequencyHiRegister(frequencyHiRegister)
 {
     memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
 }
@@ -685,8 +691,7 @@ APU::NoiseGenerator::NoiseGenerator(
     m_SoundLengthRegister(soundLengthRegister),
     m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
     m_PolynomialCounterRegister(polynomialCounterRegister),
-    m_CounterRegister(counterRegister),
-    m_Signal(0.0)
+    m_CounterRegister(counterRegister)
 {
 }
 

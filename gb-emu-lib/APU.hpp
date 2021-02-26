@@ -62,31 +62,31 @@ private:
             const APUChannel channel,
             const byte* soundOnOffRegister
         );
-        virtual ~SoundGenerator() = 0;
+        virtual ~SoundGenerator() = default;
         float NextSample();
     
     protected:
         const APUChannel m_Channel;
         const byte* m_SoundOnOffRegister;
 
-        bool m_Enabled;
-        double m_FrequencyHz;
-        double m_Phase;
-        bool m_CounterModeEnabled;
+        bool m_Enabled = true;
+        double m_FrequencyHz = 1.0;
+        double m_Phase = 0.0;
+        bool m_CounterModeEnabled = false;
         double m_SoundLengthSeconds;
-        bool m_SweepModeEnabled;
+        bool m_SweepModeEnabled = false;
         double m_SweepDirection;
         int m_SweepShiftFrequencyExponent;
         double m_SweepStepLengthSeconds;
-        bool m_EnvelopeModeEnabled;
+        bool m_EnvelopeModeEnabled = false;
         double m_EnvelopeDirection;
-        double m_EnvelopeStartVolume;
+        double m_EnvelopeStartVolume = 1.0;
         double m_EnvelopeStepLengthSeconds;
-        double m_SoundLengthTimerSeconds;
-        bool m_SoundLengthExpired;
+        double m_SoundLengthTimerSeconds = 0.0;
+        bool m_SoundLengthExpired = true;
 
         virtual float NextWaveformSample() = 0;
-        virtual uint GetFrequency();
+        virtual uint GetFrequency() = 0;
         virtual void UpdateFrequency(uint freqencyRegValue) = 0;
 
         void RestartSound();
@@ -121,8 +121,8 @@ private:
         const byte* m_FrequencyLoRegister;
         const byte* m_FrequencyHiRegister;
 
-        double m_DutyCycle;
-        int m_HarmonicsCount;
+        double m_DutyCycle = 0.5;
+        int m_HarmonicsCount = 0;
         double m_Coefficients[MaxHarmonicsCount];
 
         float NextWaveformSample() override;
@@ -156,8 +156,8 @@ private:
         const byte* m_PolynomialCounterRegister;
         const byte* m_CounterRegister;
         
-        double m_Signal;
-        double m_PreviousSamplePhase;
+        double m_Signal = 0.0;
+        double m_PreviousSamplePhase = 0.0;
 
         float NextWaveformSample() override;
         uint GetFrequency() override;
