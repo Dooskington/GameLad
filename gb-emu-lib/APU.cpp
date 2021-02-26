@@ -459,6 +459,8 @@ float APU::SoundGenerator::NextSample() {
         }
 
         // Recalculate the frequency
+
+        // TODO: This shouldn't set m_Frequency
         UpdateFrequency(frequency_shadow);
     }
 
@@ -765,6 +767,7 @@ float APU::NoiseGenerator::NextWaveformSample() {
         float r = rand() / (RAND_MAX + 1.0);
         m_Signal = r > 0.5 ? 0.5 : -0.5;
     }
+    m_PreviousSamplePhase = m_Phase;
     return m_Signal;
 }
 

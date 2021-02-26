@@ -83,7 +83,7 @@ private:
         double m_EnvelopeStartVolume = 1.0;
         double m_EnvelopeStepLengthSeconds;
         double m_SoundLengthTimerSeconds = 0.0;
-        bool m_SoundLengthExpired = true;
+        bool m_SoundLengthExpired = false;
 
         virtual float NextWaveformSample() = 0;
         virtual uint GetFrequency() = 0;
@@ -156,7 +156,7 @@ private:
         const byte* m_PolynomialCounterRegister;
         const byte* m_CounterRegister;
         
-        double m_Signal = 0.0;
+        double m_Signal = 0.5;
         double m_PreviousSamplePhase = 0.0;
 
         float NextWaveformSample() override;
