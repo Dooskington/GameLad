@@ -30,12 +30,13 @@ Then, follow the code of the main emulator loop that starts [here](https://githu
 * `git clone https://github.com/Microsoft/vcpkg.git`
 * `cd vcpkg`
 * *Linux:* `sudo apt-get install build-essential`
-* *Linux:* `./bootstrap-vcpkg.sh`
+* *macOS:* `xcode-select --install`
+* *Linux/macOS:* `./bootstrap-vcpkg.sh`
 * *Windows:* `bootstrap-vcpkg.bat`
 
 NOTE: The bootstrap may fail, if it does, follow any instructions listed and try again.
 
-## Linux
+## Linux/macOS
 * You may need to run: `chmod 700 compile.sh`
 * `./compile.sh <path_to_cloned_vcpkg>`
 *     For example: ./compile.sh ~/git/microsoft/vcpkg
