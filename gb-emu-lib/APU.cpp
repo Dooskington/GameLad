@@ -447,24 +447,21 @@ float APU::SoundGenerator::NextSample() {
     }
     sample *= volume;
 
-    double frequency = m_FrequencyHz;
     if (m_SweepModeEnabled)
     {
-        uint frequency_shadow = GetFrequency();
+        // Only Channel 1 (square wave) has sweep
+        uint adjusted_frequency = m_FrequencyRegisterData;
         int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
 
         for (int i = 0; i < step_number; i++)
         {
-            frequency_shadow -= (frequency_shadow >> m_SweepShiftFrequencyExponent);
+            adjusted_frequency -= (adjusted_frequency >> m_SweepShiftFrequencyExponent);
         }
 
-        // Recalculate the frequency
-
-        // TODO: This shouldn't set m_Frequency
-        UpdateFrequency(frequency_shadow);
+        UpdateFrequency(adjusted_frequency);
     }
 
-    m_Phase += (TwoPi * frequency) / (double)AudioSampleRate;
+    m_Phase += (TwoPi * m_FrequencyHz) / (double)AudioSampleRate;
     while (m_Phase >= TwoPi)
     {
         m_Phase -= TwoPi;
@@ -616,17 +613,29 @@ void APU::SquareWaveGenerator::TriggerVolumeEnvelopeRegisterUpdate()
 void APU::SquareWaveGenerator::TriggerFrequencyLoRegisterUpdate()
 {
     // Bit 7-0 - Low 8 bits of the frequency data
-    uint frequencyData = GetFrequency();
-    UpdateFrequency(frequencyData);
+    byte frequency_lo_register = *m_FrequencyLoRegister;
+    byte frequency_hi_register = *m_FrequencyHiRegister;
+    uint frequency_reg_value = ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
+
+    UpdateFrequency(frequency_reg_value);
+
+    // Store the frequency value from the registers as well so that it can be
+    // used by the frequency sweep functionality
+    m_FrequencyRegisterData = frequency_reg_value;
 }
 
 void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
 {
     // Bit 2-0 - High 3 bits of the frequency data
-    uint frequencyData = GetFrequency();
-    UpdateFrequency(frequencyData);
-
+    byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
+    uint frequency_reg_value = ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
+
+    UpdateFrequency(frequency_reg_value);
+
+    // Store the frequency value from the registers as well so that it can be
+    // used by the frequency sweep functionality
+    m_FrequencyRegisterData = frequency_reg_value;
 
     // Bit 6 - Counter/consecutive selection
     m_CounterModeEnabled = ISBITSET(frequency_hi_register, 6);
@@ -645,12 +654,6 @@ float APU::SquareWaveGenerator::NextWaveformSample() {
         sample += m_Coefficients[j] * cos(j * m_Phase);
     }
     return sample;
-}
-
-uint APU::SquareWaveGenerator::GetFrequency() {
-    byte frequency_lo_register = *m_FrequencyLoRegister;
-    byte frequency_hi_register = *m_FrequencyHiRegister;
-    return ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
 }
 
 void APU::SquareWaveGenerator::UpdateFrequency(uint frequencyRegValue)
@@ -730,16 +733,7 @@ void APU::NoiseGenerator::TriggerPolynomialCounterRegisterUpdate()
 {
     byte polynomial_counter_register = *m_PolynomialCounterRegister;
 
-    // Bit 2-0 - Dividing ratio of frequency (r)
-    byte divide_ratio = polynomial_counter_register & 7;
-
-    // Bit 7-4 - Shift clock frequency (s)
-    byte shift_clock_frequency = (polynomial_counter_register >> 4) & 0xF;
-
-    // 524288 Hz / r / 2^(s+1)
-    // For r=0 assume r=0.5 instead
-    double r = divide_ratio == 0 ? 0.5 : (double)divide_ratio;
-    m_FrequencyHz = 524288.0 / r / (double)(2 << shift_clock_frequency);
+    UpdateFrequency(polynomial_counter_register);
 
     // Bit 3 - Counter step (0=15 bits, 1=7 bits)
     byte counter_step = ISBITSET(polynomial_counter_register, 3) ? 7 : 15;
@@ -771,12 +765,17 @@ float APU::NoiseGenerator::NextWaveformSample() {
     return m_Signal;
 }
 
-uint APU::NoiseGenerator::GetFrequency() {
-    // TODO: Refactor so this isn't needed
-}
+void APU::NoiseGenerator::UpdateFrequency(uint polynomial_counter_register) {
+    // Bit 2-0 - Dividing ratio of frequency (r)
+    byte divide_ratio = polynomial_counter_register & 7;
 
-void APU::NoiseGenerator::UpdateFrequency(uint stuff) {
-    // TODO: Refactor so this isn't needed
+    // Bit 7-4 - Shift clock frequency (s)
+    byte shift_clock_frequency = (polynomial_counter_register >> 4) & 0xF;
+
+    // 524288 Hz / r / 2^(s+1)
+    // For r=0 assume r=0.5 instead
+    double r = divide_ratio == 0 ? 0.5 : (double)divide_ratio;
+    m_FrequencyHz = 524288.0 / r / (double)(2 << shift_clock_frequency);
 }
 
 APU::WaveformGenerator::WaveformGenerator(
@@ -842,17 +841,17 @@ void APU::WaveformGenerator::TriggerSelectOutputLevelRegisterUpdate()
 void APU::WaveformGenerator::TriggerFrequencyLoRegisterUpdate()
 {
     // Bit 7-0 - Low 8 bits of the frequency data
-    uint frequencyRegisterValue = GetFrequency();
-    UpdateFrequency(frequencyRegisterValue);
+    byte frequency_lo_register = *m_FrequencyLoRegister;
+    byte frequency_hi_register = *m_FrequencyHiRegister;
+    UpdateFrequency(((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF);
 }
 
 void APU::WaveformGenerator::TriggerFrequencyHiRegisterUpdate()
 {
     // Bit 2-0 - High 3 bits of the frequency data
-    uint frequencyRegisterValue = GetFrequency();
-    UpdateFrequency(frequencyRegisterValue);
-
+    byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
+    UpdateFrequency(((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF);
 
     // Bit 6 - Counter/consecutive selection
     m_CounterModeEnabled = ISBITSET(frequency_hi_register, 6);
@@ -876,13 +875,6 @@ float APU::WaveformGenerator::NextWaveformSample()
     // TODO: Emulate bit-shift sound level scaling rather than relying on the volume envelope
 
     return sample;
-}
-
-uint APU::WaveformGenerator::GetFrequency()
-{
-    byte frequency_lo_register = *m_FrequencyLoRegister;
-    byte frequency_hi_register = *m_FrequencyHiRegister;
-    return ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
 }
 
 void APU::WaveformGenerator::UpdateFrequency(uint frequencyRegValue)

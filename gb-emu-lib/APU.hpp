@@ -84,9 +84,9 @@ private:
         double m_EnvelopeStepLengthSeconds;
         double m_SoundLengthTimerSeconds = 0.0;
         bool m_SoundLengthExpired = false;
+        uint m_FrequencyRegisterData = 0;
 
         virtual float NextWaveformSample() = 0;
-        virtual uint GetFrequency() = 0;
         virtual void UpdateFrequency(uint freqencyRegValue) = 0;
 
         void RestartSound();
@@ -126,7 +126,6 @@ private:
         double m_Coefficients[MaxHarmonicsCount];
 
         float NextWaveformSample() override;
-        uint GetFrequency() override;
         void UpdateFrequency(uint freqencyRegValue) override;
         
         void RegenerateCoefficients();
@@ -160,7 +159,6 @@ private:
         double m_PreviousSamplePhase = 0.0;
 
         float NextWaveformSample() override;
-        uint GetFrequency() override;
         void UpdateFrequency(uint freqencyRegValue) override;
     };
 
@@ -194,7 +192,6 @@ private:
         const byte* m_WaveBuffer;
 
         float NextWaveformSample() override;
-        uint GetFrequency() override;
         void UpdateFrequency(uint freqencyRegValue) override;
     };
 
