@@ -55,6 +55,7 @@ private:
         void AdvanceWriteIndex();
     };
 
+    // Base class for sound channel sample generators
     class SoundGenerator
     {
     public:

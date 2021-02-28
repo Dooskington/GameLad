@@ -419,8 +419,13 @@ APU::SoundGenerator::SoundGenerator(
 }
 
 float APU::SoundGenerator::NextSample() {
+    float sample = 0.0;
+
+    if (!m_Enabled) {
+        return sample;
+    }
+
     bool is_sound_length_expired = m_CounterModeEnabled && m_SoundLengthTimerSeconds > m_SoundLengthSeconds;
-    bool is_sound_playing = m_Enabled && m_EnvelopeStartVolume != 0.0 && !is_sound_length_expired;
 
     if (is_sound_length_expired && !m_SoundLengthExpired)
     {
@@ -428,9 +433,7 @@ float APU::SoundGenerator::NextSample() {
         ResetSoundOnOffFlag();
     }
 
-    float sample = 0.0;
-
-    if (is_sound_playing)
+    if (!m_SoundLengthExpired)
     {
         sample = NextWaveformSample();
     }
