@@ -443,10 +443,11 @@ float APU::SoundGenerator::NextSample() {
     {
         int step_number = (int)(m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds);
         volume += m_EnvelopeDirection * ((double)step_number / 16.0);
-        if (volume < 0.0)
+        if (volume < 0.0) { // Clamp volume between 0 and 1
             volume = 0.0;
-        if (volume > 1.0)
+        } else if (volume > 1.0) {
             volume = 1.0;
+        }
     }
     sample *= volume;
 
@@ -458,7 +459,18 @@ float APU::SoundGenerator::NextSample() {
 
         for (int i = 0; i < step_number; i++)
         {
-            adjusted_frequency -= (adjusted_frequency >> m_SweepShiftFrequencyExponent);
+            if (m_SweepDirection > 0) {
+                adjusted_frequency += (adjusted_frequency >> m_SweepShiftFrequencyExponent);
+            } else {
+                adjusted_frequency -= (adjusted_frequency >> m_SweepShiftFrequencyExponent);
+            }
+        }
+
+        // Clamp adjusted frequency between 0 and 2047
+        if (adjusted_frequency < 0) {
+            adjusted_frequency = 0;
+        } else if (adjusted_frequency > 2047) {
+            adjusted_frequency = 2047;
         }
 
         UpdateFrequency(adjusted_frequency);
