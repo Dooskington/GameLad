@@ -171,10 +171,10 @@ void APU::Step(unsigned long cycles)
     // Compute the next audio sample(s)
     for (int i = 0; i < int_part; i++)
     {
-        float ch1_sample = 0;// m_Channel1SoundGenerator.NextSample();
-        float ch2_sample = 0;// m_Channel2SoundGenerator.NextSample();
+        float ch1_sample = m_Channel1SoundGenerator.NextSample();
+        float ch2_sample = m_Channel2SoundGenerator.NextSample();
         float ch3_sample = m_Channel3SoundGenerator.NextSample();
-        float ch4_sample = 0;// m_Channel4SoundGenerator.NextSample();
+        float ch4_sample = m_Channel4SoundGenerator.NextSample();
 
         // Left channel "SO1"
         float so1 = 0.0;
@@ -420,7 +420,7 @@ APU::SoundGenerator::SoundGenerator(
 
 float APU::SoundGenerator::NextSample() {
     bool is_sound_length_expired = m_CounterModeEnabled && m_SoundLengthTimerSeconds > m_SoundLengthSeconds;
-    bool is_sound_enabled = m_Enabled && m_EnvelopeStartVolume != 0.0 && !is_sound_length_expired;
+    bool is_sound_playing = m_Enabled && m_EnvelopeStartVolume != 0.0 && !is_sound_length_expired;
 
     if (is_sound_length_expired && !m_SoundLengthExpired)
     {
@@ -430,7 +430,7 @@ float APU::SoundGenerator::NextSample() {
 
     float sample = 0.0;
 
-    if (is_sound_enabled)
+    if (is_sound_playing)
     {
         sample = NextWaveformSample();
     }
@@ -867,7 +867,7 @@ void APU::WaveformGenerator::TriggerFrequencyHiRegisterUpdate()
 float APU::WaveformGenerator::NextWaveformSample() 
 {
     // Wave is made up of 32 4-bit samples
-    int wave_ram_sample_number = (int)(m_Phase * 32.0);
+    int wave_ram_sample_number = (int)((m_Phase / TwoPi) * 32.0);
     int wave_ram_byte_offset = wave_ram_sample_number / 2;
     int shift = ((1 + wave_ram_sample_number) % 2) * 4; // shift 0 or 4 bits.
     int wave_ram_sample = (m_WaveBuffer[wave_ram_byte_offset] >> shift) & 0xF;
