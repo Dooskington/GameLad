@@ -186,7 +186,6 @@ void APU::Step(unsigned long cycles)
             so1 += ch3_sample;
         if (OutputChannel4ToSO1)
             so1 += ch4_sample;
-        so1 *= ((float)OutputLevelSO1 / 7); // 0 = mute; 7 = max volume
 
         // Right channel "SO2"
         float so2 = 0.0;
@@ -198,7 +197,11 @@ void APU::Step(unsigned long cycles)
             so2 += ch3_sample;
         if (OutputChannel4ToSO2)
             so2 += ch4_sample;
-        so2 *= ((float)OutputLevelSO2 / 7); // 0 = mute; 7 = max volume
+
+        // 0 = mute; 7 = max volume;
+        // Output volume = OutputLevel / 7, then scale by 1/4
+        so1 *= ((float)OutputLevelSO1 / 28); 
+        so2 *= ((float)OutputLevelSO2 / 28);
 
         float f_frame[2] = {so1, so2};
         m_OutputBuffer.Put((Uint8 *)f_frame);
