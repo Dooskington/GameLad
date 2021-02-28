@@ -4,14 +4,14 @@ This is a gameboy emulator that I made with [tyren](https://github.com/TyrenDe) 
 
 ![GameLad](https://i.imgur.com/QDiatSD.jpg)
 
-It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests. There isn't audio support.
+It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests.
 
 Learn more [here](https://github.com/Dooskington/GameLad/wiki).
 
 Technology     | Purpose
 ---------------|----------
 **C++14**      | Core
-**SDL2**       | Windowing, Rendering, & Input
+**SDL2**       | Windowing, Rendering, Sound, & Input
 **VS2015+**    | Windows Compilation
 
 # Pull Requests
