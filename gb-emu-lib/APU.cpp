@@ -133,7 +133,7 @@ void APU::Step(unsigned long cycles)
 
         // 0 = mute; 7 = max volume;
         // Output volume = OutputLevel / 7, then scale by 1/4
-        so1 *= ((float)OutputLevelSO1 / 28); 
+        so1 *= ((float)OutputLevelSO1 / 28);
         so2 *= ((float)OutputLevelSO2 / 28);
 
         float f_frame[2] = {so1, so2};
@@ -354,10 +354,12 @@ APU::SoundGenerator::SoundGenerator(
 {
 }
 
-float APU::SoundGenerator::NextSample() {
+float APU::SoundGenerator::NextSample()
+{
     float sample = 0.0;
 
-    if (!m_Enabled) {
+    if (!m_Enabled)
+    {
         return sample;
     }
 
@@ -365,7 +367,7 @@ float APU::SoundGenerator::NextSample() {
 
     if (is_sound_length_expired && !m_SoundLengthExpired)
     {
-        // Sound length has expired since the previous sample - reset 
+        // Sound length has expired since the previous sample - reset
         // the sound on/off flag to indicate the sound no longer on
         m_SoundLengthExpired = true;
         ResetSoundOnOffFlag();
@@ -384,9 +386,12 @@ float APU::SoundGenerator::NextSample() {
         // Emulate this through applying a 1/16 change in volume per step.
         int step_number = (int)(m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds);
         volume += m_EnvelopeDirection * ((double)step_number / 16.0);
-        if (volume < 0.0) { // Clamp volume between 0 and 1
+        if (volume < 0.0)
+        { // Clamp volume between 0 and 1
             volume = 0.0;
-        } else if (volume > 1.0) {
+        }
+        else if (volume > 1.0)
+        {
             volume = 1.0;
         }
     }
@@ -405,17 +410,23 @@ float APU::SoundGenerator::NextSample() {
         // X(t) = X(t-1) +/- X(t-1)/2^n
         for (int i = 0; i < step_number; i++)
         {
-            if (m_SweepDirection > 0) {
+            if (m_SweepDirection > 0)
+            {
                 adjusted_frequency += (adjusted_frequency >> m_SweepShiftFrequencyExponent);
-            } else {
+            }
+            else
+            {
                 adjusted_frequency -= (adjusted_frequency >> m_SweepShiftFrequencyExponent);
             }
         }
 
         // Clamp adjusted frequency between 0 and 2047
-        if (adjusted_frequency < 0) {
+        if (adjusted_frequency < 0)
+        {
             adjusted_frequency = 0;
-        } else if (adjusted_frequency > 2047) {
+        }
+        else if (adjusted_frequency > 2047)
+        {
             adjusted_frequency = 2047;
         }
 
@@ -445,47 +456,49 @@ void APU::SoundGenerator::RestartSound()
 void APU::SoundGenerator::SetSoundOnOffFlag()
 {
     byte sound_on_off_register = *m_SoundOnOffRegister;
-    switch(m_Channel) {
-        case CHANNEL_1:
-            sound_on_off_register |= 0b0001;
-            break;
-        case CHANNEL_2:
-            sound_on_off_register |= 0b0010;
-            break;
-        case CHANNEL_3:
-            sound_on_off_register |= 0b0100;
-            break;
-        case CHANNEL_4:
-            sound_on_off_register |= 0b1000;
+    switch (m_Channel)
+    {
+    case CHANNEL_1:
+        sound_on_off_register |= 0b0001;
+        break;
+    case CHANNEL_2:
+        sound_on_off_register |= 0b0010;
+        break;
+    case CHANNEL_3:
+        sound_on_off_register |= 0b0100;
+        break;
+    case CHANNEL_4:
+        sound_on_off_register |= 0b1000;
     }
 }
 
-void APU::SoundGenerator::ResetSoundOnOffFlag() 
+void APU::SoundGenerator::ResetSoundOnOffFlag()
 {
     byte sound_on_off_register = *m_SoundOnOffRegister;
-    switch(m_Channel) {
-        case CHANNEL_1:
-            sound_on_off_register &= ~0b0001;
-            break;
-        case CHANNEL_2:
-            sound_on_off_register &= ~0b0010;
-            break;
-        case CHANNEL_3:
-            sound_on_off_register &= ~0b0100;
-            break;
-        case CHANNEL_4:
-            sound_on_off_register &= ~0b1000;
+    switch (m_Channel)
+    {
+    case CHANNEL_1:
+        sound_on_off_register &= ~0b0001;
+        break;
+    case CHANNEL_2:
+        sound_on_off_register &= ~0b0010;
+        break;
+    case CHANNEL_3:
+        sound_on_off_register &= ~0b0100;
+        break;
+    case CHANNEL_4:
+        sound_on_off_register &= ~0b1000;
     }
 }
 
 APU::SquareWaveGenerator::SquareWaveGenerator(
     const APUChannel channel,
-    const byte *soundOnOffRegister,
-    const byte *sweepRegister,
-    const byte *soundLengthRegister,
-    const byte *volumeEnvelopeRegister,
-    const byte *frequencyLoRegister,
-    const byte *frequencyHiRegister)
+    const byte* soundOnOffRegister,
+    const byte* sweepRegister,
+    const byte* soundLengthRegister,
+    const byte* volumeEnvelopeRegister,
+    const byte* frequencyLoRegister,
+    const byte* frequencyHiRegister)
     : SoundGenerator(channel, soundOnOffRegister),
       m_SweepRegister(sweepRegister),
       m_SoundLengthRegister(soundLengthRegister),
@@ -499,7 +512,7 @@ APU::SquareWaveGenerator::SquareWaveGenerator(
 void APU::SquareWaveGenerator::TriggerSweepRegisterUpdate()
 {
     byte sweep_register = *m_SweepRegister;
-    
+
     // Bit 2-0 Sweep shift number
     // Shift value to calculate frequency step amount
     m_SweepShiftFrequencyExponent = sweep_register & 7;
@@ -610,7 +623,8 @@ void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
     }
 }
 
-float APU::SquareWaveGenerator::NextWaveformSample() {
+float APU::SquareWaveGenerator::NextWaveformSample()
+{
     float sample = 0.0;
     // Build the square wave using additive synthesis
     for (int j = 0; j < m_HarmonicsCount; j++)
@@ -654,13 +668,12 @@ APU::NoiseGenerator::NoiseGenerator(
     const byte* soundLengthRegister,
     const byte* volumeEnvelopeRegister,
     const byte* polynomialCounterRegister,
-    const byte* counterRegister
-) :
-    SoundGenerator(channel, soundOnOffRegister),
-    m_SoundLengthRegister(soundLengthRegister),
-    m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
-    m_PolynomialCounterRegister(polynomialCounterRegister),
-    m_CounterRegister(counterRegister)
+    const byte* counterRegister) 
+    : SoundGenerator(channel, soundOnOffRegister),
+      m_SoundLengthRegister(soundLengthRegister),
+      m_VolumeEnvelopeRegister(volumeEnvelopeRegister),
+      m_PolynomialCounterRegister(polynomialCounterRegister),
+      m_CounterRegister(counterRegister)
 {
 }
 
@@ -718,7 +731,8 @@ void APU::NoiseGenerator::TriggerCounterRegisterUpdate()
     }
 }
 
-float APU::NoiseGenerator::NextWaveformSample() {
+float APU::NoiseGenerator::NextWaveformSample()
+{
     if (m_Phase < m_PreviousSamplePhase) // A wrap-around occurred
     {
         // TODO: Model real GB behavior
@@ -729,7 +743,8 @@ float APU::NoiseGenerator::NextWaveformSample() {
     return m_Signal;
 }
 
-void APU::NoiseGenerator::UpdateFrequency(uint polynomial_counter_register) {
+void APU::NoiseGenerator::UpdateFrequency(uint polynomial_counter_register)
+{
     // Bit 2-0 - Dividing ratio of frequency (r)
     byte divide_ratio = polynomial_counter_register & 7;
 
@@ -750,15 +765,14 @@ APU::WaveformGenerator::WaveformGenerator(
     const byte* selectOutputLevelRegister,
     const byte* frequencyLoRegister,
     const byte* frequencyHiRegister,
-    const byte* waveBuffer
-) :
-    SoundGenerator(channel, soundOnOffRegister),
-    m_ChannelSoundOnOffRegister(channelSoundOnOffRegister),
-    m_SoundLengthRegister(soundLengthRegister),
-    m_SelectOutputLevelRegister(selectOutputLevelRegister),
-    m_FrequencyLoRegister(frequencyLoRegister),
-    m_FrequencyHiRegister(frequencyHiRegister),
-    m_WaveBuffer(waveBuffer)
+    const byte* waveBuffer)
+    : SoundGenerator(channel, soundOnOffRegister),
+      m_ChannelSoundOnOffRegister(channelSoundOnOffRegister),
+      m_SoundLengthRegister(soundLengthRegister),
+      m_SelectOutputLevelRegister(selectOutputLevelRegister),
+      m_FrequencyLoRegister(frequencyLoRegister),
+      m_FrequencyHiRegister(frequencyHiRegister),
+      m_WaveBuffer(waveBuffer)
 {
 }
 
@@ -773,7 +787,7 @@ void APU::WaveformGenerator::TriggerSoundLengthRegisterUpdate()
     byte sound_length_register = *m_SoundLengthRegister;
 
     // Bit 7-0 - Sound length (t1: 0 - 255)
-    // Sound Length = (256-t1)*(1/256) seconds 
+    // Sound Length = (256-t1)*(1/256) seconds
     m_SoundLengthSeconds = (256.0 - (double)sound_length_register) / 256.0;
 }
 
@@ -827,7 +841,7 @@ void APU::WaveformGenerator::TriggerFrequencyHiRegisterUpdate()
     }
 }
 
-float APU::WaveformGenerator::NextWaveformSample() 
+float APU::WaveformGenerator::NextWaveformSample()
 {
     // Wave is made up of 32 4-bit samples
     int wave_ram_sample_number = (int)((m_Phase / TwoPi) * 32.0);

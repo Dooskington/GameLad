@@ -62,7 +62,7 @@
 
 #define AudioSampleRate 48000
 #define AudioOutChannelCount 2
-#define FrameSizeBytes 8 // 32 bit samples * 2 channels
+#define FrameSizeBytes 8      // 32 bit samples * 2 channels
 #define AudioBufferSize 32768 // 32 KB
 
 #define CyclesPerSecond 4213440 // CyclesPerFrame * 60Hz refresh
@@ -103,14 +103,14 @@ private:
 
         void Reset();
         void Put(Uint8 *element);
-        Uint8 *Get();
+        Uint8* Get();
 
     private:
         size_t m_ElementCount;
         size_t m_ElementSize;
         size_t m_BufferSize;
-        Uint8 *m_Bytes;
-        Uint8 *m_DefaultBytes;
+        Uint8* m_Bytes;
+        Uint8* m_DefaultBytes;
         size_t m_ReadIndex;
         size_t m_WriteIndex;
         std::mutex mutex;
@@ -129,7 +129,7 @@ private:
         );
         virtual ~SoundGenerator() = default;
         float NextSample();
-    
+
     protected:
         const APUChannel m_Channel;
         const byte* m_SoundOnOffRegister;
@@ -195,7 +195,7 @@ private:
 
         float NextWaveformSample() override;
         void UpdateFrequency(uint freqencyRegValue) override;
-        
+
         void RegenerateCoefficients();
     };
 
