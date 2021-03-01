@@ -1,72 +1,5 @@
 #include "pch.hpp"
 #include "APU.hpp"
-#include <cmath>
-
-#define AudioSampleRate 48000
-#define AudioOutChannelCount 2
-#define FrameSizeBytes 8 // 32 bit samples * 2 channels
-
-// Based on 60Hz screen refresh rate
-#define AudioBufferSize (AudioSampleRate * AudioOutChannelCount) // 1 sec TODO: This is pretty big
-#define CyclesPerSecond 4213440 // CyclesPerFrame * 60
-
-#define Pi 3.141592653589793
-#define TwoPi 6.283185307179586
-
-// FF10 - NR10 - Channel 1 Sweep register (R / W)
-// FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
-// FF12 - NR12 - Channel 1 Volume Envelope (R/W)
-// FF13 - NR13 - Channel 1 Frequency lo (Write Only)
-// FF14 - NR14 - Channel 1 Frequency hi (R/W)
-// FF16 - NR21 - Channel 2 Sound Length/Wave Pattern Duty (R/W)
-// FF17 - NR22 - Channel 2 Volume Envelope (R/W)
-// FF18 - NR23 - Channel 2 Frequency lo data (W)
-// FF19 - NR24 - Channel 2 Frequency hi data (R/W)
-// FF1A - NR30 - Channel 3 Sound on/off (R/W)
-// FF1B - NR31 - Channel 3 Sound Length
-// FF1C - NR32 - Channel 3 Select output level (R/W)
-// FF1D - NR33 - Channel 3 Frequency's lower data (W)
-// FF1E - NR34 - Channel 3 Frequency's higher data (R/W)
-// FF20 - NR41 - Channel 4 Sound Length (R/W)
-// FF21 - NR42 - Channel 4 Volume Envelope (R/W)
-// FF22 - NR43 - Channel 4 Polynomial Counter (R/W)
-// FF23 - NR44 - Channel 4 Counter/consecutive; Inital (R/W)
-// FF24 - NR50 - Channel control / ON-OFF / Volume (R/W)
-// FF25 - NR51 - Selection of Sound output terminal (R/W)
-// FF26 - NR52 - Sound on/off
-#define Channel1Sweep 0xFF10
-#define Channel1LengthWavePatternDuty 0xFF11
-#define Channel1VolumeEnvelope 0xFF12
-#define Channel1FrequencyLo 0xFF13
-#define Channel1FrequencyHi 0xFF14
-#define Channel2LengthWavePatternDuty 0xFF16
-#define Channel2VolumeEnvelope 0xFF17
-#define Channel2FrequnecyLo 0xFF18
-#define Channel2FrequencyHi 0xFF19
-#define Channel3OnOff 0xFF1A
-#define Channel3Length 0xFF1B
-#define Channel3OutputLevel 0xFF1C
-#define Channel3FrequencyLower 0xFF1D
-#define Channel3FrequnecyHigher 0xFF1E
-#define Channel4Length 0xFF20
-#define Channel4VolumeEnvelope 0xFF21
-#define Channel4PolynomialCounter 0xFF22
-#define Channel4Counter 0xFF23
-#define ChannelControl 0xFF24
-#define OutputTerminalSelection 0xFF25
-#define SoundOnOff 0xFF26
-
-#define OutputLevelSO1 (m_ChannelControlOnOffVolume & 0x7)
-#define OutputLevelSO2 ((m_ChannelControlOnOffVolume >> 4) & 0x7)
-
-#define OutputChannel1ToSO1 ISBITSET(m_OutputTerminal, 0)
-#define OutputChannel2ToSO1 ISBITSET(m_OutputTerminal, 1)
-#define OutputChannel3ToSO1 ISBITSET(m_OutputTerminal, 2)
-#define OutputChannel4ToSO1 ISBITSET(m_OutputTerminal, 3)
-#define OutputChannel1ToSO2 ISBITSET(m_OutputTerminal, 4)
-#define OutputChannel2ToSO2 ISBITSET(m_OutputTerminal, 5)
-#define OutputChannel3ToSO2 ISBITSET(m_OutputTerminal, 6)
-#define OutputChannel4ToSO2 ISBITSET(m_OutputTerminal, 7)
 
 void AudioDeviceCallbackStatic(void* pUserdata, Uint8* pStream, int length)
 {
@@ -432,18 +365,23 @@ float APU::SoundGenerator::NextSample() {
 
     if (is_sound_length_expired && !m_SoundLengthExpired)
     {
+        // Sound length has expired since the previous sample - reset 
+        // the sound on/off flag to indicate the sound no longer on
         m_SoundLengthExpired = true;
         ResetSoundOnOffFlag();
     }
 
     if (!m_SoundLengthExpired)
     {
+        // Skip generating the sample if the sound is not playing
         sample = NextWaveformSample();
     }
 
     double volume = m_EnvelopeStartVolume;
     if (m_EnvelopeModeEnabled)
     {
+        // GB apparently has 16 "levels" of volume due to the value being stored as a 4 bit number.
+        // Emulate this through applying a 1/16 change in volume per step.
         int step_number = (int)(m_SoundLengthTimerSeconds / m_EnvelopeStepLengthSeconds);
         volume += m_EnvelopeDirection * ((double)step_number / 16.0);
         if (volume < 0.0) { // Clamp volume between 0 and 1
@@ -456,10 +394,15 @@ float APU::SoundGenerator::NextSample() {
 
     if (m_SweepModeEnabled)
     {
-        // Only Channel 1 (square wave) has sweep
+        // The new frequency during the sweep function is calculated through applying
+        // a bit shift to the binary data stored in the two frequency registers. In order
+        // to apply this computation we need the actual value from the registers themsevles.
+        // Note: Only Channel 1 (square wave) supports sweep.
         uint adjusted_frequency = m_FrequencyRegisterData;
         int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
 
+        // Apply the sweep algorithm to determine the new frequency:
+        // X(t) = X(t-1) +/- X(t-1)/2^n
         for (int i = 0; i < step_number; i++)
         {
             if (m_SweepDirection > 0) {
@@ -479,12 +422,14 @@ float APU::SoundGenerator::NextSample() {
         UpdateFrequency(adjusted_frequency);
     }
 
+    // Adjust the phase based on the duration of 1 audio sample and wrap.
     m_Phase += (TwoPi * m_FrequencyHz) / (double)AudioSampleRate;
     while (m_Phase >= TwoPi)
     {
         m_Phase -= TwoPi;
     }
 
+    // Increase the timer for sound length based on the duration of 1 audio sample
     m_SoundLengthTimerSeconds += 1.0 / (double)AudioSampleRate;
 
     return sample;
@@ -667,6 +612,7 @@ void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
 
 float APU::SquareWaveGenerator::NextWaveformSample() {
     float sample = 0.0;
+    // Build the square wave using additive synthesis
     for (int j = 0; j < m_HarmonicsCount; j++)
     {
         sample += m_Coefficients[j] * cos(j * m_Phase);
@@ -903,6 +849,7 @@ void APU::WaveformGenerator::UpdateFrequency(uint frequencyRegValue)
     m_FrequencyHz = 65536.0 / (double)(2048 - frequencyRegValue);
 }
 
+// TODO: Move this out of the APU class
 APU::Buffer::Buffer(size_t element_count, size_t element_size)
 {
     m_ElementCount = element_count + 1;
