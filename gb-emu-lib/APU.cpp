@@ -131,6 +131,7 @@ void APU::Step(unsigned long cycles)
         if (OutputChannel4ToSO2)
             so2 += ch4_sample;
 
+        // Adjust Left & Right channel's volume
         // 0 = mute; 7 = max volume;
         // Output volume = OutputLevel / 7, then scale by 1/4
         so1 *= ((float)OutputLevelSO1 / 28);
@@ -620,6 +621,7 @@ void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
     if (ISBITSET(frequency_hi_register, 7))
     {
         RestartSound();
+        Logger::Log("Restart!");
     }
 }
 
