@@ -715,8 +715,7 @@ void APU::NoiseGenerator::TriggerPolynomialCounterRegisterUpdate()
     UpdateFrequency(polynomial_counter_register);
 
     // Bit 3 - Counter step (0=15 bits, 1=7 bits)
-    byte counter_step = ISBITSET(polynomial_counter_register, 3) ? 7 : 15;
-    // TODO - where to use this?
+    m_shiftRegisterMSB = ISBITSET(polynomial_counter_register, 3) ? 6 : 14;
 }
 
 void APU::NoiseGenerator::TriggerCounterRegisterUpdate()
@@ -737,9 +736,16 @@ float APU::NoiseGenerator::NextWaveformSample()
 {
     if (m_Phase < m_PreviousSamplePhase) // A wrap-around occurred
     {
-        // TODO: Model real GB behavior
-        float r = rand() / (RAND_MAX + 1.0);
-        m_Signal = r > 0.5 ? 0.5 : -0.5;
+        // xor two least-significant bits
+        uint x = ((m_shiftRegister >> 1) ^ m_shiftRegister) & 1;
+        // shift the register bits by one
+        m_shiftRegister >>= 1;
+        // set the most-significant bit (15 or 7 depending on the current register size)
+        // to the xor'd value from earlier
+        x <<= m_shiftRegisterMSB;
+        m_shiftRegister |= x;
+        // Signal is high when LSB is set
+        m_Signal = ((float)(m_shiftRegister & 1)) - 0.5;
     }
     m_PreviousSamplePhase = m_Phase;
     return m_Signal;

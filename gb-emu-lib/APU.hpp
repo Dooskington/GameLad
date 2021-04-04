@@ -226,6 +226,9 @@ private:
         double m_Signal = 0.5;
         double m_PreviousSamplePhase = 0.0;
 
+        uint m_shiftRegisterMSB = 14;
+        uint m_shiftRegister = 0xFF;
+
         float NextWaveformSample() override;
         void UpdateFrequency(uint freqencyRegValue) override;
     };
