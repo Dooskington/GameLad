@@ -267,6 +267,7 @@ private:
     };
 
 private:
+    // Audio Registers
     byte m_Channel1Sweep;
     byte m_Channel1SoundLength;
     byte m_Channel1VolumeEnvelope;
@@ -302,8 +303,8 @@ private:
     NoiseGenerator m_Channel4SoundGenerator;
 
     // Output
-    bool m_Initialized;
     SDL_AudioDeviceID m_AudioDevice;
     double m_AudioFrameRemainder;
     Buffer m_OutputBuffer;
+    bool m_Initialized;
 };

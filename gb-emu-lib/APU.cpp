@@ -527,7 +527,8 @@ void APU::SquareWaveGenerator::TriggerSweepRegisterUpdate()
     m_SweepStepLengthSeconds = (double)sweep_time / 128.0;
     m_SweepModeEnabled = sweep_time != 0;
 
-    // TODO: I believe the sweep function has it's own timer separate from the sound length timer - add that.
+    // TODO: Apparently the sweep function has it's own timer separate from the sound 
+    // length timer. This can be implemented if desired for more accurate emulation.
 }
 
 void APU::SquareWaveGenerator::TriggerSoundLengthRegisterUpdate()
@@ -733,8 +734,12 @@ void APU::NoiseGenerator::TriggerCounterRegisterUpdate()
 
 float APU::NoiseGenerator::NextWaveformSample()
 {
-    if (m_Phase < m_PreviousSamplePhase) // A wrap-around occurred
+    if (m_Phase < m_PreviousSamplePhase) // Next clock pulse
     {
+        // The Noise channel uses a linear-feedback shift register (LFSR) to generate
+        // pseudo-random numbers. This results in an audible fundamental (especially at 
+        // higher frequencies). The algorithm for the LFSR is as follows:
+
         // xor two least-significant bits
         uint x = ((m_shiftRegister >> 1) ^ m_shiftRegister) & 1;
         // shift the register bits by one
@@ -870,7 +875,6 @@ void APU::WaveformGenerator::UpdateFrequency(uint frequencyRegValue)
     m_FrequencyHz = 65536.0 / (double)(2048 - frequencyRegValue);
 }
 
-// TODO: Move this out of the APU class
 APU::Buffer::Buffer(size_t element_count, size_t element_size)
 {
     m_ElementCount = element_count + 1;
