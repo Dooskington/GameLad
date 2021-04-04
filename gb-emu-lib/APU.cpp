@@ -621,7 +621,6 @@ void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
     if (ISBITSET(frequency_hi_register, 7))
     {
         RestartSound();
-        Logger::Log("Restart!");
     }
 }
 
