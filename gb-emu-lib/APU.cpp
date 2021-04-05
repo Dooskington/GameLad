@@ -864,7 +864,7 @@ float APU::WaveformGenerator::NextWaveformSample()
 
     // shift to adjust output level volume
     wave_ram_sample >>= m_VolumeShift;
-    return ((double)wave_ram_sample / 16.0) - 0.5;
+    return ((double)wave_ram_sample / 16.0) - (0.5 / (m_VolumeShift + 1));
 }
 
 void APU::WaveformGenerator::UpdateFrequency(uint frequencyRegValue)
