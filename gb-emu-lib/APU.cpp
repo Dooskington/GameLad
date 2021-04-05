@@ -742,12 +742,15 @@ float APU::NoiseGenerator::NextWaveformSample()
 
         // xor two least-significant bits
         uint x = ((m_shiftRegister >> 1) ^ m_shiftRegister) & 1;
+
         // shift the register bits by one
         m_shiftRegister >>= 1;
+
         // set the most-significant bit (15 or 7 depending on the current register size)
         // to the xor'd value from earlier
         x <<= m_shiftRegisterMSB;
         m_shiftRegister |= x;
+
         // Signal is high when LSB is set
         m_Signal = ((float)(m_shiftRegister & 1)) - 0.5;
     }
@@ -851,9 +854,11 @@ float APU::WaveformGenerator::NextWaveformSample()
     // Wave is made up of 32 4-bit samples
     int wave_ram_sample_number = (int)((m_Phase / TwoPi) * 32.0);
     int wave_ram_byte_offset = wave_ram_sample_number / 2;
+
     // shift 0 or 4 bits (if higher or lower 4)
     int shift = ((1 + wave_ram_sample_number) % 2) * 4;
     int wave_ram_sample = (m_WaveBuffer[wave_ram_byte_offset] >> shift) & 0xF;
+
     // shift to adjust output level volume
     wave_ram_sample >>= m_VolumeShift;
     return ((double)wave_ram_sample / 16.0) - 0.5;
@@ -872,24 +877,16 @@ APU::Buffer::Buffer(size_t element_count, size_t element_size)
     m_ElementCount = element_count + 1;
     m_ElementSize = element_size;
     m_BufferSize = m_ElementCount * m_ElementSize;
-    m_Bytes = (Uint8 *)malloc(m_BufferSize * sizeof(Uint8));
-    if (m_Bytes == nullptr)
-    {
-        // TODO handle error
-    }
-    m_DefaultBytes = (Uint8 *)malloc(m_ElementSize * sizeof(Uint8));
-    if (m_DefaultBytes == nullptr)
-    {
-        // TODO handle error
-    }
+    m_Bytes = new Uint8[m_BufferSize * sizeof(Uint8)];
+    m_DefaultBytes = new Uint8[m_ElementSize * sizeof(Uint8)];
     memset(m_DefaultBytes, 0, m_ElementSize);
     Reset();
 }
 
 APU::Buffer::~Buffer()
 {
-    free(m_Bytes);
-    free(m_DefaultBytes);
+    delete m_Bytes;
+    delete m_DefaultBytes;
 }
 
 void APU::Buffer::Reset()
