@@ -257,10 +257,3 @@ FakesAssemblies/
 **/*.Server/ModelManifest.xml
 _Pvt_Extensions
 /gb-emu.VC.db
-
-# Visual Studio Code configuration files
-.vscode/
-*.code-workspace
-
-# Local History for Visual Studio Code
-.history/
