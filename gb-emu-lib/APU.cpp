@@ -815,10 +815,13 @@ void APU::WaveformGenerator::TriggerSelectOutputLevelRegisterUpdate()
     // 3: 25% (Wave data shifted right 2x)
     byte sound_output_level = ((*m_SelectOutputLevelRegister) >> 5) & 0x3;
 
-    if (sound_output_level == 0) {
+    if (sound_output_level == 0)
+    {
         m_EnvelopeStartVolume = 0.0;
         m_VolumeShift = 0;
-    } else {
+    }
+    else
+    {
         m_EnvelopeStartVolume = 1.0;
         m_VolumeShift = sound_output_level - 1; // 0, 1, or 2
     }
