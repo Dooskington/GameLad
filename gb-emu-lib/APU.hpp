@@ -62,8 +62,9 @@
 
 #define AudioSampleRate 48000
 #define AudioOutChannelCount 2
-#define FrameSizeBytes 8      // 32 bit samples * 2 channels
-#define AudioBufferSize 32768 // 32 KB
+#define FrameSizeBytes 8              // 32 bit samples * 2 channels
+#define AudioDeviceBufferSize 2048    // 2 KB
+#define InternalAudioBufferSize 32768 // 32 KB
 
 #define CyclesPerSecond 4213440 // CyclesPerFrame * 60Hz refresh
 
@@ -94,7 +95,7 @@ private:
         CHANNEL_4
     } APUChannel;
 
-    // Ring buffer for streaming audio data
+    // Byte ring buffer for streaming audio data
     class Buffer
     {
     public:
@@ -261,6 +262,8 @@ private:
         const byte* m_FrequencyLoRegister;
         const byte* m_FrequencyHiRegister;
         const byte* m_WaveBuffer;
+
+        byte m_VolumeShift = 0;
 
         float NextWaveformSample() override;
         void UpdateFrequency(uint freqencyRegValue) override;

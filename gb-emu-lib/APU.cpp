@@ -69,7 +69,7 @@ APU::APU() :
     m_Initialized(false),
     m_AudioDevice(0),
     m_AudioFrameRemainder(0.0),
-    m_OutputBuffer(AudioBufferSize, FrameSizeBytes)
+    m_OutputBuffer(InternalAudioBufferSize, FrameSizeBytes)
 {
     memset(m_WavePatternRAM, 0x00, ARRAYSIZE(m_WavePatternRAM));
 
@@ -332,7 +332,7 @@ void APU::LoadAudioDevice(SDL_AudioCallback callback)
     want.freq = AudioSampleRate;
     want.format = AUDIO_F32;
     want.channels = AudioOutChannelCount;
-    want.samples = 1024 * AudioOutChannelCount;
+    want.samples = AudioDeviceBufferSize; // Must be a power of 2
     want.callback = callback;
     want.userdata = this;
 
@@ -806,25 +806,18 @@ void APU::WaveformGenerator::TriggerSoundLengthRegisterUpdate()
 void APU::WaveformGenerator::TriggerSelectOutputLevelRegisterUpdate()
 {
     // Bit 6-5 - Select output level
+    // 0: Mute
+    // 1: 100% (No shift)
+    // 2: 50% (Wave data shifted right 1x)
+    // 3: 25% (Wave data shifted right 2x)
     byte sound_output_level = ((*m_SelectOutputLevelRegister) >> 5) & 0x3;
 
-    // 0: Mute
-    // 1: 100%
-    // 2: 50%
-    // 3: 25%
-    switch (sound_output_level)
-    {
-    case 0:
+    if (sound_output_level == 0) {
         m_EnvelopeStartVolume = 0.0;
-        break;
-    case 1:
+        m_VolumeShift = 0;
+    } else {
         m_EnvelopeStartVolume = 1.0;
-        break;
-    case 2:
-        m_EnvelopeStartVolume = 0.5;
-        break;
-    case 3:
-        m_EnvelopeStartVolume = 0.25;
+        m_VolumeShift = sound_output_level - 1; // 0, 1, or 2
     }
 }
 
@@ -858,13 +851,12 @@ float APU::WaveformGenerator::NextWaveformSample()
     // Wave is made up of 32 4-bit samples
     int wave_ram_sample_number = (int)((m_Phase / TwoPi) * 32.0);
     int wave_ram_byte_offset = wave_ram_sample_number / 2;
-    int shift = ((1 + wave_ram_sample_number) % 2) * 4; // shift 0 or 4 bits.
+    // shift 0 or 4 bits (if higher or lower 4)
+    int shift = ((1 + wave_ram_sample_number) % 2) * 4;
     int wave_ram_sample = (m_WaveBuffer[wave_ram_byte_offset] >> shift) & 0xF;
-    float sample = ((double)wave_ram_sample / 16.0) - 0.5;
-
-    // TODO: Emulate bit-shift sound level scaling rather than relying on the volume envelope
-
-    return sample;
+    // shift to adjust output level volume
+    wave_ram_sample >>= m_VolumeShift;
+    return ((double)wave_ram_sample / 16.0) - 0.5;
 }
 
 void APU::WaveformGenerator::UpdateFrequency(uint frequencyRegValue)
