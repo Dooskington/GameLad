@@ -396,7 +396,7 @@ float APU::SoundGenerator::NextSample()
             volume = 1.0;
         }
     }
-    sample *= volume;
+    sample *= (float)volume;
 
     if (m_SweepModeEnabled)
     {
@@ -404,8 +404,8 @@ float APU::SoundGenerator::NextSample()
         // a bit shift to the binary data stored in the two frequency registers. In order
         // to apply this computation we need the actual value from the registers themsevles.
         // Note: Only Channel 1 (square wave) supports sweep.
-        uint adjusted_frequency = m_FrequencyRegisterData;
-        int step_number = m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds;
+        unsigned int adjusted_frequency = m_FrequencyRegisterData;
+        int step_number = (int)(m_SoundLengthTimerSeconds / m_SweepStepLengthSeconds);
 
         // Apply the sweep algorithm to determine the new frequency:
         // X(t) = X(t-1) +/- X(t-1)/2^n
@@ -507,7 +507,7 @@ APU::SquareWaveGenerator::SquareWaveGenerator(
       m_FrequencyLoRegister(frequencyLoRegister),
       m_FrequencyHiRegister(frequencyHiRegister)
 {
-    memset(m_Coefficients, 0.0, ARRAYSIZE(m_Coefficients));
+    memset(m_Coefficients, 0, ARRAYSIZE(m_Coefficients));
 }
 
 void APU::SquareWaveGenerator::TriggerSweepRegisterUpdate()
@@ -562,7 +562,6 @@ void APU::SquareWaveGenerator::TriggerSoundLengthRegisterUpdate()
         break;
     default:
         Logger::LogError("Invalid duty cycle %x", wave_pattern_duty);
-        assert(false);
     }
 
     // Duty cycle update requires update of coefficients
@@ -593,7 +592,7 @@ void APU::SquareWaveGenerator::TriggerFrequencyLoRegisterUpdate()
     // Bit 7-0 - Low 8 bits of the frequency data
     byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
-    uint frequency_reg_value = ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
+    unsigned int frequency_reg_value = ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
 
     UpdateFrequency(frequency_reg_value);
 
@@ -607,7 +606,7 @@ void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
     // Bit 2-0 - High 3 bits of the frequency data
     byte frequency_lo_register = *m_FrequencyLoRegister;
     byte frequency_hi_register = *m_FrequencyHiRegister;
-    uint frequency_reg_value = ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
+    unsigned int frequency_reg_value = ((frequency_hi_register << 8) | frequency_lo_register) & 0x7FF;
 
     UpdateFrequency(frequency_reg_value);
 
@@ -627,16 +626,16 @@ void APU::SquareWaveGenerator::TriggerFrequencyHiRegisterUpdate()
 
 float APU::SquareWaveGenerator::NextWaveformSample()
 {
-    float sample = 0.0;
+    double sample = 0.0;
     // Build the square wave using additive synthesis
     for (int j = 0; j < m_HarmonicsCount; j++)
     {
         sample += m_Coefficients[j] * cos(j * m_Phase);
     }
-    return sample;
+    return (float)sample;
 }
 
-void APU::SquareWaveGenerator::UpdateFrequency(uint frequencyRegValue)
+void APU::SquareWaveGenerator::UpdateFrequency(unsigned int frequencyRegValue)
 {
     // Frequency data (11 bits total)
     // For x = the value in the frequency registers, the actual frequency
@@ -650,7 +649,7 @@ void APU::SquareWaveGenerator::UpdateFrequency(uint frequencyRegValue)
 void APU::SquareWaveGenerator::RegenerateCoefficients()
 {
     // Keep the upper harmonic below the Nyquist frequency
-    m_HarmonicsCount = AudioSampleRate / (m_FrequencyHz * 2);
+    m_HarmonicsCount = (int)(AudioSampleRate / (m_FrequencyHz * 2));
     if (m_HarmonicsCount > MaxHarmonicsCount)
     {
         m_HarmonicsCount = MaxHarmonicsCount;
@@ -741,7 +740,7 @@ float APU::NoiseGenerator::NextWaveformSample()
         // higher frequencies). The algorithm for the LFSR is as follows:
 
         // xor two least-significant bits
-        uint x = ((m_shiftRegister >> 1) ^ m_shiftRegister) & 1;
+        unsigned int x = ((m_shiftRegister >> 1) ^ m_shiftRegister) & 1;
 
         // shift the register bits by one
         m_shiftRegister >>= 1;
@@ -752,13 +751,13 @@ float APU::NoiseGenerator::NextWaveformSample()
         m_shiftRegister |= x;
 
         // Signal is high when LSB is set
-        m_Signal = ((float)(m_shiftRegister & 1)) - 0.5;
+        m_Signal = ((float)(m_shiftRegister & 1)) - 0.5f;
     }
     m_PreviousSamplePhase = m_Phase;
     return m_Signal;
 }
 
-void APU::NoiseGenerator::UpdateFrequency(uint polynomial_counter_register)
+void APU::NoiseGenerator::UpdateFrequency(unsigned int polynomial_counter_register)
 {
     // Bit 2-0 - Dividing ratio of frequency (r)
     byte divide_ratio = polynomial_counter_register & 7;
@@ -864,10 +863,10 @@ float APU::WaveformGenerator::NextWaveformSample()
 
     // shift to adjust output level volume
     wave_ram_sample >>= m_VolumeShift;
-    return ((double)wave_ram_sample / 16.0) - (0.5 / (m_VolumeShift + 1));
+    return ((float)wave_ram_sample / 16.0f) - (0.5f / ((float)m_VolumeShift + 1.0f));
 }
 
-void APU::WaveformGenerator::UpdateFrequency(uint frequencyRegValue)
+void APU::WaveformGenerator::UpdateFrequency(unsigned int frequencyRegValue)
 {
     // Frequency data (11 bits total)
     // For x = the value in the frequency registers, the actual frequency

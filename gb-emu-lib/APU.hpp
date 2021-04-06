@@ -1,9 +1,6 @@
 #pragma once
 
-#include <SDL2/SDL.h>
 #include <mutex>
-#include <functional>
-#include <cmath>
 
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
@@ -150,10 +147,10 @@ private:
         double m_EnvelopeStepLengthSeconds;
         double m_SoundLengthTimerSeconds = 0.0;
         bool m_SoundLengthExpired = false;
-        uint m_FrequencyRegisterData = 0;
+        unsigned int m_FrequencyRegisterData = 0;
 
         virtual float NextWaveformSample() = 0;
-        virtual void UpdateFrequency(uint freqencyRegValue) = 0;
+        virtual void UpdateFrequency(unsigned int freqencyRegValue) = 0;
 
         void RestartSound();
         void SetSoundOnOffFlag();
@@ -195,7 +192,7 @@ private:
         double m_Coefficients[MaxHarmonicsCount];
 
         float NextWaveformSample() override;
-        void UpdateFrequency(uint freqencyRegValue) override;
+        void UpdateFrequency(unsigned int freqencyRegValue) override;
 
         void RegenerateCoefficients();
     };
@@ -224,14 +221,14 @@ private:
         const byte* m_PolynomialCounterRegister;
         const byte* m_CounterRegister;
         
-        double m_Signal = 0.5;
+        float m_Signal = 0.5;
         double m_PreviousSamplePhase = 0.0;
 
-        uint m_shiftRegisterMSB = 14;
-        uint m_shiftRegister = 0xFF;
+        unsigned int m_shiftRegisterMSB = 14;
+        unsigned int m_shiftRegister = 0xFF;
 
         float NextWaveformSample() override;
-        void UpdateFrequency(uint freqencyRegValue) override;
+        void UpdateFrequency(unsigned int freqencyRegValue) override;
     };
 
     class WaveformGenerator : public SoundGenerator
@@ -266,7 +263,7 @@ private:
         byte m_VolumeShift = 0;
 
         float NextWaveformSample() override;
-        void UpdateFrequency(uint freqencyRegValue) override;
+        void UpdateFrequency(unsigned int freqencyRegValue) override;
     };
 
 private:
