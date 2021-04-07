@@ -29,7 +29,7 @@ Then, follow the code of the main emulator loop that starts [here](https://githu
 * `cd microsoft`
 * `git clone https://github.com/Microsoft/vcpkg.git`
 * `cd vcpkg`
-* *Linux:* `sudo apt-get install build-essential`
+* *Linux:* `sudo apt-get install build-essential cmake`
 * *macOS:* `xcode-select --install`
 * *Linux/macOS:* `./bootstrap-vcpkg.sh`
 * *Windows:* `bootstrap-vcpkg.bat`
