@@ -4,14 +4,14 @@ This is a gameboy emulator that I made with [tyren](https://github.com/TyrenDe) 
 
 ![GameLad](https://i.imgur.com/QDiatSD.jpg)
 
-It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests. There isn't audio support.
+It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests.
 
 Learn more [here](https://github.com/Dooskington/GameLad/wiki).
 
 Technology     | Purpose
 ---------------|----------
 **C++14**      | Core
-**SDL2**       | Windowing, Rendering, & Input
+**SDL2**       | Windowing, Rendering, Sound, & Input
 **VS2015+**    | Windows Compilation
 
 # Pull Requests
@@ -29,13 +29,14 @@ Then, follow the code of the main emulator loop that starts [here](https://githu
 * `cd microsoft`
 * `git clone https://github.com/Microsoft/vcpkg.git`
 * `cd vcpkg`
-* *Linux:* `sudo apt-get install build-essential`
-* *Linux:* `./bootstrap-vcpkg.sh`
+* *Linux:* `sudo apt-get install build-essential cmake`
+* *macOS:* `xcode-select --install`
+* *Linux/macOS:* `./bootstrap-vcpkg.sh`
 * *Windows:* `bootstrap-vcpkg.bat`
 
 NOTE: The bootstrap may fail, if it does, follow any instructions listed and try again.
 
-## Linux
+## Linux/macOS
 * You may need to run: `chmod 700 compile.sh`
 * `./compile.sh <path_to_cloned_vcpkg>`
 *     For example: ./compile.sh ~/git/microsoft/vcpkg

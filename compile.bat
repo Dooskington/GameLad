@@ -6,8 +6,7 @@ IF "%1"=="" (
 )
 
 SET VCPKG_DIR=%1
-SET VCPKG_TOOLS_DIR=%VCPKG_DIR%\downloads\tools
-SET CMAKE_EXE=%VCPKG_TOOLS_DIR%\cmake-3.10.2-windows\cmake-3.10.2-win32-x86\bin\cmake.exe
+SET CMAKE_EXE=cmake
 
 RMDIR /s/q build
 MKDIR build

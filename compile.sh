@@ -3,8 +3,7 @@ if [[ $1 == "" ]]; then
     echo "Please specify the full path to your VCPKG install."
 else
     VCPKG_DIR=$1
-    VCPKG_TOOLS_DIR=$VCPKG_DIR/downloads/tools
-    CMAKE_EXE=$VCPKG_TOOLS_DIR/cmake-3.10.2-linux/cmake-3.10.2-Linux-x86_64/bin/cmake
+    CMAKE_EXE=cmake
 
     rm -rf build
     mkdir build
