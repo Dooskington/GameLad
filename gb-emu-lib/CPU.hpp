@@ -41,6 +41,7 @@ public:
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);
     void SetVSyncCallback(void(*pCallback)());
+    ushort GetPC() { return m_PC; }
 
 private:
     static byte GetHighByte(ushort dest);
@@ -205,6 +206,7 @@ private:
     // Clock cycles
     unsigned long m_cycles; // The current number of cycles
     bool m_isHalted;
+    bool m_imePending;
 
     // Registers
     ushort m_AF; // Accumulator & flags

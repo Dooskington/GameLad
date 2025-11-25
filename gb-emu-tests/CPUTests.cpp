@@ -68,13 +68,13 @@ public:
         byte opTimes[] = 
         {
             1,3,2,2,1,1,2,1,5,2,2,2,1,1,2,1,
-            0,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
+            4,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
             2,3,2,2,1,1,2,1,2,2,2,2,1,1,2,1,
             2,3,2,2,3,3,3,1,2,2,2,2,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
-            2,2,2,2,2,2,0,2,1,1,1,1,1,1,2,1,
+            2,2,2,2,2,2,4,2,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
@@ -88,13 +88,13 @@ public:
         byte condOpTimes[] =
         {
             1,3,2,2,1,1,2,1,5,2,2,2,1,1,2,1,
-            0,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
+            1,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
             3,3,2,2,1,1,2,1,3,2,2,2,1,1,2,1,
             3,3,2,2,3,3,3,1,3,2,2,2,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
-            2,2,2,2,2,2,0,2,1,1,1,1,1,1,2,1,
+            2,2,2,2,2,2,1,2,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
             1,1,1,1,1,1,2,1,1,1,1,1,1,1,2,1,
@@ -1276,7 +1276,7 @@ public:
         spCPU->Step();
 
         // Verify expectations after
-        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::IsTrue(spCPU->m_isHalted);
 
@@ -2887,7 +2887,7 @@ public:
         spCPU->Step();
 
         // Verify expectations after
-        Assert::AreEqual(0, (int)spCPU->m_cycles);
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
         Assert::AreEqual(0x0001, (int)spCPU->m_PC);
         Assert::IsTrue(spCPU->m_isHalted);
 
@@ -4821,7 +4821,7 @@ public:
     // 0xFB
     TEST_METHOD(EI_Test)
     {
-        byte m_Mem[] = { 0xFB };
+        byte m_Mem[] = { 0xFB, 0x00 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
 
@@ -4836,6 +4836,13 @@ public:
 
         // Verify expectations after
         Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x00, (int)(spCPU->m_IME));
+
+        // Step the CPU 1 OpCode
+        spCPU->Step();
+
+        // Verify expectations after
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
         Assert::AreEqual(0x01, (int)(spCPU->m_IME));
 
         spCPU.reset();

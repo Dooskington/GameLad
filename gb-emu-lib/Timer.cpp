@@ -149,6 +149,7 @@ bool Timer::WriteByte(const ushort& address, const byte val)
         return true;
     case TimerModulo:
         m_TimerModulo = val;
+        return true;
     case TimerControl:
         if (ISBITSET(val, 2))
         {

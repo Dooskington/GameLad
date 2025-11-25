@@ -39,7 +39,9 @@
 */
 
 MMU::MMU() :
-    m_isBooting(0x00)
+    m_isBooting(0x00),
+    m_IE(0x00),
+    m_IF(0x00)
 {
     RegisterMemoryUnit(0x0000, 0xFFFF, this);
 }

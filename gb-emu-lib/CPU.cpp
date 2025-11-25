@@ -6,6 +6,7 @@
 CPU::CPU() :
     m_cycles(0),
     m_isHalted(false),
+    m_imePending(false),
     m_AF(0x0000),
     m_BC(0x0000),
     m_DE(0x0000),
@@ -771,6 +772,8 @@ int CPU::Step()
 {
     unsigned long cycles = 0x00;
 
+    bool imePending = m_imePending;
+
     if (m_isHalted)
     {
         // While halted, the CPU spins on NOP
@@ -808,6 +811,12 @@ int CPU::Step()
 
     m_cycles += cycles;
 
+    if (imePending)
+    {
+        m_IME = 0x01;
+        m_imePending = false;
+    }
+
     if (m_GPU != nullptr)
     {
         // Step GPU by # of elapsed cycles
@@ -833,14 +842,19 @@ int CPU::Step()
 void CPU::TriggerInterrupt(byte interrupt)
 {
     byte IF = m_MMU->Read(0xFF0F);
+    byte IE = m_MMU->Read(0xFFFF);
+
     if (interrupt == INT40) IF = SETBIT(IF, 0);
     else if (interrupt == INT48) IF = SETBIT(IF, 1);
     else if (interrupt == INT50) IF = SETBIT(IF, 2);
     else if (interrupt == INT58) IF = SETBIT(IF, 3);
     else if (interrupt == INT60) IF = SETBIT(IF, 4);
 
-    // If we were halted, wake up
-    m_isHalted = false;
+    if (m_isHalted)
+    {
+        // If we were halted, wake up if enabled
+        m_isHalted = (IE & IF) == 0x00;
+    }
 
     m_MMU->Write(0xFF0F, IF);
 }
@@ -1061,7 +1075,7 @@ void CPU::HandleInterrupts()
         byte IF = m_MMU->Read(0xFF0F);
 
         // This will only match valid interrupts
-        byte activeInterrupts = ((IE & IF) & 0x0F);
+        byte activeInterrupts = ((IE & IF) & 0x1F);
         if (activeInterrupts > 0x00)
         {
             m_IME = 0x00; // Disable further interrupts
@@ -1450,13 +1464,15 @@ unsigned long CPU::ADDHLss(const byte& opCode)
 */
 unsigned long CPU::ADDSPdd(const byte& opCode)
 {
-    sbyte arg = static_cast<sbyte>(ReadBytePC());
-    ushort result = (m_SP + arg);
+    byte immediate = ReadBytePC();
+    sbyte arg = static_cast<sbyte>(immediate);
+    ushort result = static_cast<ushort>(m_SP + arg);
 
     ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
-    ((result & 0xF) < (m_SP & 0xF)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((result & 0xFF) < (m_SP & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+
+    (((m_SP & 0xF) + (immediate & 0xF)) > 0xF) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (((m_SP & 0xFF) + immediate) > 0xFF) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     m_SP = result;
 
@@ -2489,7 +2505,7 @@ unsigned long CPU::HALT(const byte& opCode)
 {
     m_isHalted = true;
     //m_IFWhenHalted = m_MMU->Read(0xFF0F);
-    return 0;
+    return 4;
 }
 
 /*
@@ -2550,8 +2566,8 @@ unsigned long CPU::SUB_HL_(const byte& opCode)
 
     (result == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     SetFlag(SubtractFlag);
-    ((A & 0x0F) < (result & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
-    ((A & 0xFF) < (result & 0xFF)) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
+    ((A & 0x0F) < (HL & 0x0F)) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (A < HL) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     return 8;
 }
@@ -2972,14 +2988,13 @@ unsigned long CPU::LDSPHL(const byte& opCode)
 */
 unsigned long CPU::LDHLSPe(const byte& opCode)
 {
-    sbyte e = static_cast<sbyte>(ReadBytePC());
+    byte immediate = ReadBytePC();
+    sbyte e = static_cast<sbyte>(immediate);
 
-    ushort result = m_SP + e;
+    ushort result = static_cast<ushort>(m_SP + e);
 
-    ushort check = m_SP ^ e ^ ((m_SP + e) & 0xFFFF);
-
-    ((check & 0x100) == 0x100) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
-    ((check & 0x10) == 0x10) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (((m_SP & 0xF) + (immediate & 0xF)) > 0xF) ? SetFlag(HalfCarryFlag) : ClearFlag(HalfCarryFlag);
+    (((m_SP & 0xFF) + immediate) > 0xFF) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);
@@ -3017,7 +3032,7 @@ unsigned long CPU::LDA_nn_(const byte& opCode)
 */
 unsigned long CPU::EI(const byte& opCode)
 {
-    m_IME = 0x01;
+    m_imePending = true;
 
     return 4;
 }

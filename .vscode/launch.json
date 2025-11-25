@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Emulator",
+            "program": "${workspaceFolder}/build/bin/gb-emu.exe",
+            "args": ["4", "./res/tests/02-interrupts.gb"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Tests",
+            "program": "${workspaceFolder}/build/bin/gb-emu-tests.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
