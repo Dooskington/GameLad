@@ -40,14 +40,57 @@
 
 MMU::MMU() :
     m_isBooting(0x00),
+    m_mode(GameBoyMode::DMG),
+    m_SVBK(0x00),
+    m_speedSwitchArmed(false),
+    m_doubleSpeed(false),
+    m_RP(0x00),
+    m_OPRI(0x00),
+    m_undocumented72(0x00),
+    m_undocumented73(0x00),
+    m_undocumented74(0x00),
+    m_undocumented75(0x00),
     m_IE(0x00),
     m_IF(0x00)
 {
+    memset(m_WRAM, 0x00, sizeof(m_WRAM));
+    memset(m_HRAM, 0x00, sizeof(m_HRAM));
     RegisterMemoryUnit(0x0000, 0xFFFF, this);
 }
 
 MMU::~MMU()
 {
+}
+
+void MMU::SetGameBoyMode(GameBoyMode mode)
+{
+    m_mode = mode;
+
+    if (!IsCGBHardware(mode))
+    {
+        // A DMG has no second speed and no WRAM banking; make sure a mode
+        // change can never strand the MMU in a CGB-only state.
+        m_speedSwitchArmed = false;
+        m_doubleSpeed = false;
+        m_SVBK = 0x00;
+    }
+}
+
+void MMU::CompleteSpeedSwitch()
+{
+    m_doubleSpeed = !m_doubleSpeed;
+    m_speedSwitchArmed = false;
+}
+
+unsigned int MMU::CurrentWRAMBank() const
+{
+    if (!IsCGBFeatureMode(m_mode))
+    {
+        return 1;
+    }
+
+    const unsigned int bank = m_SVBK & 0x07;
+    return (bank == 0) ? 1 : bank;
 }
 
 void MMU::RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit)
@@ -114,7 +157,7 @@ bool MMU::LoadBootROM(const char* bootROMPath)
             else
             {
                 file.seekg(0, std::ios::beg);
-                m_BIOS = std::unique_ptr<byte>(new byte[static_cast<unsigned int>(iSize)]);
+                m_BIOS = std::unique_ptr<byte[]>(new byte[static_cast<unsigned int>(iSize)]);
                 if (file.read(reinterpret_cast<char*>(m_BIOS.get()), iSize))
                 {
                     Logger::Log("Loaded boot rom %s (%d bytes)", bootROMPath, iSize);
@@ -133,12 +176,7 @@ bool MMU::LoadBootROM(const char* bootROMPath)
 
 bool MMU::Write(const ushort& address, const byte val)
 {
-    if ((m_isBooting == 0x00) && (address <= 0x00FF))
-    {
-        Logger::LogError("Access Violation! You can't write to the boot ROM [0x%04X = 0x%02X]", address, val);
-        return false;
-    }
-
+    // The boot ROM overlays cartridge reads only; MBC register writes still reach the cartridge.
     return m_memoryUnits[address]->WriteByte(address, val);
 }
 
@@ -156,19 +194,19 @@ byte MMU::ReadByte(const ushort& address)
 
     if (address >= 0xC000 && address <= 0xCFFF)
     {
-        return m_bank0[address - 0xC000];
+        return m_WRAM[0][address - 0xC000];
     }
     else if (address >= 0xD000 && address <= 0xDFFF)
     {
-        return m_bank1[address - 0xD000];
+        return m_WRAM[CurrentWRAMBank()][address - 0xD000];
     }
     else if (address >= 0xE000 && address <= 0xEFFF)
     {
-        return m_bank0[address - 0xE000];
+        return m_WRAM[0][address - 0xE000];
     }
     else if (address >= 0xF000 && address <= 0xFDFF)
     {
-        return m_bank1[address - 0xF000];
+        return m_WRAM[CurrentWRAMBank()][address - 0xF000];
     }
     else if (address >= 0xFEA0 && address <= 0xFEFF)
     {
@@ -185,15 +223,19 @@ byte MMU::ReadByte(const ushort& address)
     }
     else if (address == 0xFF0F)
     {
-        return m_IF;
+        return m_IF | 0xE0;
     }
     else if (address == 0xFF50)
     {
         return m_isBooting;
     }
-    else if (address == 0xFF4D)
+    else if (address >= 0xFF00 && address <= 0xFF7F)
     {
-        return m_Key1;
+        return ReadIORegister(address);
+    }
+    else if (address == 0xFF7F)
+    {
+        return 0xFF;
     }
     else
     {
@@ -201,23 +243,75 @@ byte MMU::ReadByte(const ushort& address)
     }
 }
 
+/*
+    I/O registers that reach the MMU rather than a dedicated component:
+    0xFF4D KEY1, 0xFF56 RP, 0xFF6C OPRI, 0xFF70 SVBK, 0xFF72-0xFF75.
+    Everything else in the I/O page that is not claimed by a component is
+    unmapped and reads back as 0xFF on hardware.
+*/
+byte MMU::ReadIORegister(const ushort& address)
+{
+    const bool cgbFeatures = IsCGBFeatureMode(m_mode);
+
+    switch (address)
+    {
+    case 0xFF4D: // KEY1
+        if (!IsCGBHardware(m_mode))
+        {
+            return 0xFF;
+        }
+        // Bit 7 current speed, bit 0 prepare, bits 1-6 always read 1.
+        return (m_doubleSpeed ? 0x80 : 0x00) | (m_speedSwitchArmed ? 0x01 : 0x00) | 0x7E;
+    case 0xFF56: // RP (infrared)
+        if (!cgbFeatures)
+        {
+            return 0xFF;
+        }
+        // Bits 2-5 are unused and read 1. Bit 1 is the received signal, which
+        // reads 1 ("no signal") whenever the read enable bits are not both set.
+        return static_cast<byte>((m_RP & 0xC1) | 0x3C | (((m_RP & 0xC0) == 0xC0) ? 0x00 : 0x02));
+    case 0xFF6C: // OPRI
+        if (!cgbFeatures)
+        {
+            return 0xFF;
+        }
+        return static_cast<byte>((m_OPRI & 0x01) | 0xFE);
+    case 0xFF70: // SVBK
+        if (!cgbFeatures)
+        {
+            return 0xFF;
+        }
+        return static_cast<byte>((m_SVBK & 0x07) | 0xF8);
+    case 0xFF72:
+        return cgbFeatures ? m_undocumented72 : 0xFF;
+    case 0xFF73:
+        return cgbFeatures ? m_undocumented73 : 0xFF;
+    case 0xFF74:
+        return cgbFeatures ? m_undocumented74 : 0xFF;
+    case 0xFF75:
+        return cgbFeatures ? static_cast<byte>((m_undocumented75 & 0x70) | 0x8F) : 0xFF;
+    default:
+        return 0xFF;
+    }
+}
+
 bool MMU::WriteByte(const ushort& address, const byte val)
 {
     if (address >= 0xC000 && address <= 0xCFFF)
     {
-        m_bank0[address - 0xC000] = val;
+        m_WRAM[0][address - 0xC000] = val;
     }
     else if (address >= 0xD000 && address <= 0xDFFF)
     {
-        m_bank1[address - 0xD000] = val;
+        m_WRAM[CurrentWRAMBank()][address - 0xD000] = val;
     }
     else if (address >= 0xE000 && address <= 0xEFFF)
     {
-        m_bank0[address - 0xE000] = val;
+        m_WRAM[0][address - 0xE000] = val;
     }
     else if (address >= 0xF000 && address <= 0xFDFF)
     {
-        m_bank1[address - 0xF000] = val;
+        m_WRAM[CurrentWRAMBank()][address - 0xF000] = val;
     }
     else if (address >= 0xFF80 && address <= 0xFFFE)
     {
@@ -229,15 +323,68 @@ bool MMU::WriteByte(const ushort& address, const byte val)
     }
     else if (address == 0xFF0F)
     {
-        m_IF = val;
+        m_IF = val & 0x1F;
     }
     else if (address == 0xFF50)
     {
-        m_isBooting = val;
+        if (m_isBooting == 0x00 && val != 0x00)
+        {
+            m_isBooting = val;
+        }
     }
-    else if (address == 0xFF4D)
+    else if (address >= 0xFF00 && address <= 0xFF7F)
     {
-        m_Key1 = val;
+        return WriteIORegister(address, val);
+    }
+
+    return true;
+}
+
+bool MMU::WriteIORegister(const ushort& address, const byte val)
+{
+    const bool cgbFeatures = IsCGBFeatureMode(m_mode);
+
+    switch (address)
+    {
+    case 0xFF4D: // KEY1
+        if (IsCGBHardware(m_mode))
+        {
+            // Only the prepare bit is writable; bit 7 is set by the switch itself.
+            m_speedSwitchArmed = (val & 0x01) != 0;
+        }
+        break;
+    case 0xFF56: // RP
+        if (cgbFeatures)
+        {
+            m_RP = val;
+        }
+        break;
+    case 0xFF6C: // OPRI
+        if (cgbFeatures)
+        {
+            m_OPRI = val & 0x01;
+        }
+        break;
+    case 0xFF70: // SVBK
+        if (cgbFeatures)
+        {
+            m_SVBK = val & 0x07;
+        }
+        break;
+    case 0xFF72:
+        if (cgbFeatures) { m_undocumented72 = val; }
+        break;
+    case 0xFF73:
+        if (cgbFeatures) { m_undocumented73 = val; }
+        break;
+    case 0xFF74:
+        if (cgbFeatures) { m_undocumented74 = val; }
+        break;
+    case 0xFF75:
+        if (cgbFeatures) { m_undocumented75 = val & 0x70; }
+        break;
+    default:
+        break;
     }
 
     return true;

@@ -26,6 +26,9 @@ public:
     bool WriteByte(const ushort& address, const byte val);
 
 private:
+    byte ReadInputLines() const;
+    void TriggerFallingEdgeInterrupt(byte previousLines);
+
     ICPU* m_CPU;
 
     byte m_SelectValues;

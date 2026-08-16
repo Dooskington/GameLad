@@ -1,23 +1,33 @@
 #include "pch.hpp"
 #include "MBC.hpp"
-/*
-MBC1 (max 2MByte ROM and/or 32KByte RAM)
 
-This is the first MBC chip for the gameboy. Any newer MBC chips are working similiar, so that is
-relative easy to upgrade a program from one MBC chip to another - or even to make it compatible to
-several different types of MBCs.
+#include <algorithm>
+#include <cstdint>
+#include <istream>
+#include <limits>
+#include <ostream>
 
-Note that the memory in range 0000-7FFF is used for both reading from ROM, and for writing to the
-MBCs Control Registers.
-*/
+namespace
+{
+const byte EnableRAM = 0x0A;
+const byte RAMBankMode = 0x01;
+const unsigned int ROMBankSize = 0x4000;
+const unsigned int RAMBankSize = 0x2000;
+const unsigned int MBC2RAMSize = 0x0200;
+const unsigned long GameBoyClock = 4194304;
 
-#define EnableRAM   0x0A
-#define ROMBankMode 0x00
-#define RAMBankMode 0x01
+bool IsRAMEnableValue(byte val)
+{
+    return (val & 0x0F) == EnableRAM;
+}
+}
 
-MBC::MBC(byte* pROM, byte* pRAM) :
+MBC::MBC(byte* pROM, unsigned int romSize, byte* pRAM, unsigned int ramSize) :
     m_ROM(pROM),
     m_RAM(pRAM),
+    m_ROMSize(romSize),
+    m_RAMSize(ramSize),
+    m_ROMBanks(romSize / ROMBankSize),
     m_isRAMEnabled(false)
 {
 }
@@ -26,678 +36,625 @@ MBC::~MBC()
 {
 }
 
-/*
-Small games of not more than 32KBytes ROM do not require a MBC chip for ROM banking.
-The ROM is directly mapped to memory at 0000-7FFFh. Optionally up to 8KByte of RAM could be
-connected at A000-BFFF, even though that could require a tiny MBC-like circuit, but no real MBC chip.
-*/
+byte MBC::ReadROM(unsigned int bank, unsigned int offset) const
+{
+    if (m_ROM == nullptr || m_ROMSize == 0 || m_ROMBanks == 0)
+    {
+        return 0xFF;
+    }
+
+    bank %= m_ROMBanks;
+    const unsigned int target = (bank * ROMBankSize) + (offset & (ROMBankSize - 1));
+    return target < m_ROMSize ? m_ROM[target] : 0xFF;
+}
+
+byte MBC::ReadRAM(unsigned int bank, unsigned int offset) const
+{
+    if (m_RAM == nullptr || m_RAMSize == 0)
+    {
+        return 0xFF;
+    }
+
+    const unsigned int target = ((bank * RAMBankSize) + offset) % m_RAMSize;
+    return m_RAM[target];
+}
+
+bool MBC::WriteRAM(unsigned int bank, unsigned int offset, byte val)
+{
+    if (m_RAM == nullptr || m_RAMSize == 0)
+    {
+        return false;
+    }
+
+    const unsigned int target = ((bank * RAMBankSize) + offset) % m_RAMSize;
+    m_RAM[target] = val;
+    return true;
+}
 
 ROMOnly_MBC::ROMOnly_MBC(byte* pROM, byte* pRAM) :
-    MBC(pROM, pRAM)
+    MBC(pROM, 0x8000, pRAM, pRAM == nullptr ? 0 : RAMBankSize)
 {
 }
 
-ROMOnly_MBC::~ROMOnly_MBC()
+ROMOnly_MBC::ROMOnly_MBC(byte* pROM, unsigned int romSize, byte* pRAM, unsigned int ramSize) :
+    MBC(pROM, romSize, pRAM, ramSize)
 {
 }
 
-// IMemoryUnit
 byte ROMOnly_MBC::ReadByte(const ushort& address)
 {
     if (address <= 0x7FFF)
     {
-        return m_ROM[address];
+        return ReadROM(address / ROMBankSize, address & 0x3FFF);
     }
-    else if (address >= 0xA000 && address <= 0xBFFF)
+    if (address >= 0xA000 && address <= 0xBFFF)
     {
-        if (m_RAM == nullptr)
-        {
-            //Logger::Log("ROMOnly_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
-            return 0x00;
-        }
-
-        return m_RAM[address - 0xA000];
+        return ReadRAM(0, address - 0xA000);
     }
-
-    Logger::Log("ROMOnly_MBC::ReadByte doesn't support reading from 0x%04X", address);
-    return 0x00;
+    return 0xFF;
 }
 
 bool ROMOnly_MBC::WriteByte(const ushort& address, const byte val)
 {
-    if (m_RAM == nullptr)
-    {
-        //Logger::Log("ROMOnly_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
-        return false;
-    }
-
-    if (address >= 0xA000 && address <= 0xBFFF)
-    {
-        m_RAM[address - 0xA000] = val;
-        return true;
-    }
-
-    Logger::Log("ROMOnly_MBC::WriteByte doesn't support writing to 0x%04X", address);
-    return false;
+    return address >= 0xA000 && address <= 0xBFFF &&
+        WriteRAM(0, address - 0xA000, val);
 }
 
 MBC1_MBC::MBC1_MBC(byte* pROM, byte* pRAM) :
-    MBC(pROM, pRAM),
+    MBC1_MBC(pROM, 0x10000, pRAM, pRAM == nullptr ? 0 : 0x8000, false)
+{
+}
+
+MBC1_MBC::MBC1_MBC(
+    byte* pROM,
+    unsigned int romSize,
+    byte* pRAM,
+    unsigned int ramSize,
+    bool isMulticart) :
+    MBC(pROM, romSize, pRAM, ramSize),
     m_ROMBankLower(0x01),
     m_ROMRAMBankUpper(0x00),
-    m_ROMRAMMode(ROMBankMode)
+    m_ROMRAMMode(0x00),
+    m_IsMulticart(isMulticart)
 {
 }
 
-MBC1_MBC::~MBC1_MBC()
+unsigned int MBC1_MBC::LowerROMBank() const
 {
+    if (m_ROMRAMMode != RAMBankMode)
+    {
+        return 0;
+    }
+    return static_cast<unsigned int>(m_ROMRAMBankUpper) << (m_IsMulticart ? 4 : 5);
 }
 
-// IMemoryUnit
+unsigned int MBC1_MBC::UpperROMBank() const
+{
+    const byte lowerMask = m_IsMulticart ? 0x0F : 0x1F;
+    byte lower = m_ROMBankLower & lowerMask;
+    if (m_ROMBankLower == 0)
+    {
+        lower = 1;
+    }
+    return (static_cast<unsigned int>(m_ROMRAMBankUpper) << (m_IsMulticart ? 4 : 5)) | lower;
+}
+
+unsigned int MBC1_MBC::RAMBank() const
+{
+    return m_ROMRAMMode == RAMBankMode ? m_ROMRAMBankUpper : 0;
+}
+
 byte MBC1_MBC::ReadByte(const ushort& address)
 {
     if (address <= 0x3FFF)
     {
-        /*
-        0000-3FFF - ROM Bank 00 (Read Only)
-        This area always contains the first 16KBytes of the cartridge ROM.
-        */
-        return m_ROM[address];
+        return ReadROM(LowerROMBank(), address);
     }
-    else if (address <= 0x7FFF)
+    if (address <= 0x7FFF)
     {
-        /*
-        4000-7FFF - ROM Bank 01-7F (Read Only)
-        This area may contain any of the further 16KByte banks of the ROM, allowing to address up to 125 ROM
-        Banks (almost 2MByte). As described below, bank numbers 20h, 40h, and 60h cannot be used, resulting
-        in the odd amount of 125 banks.
-        */
-        byte targetBank = m_ROMBankLower;
-        if (m_ROMRAMMode == ROMBankMode)
-        {
-            // The upper bank values are only available in ROM Bank Mode
-            targetBank |= (m_ROMRAMBankUpper << 4);
-        }
-
-        unsigned int target = (address - 0x4000);
-        target += (0x4000 * targetBank);
-        return m_ROM[target];
+        return ReadROM(UpperROMBank(), address - 0x4000);
     }
-    else if (address >= 0xA000 && address <= 0xBFFF)
+    if (address >= 0xA000 && address <= 0xBFFF)
     {
-        /*
-        A000-BFFF - RAM Bank 00-03, if any (Read/Write)
-        This area is used to address external RAM in the cartridge (if any). External RAM is often battery
-        buffered, allowing to store game positions or high score tables, even if the gameboy is turned off,
-        or if the cartridge is removed from the gameboy. Available RAM sizes are: 2KByte (at A000-A7FF),
-        8KByte (at A000-BFFF), and 32KByte (in form of four 8K banks at A000-BFFF).
-        */
-        if (!m_isRAMEnabled)
-        {
-            // RAM disabled
-            return 0xFF;
-        }
-
-        if (m_RAM == nullptr)
-        {
-            // RAM not initialized
-            return 0xFF;
-        }
-
-        // In ROM Mode, only bank 0x00 is available
-        unsigned int target = address - 0xA000;
-        if (m_ROMRAMMode == RAMBankMode)
-        {
-            // Offset based on the bank number
-            target += (0x2000 * m_ROMRAMBankUpper);
-        }
-
-        return m_RAM[target];
+        return m_isRAMEnabled ? ReadRAM(RAMBank(), address - 0xA000) : 0xFF;
     }
-
-    Logger::Log("MBC1_MBC::ReadByte doesn't support reading from 0x%04X", address);
-    return 0x00;
+    return 0xFF;
 }
 
 bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
 {
     if (address <= 0x1FFF)
     {
-        /*
-        0000-1FFF - RAM Enable (Write Only)
-        Before external RAM can be read or written, it must be enabled by writing to this address space.
-        It is recommended to disable external RAM after accessing it, in order to protect its contents from
-        damage during power down of the gameboy. Usually the following values are used:
-        00h  Disable RAM (default)
-        0Ah  Enable RAM
-        Practically any value with 0Ah in the lower 4 bits enables RAM, and any other value disables RAM.
-        */
-        m_isRAMEnabled = ((val & EnableRAM) == EnableRAM);
+        m_isRAMEnabled = IsRAMEnableValue(val);
         return true;
     }
-    else if (address <= 0x3FFF)
+    if (address <= 0x3FFF)
     {
-        /*
-        2000-3FFF - ROM Bank Number (Write Only)
-        Writing to this address space selects the lower 5 bits of the ROM Bank Number (in range 01-1Fh).
-        When 00h is written, the MBC translates that to bank 01h also. That doesn't harm so far, because ROM
-        Bank 00h can be always directly accessed by reading from 0000-3FFF.
-        But (when using the register below to specify the upper ROM Bank bits), the same happens for Bank
-        20h, 40h, and 60h. Any attempt to address these ROM Banks will select Bank 21h, 41h, and 61h instead.
-        */
+        // MBC1M ignores bit 4 for addressing, but still uses the full register
+        // when deciding whether bank zero must be translated to bank one.
         m_ROMBankLower = val & 0x1F;
-        if (m_ROMBankLower == 0x00)
-        {
-            m_ROMBankLower = 0x01;
-        }
-
         return true;
     }
-    else if (address <= 0x5FFF)
+    if (address <= 0x5FFF)
     {
-        /*
-        4000-5FFF - RAM Bank Number - or - Upper Bits of ROM Bank Number (Write Only) This 2bit register
-        can be used to select a RAM Bank in range from 00-03h, or to specify the upper two bits (Bit 5-6) of
-        the ROM Bank number, depending on the current ROM/RAM Mode. (See below.)
-        */
-
         m_ROMRAMBankUpper = val & 0x03;
         return true;
     }
-    else if (address <= 0x7FFF)
+    if (address <= 0x7FFF)
     {
-        /*
-        6000-7FFF - ROM/RAM Mode Select (Write Only)
-        This 1bit Register selects whether the two bits of the above register should be used as upper two
-        bits of the ROM Bank, or as RAM Bank Number.
-        00h = ROM Banking Mode (up to 8KByte RAM, 2MByte ROM) (default)
-        01h = RAM Banking Mode (up to 32KByte RAM, 512KByte ROM)
-        The program may freely switch between both modes, the only limitiation is that only RAM Bank 00h
-        can be used during Mode 0, and only ROM Banks 00-1Fh can be used during Mode 1.
-        */
         m_ROMRAMMode = val & 0x01;
         return true;
     }
-    else if (address >= 0xA000 && address <= 0xBFFF)
+    if (address >= 0xA000 && address <= 0xBFFF)
     {
-        /*
-        A000-BFFF - RAM Bank 00-03, if any (Read/Write)
-        This area is used to address external RAM in the cartridge (if any). External RAM is often battery
-        buffered, allowing to store game positions or high score tables, even if the gameboy is turned off,
-        or if the cartridge is removed from the gameboy. Available RAM sizes are: 2KByte (at A000-A7FF),
-        8KByte (at A000-BFFF), and 32KByte (in form of four 8K banks at A000-BFFF).
-        */
-
-        if (!m_isRAMEnabled)
-        {
-            // RAM disabled
-            return false;
-        }
-
-        if (m_RAM == nullptr)
-        {
-            // RAM not initialized
-            return false;
-        }
-
-        // In ROM Mode, only bank 0x00 is available
-        unsigned int target = address - 0xA000;
-        if (m_ROMRAMMode == RAMBankMode)
-        {
-            // Offset based on the bank number
-            target += (0x2000 * m_ROMRAMBankUpper);
-        }
-
-        m_RAM[target] = val;
-        return true;
+        return m_isRAMEnabled && WriteRAM(RAMBank(), address - 0xA000, val);
     }
-
-    Logger::Log("MBC1_MBC::WriteByte doesn't support writing to 0x%04X", address);
     return false;
 }
 
-/*
-MBC2 (max 256KByte ROM and 512x4 bits RAM)
-*/
-
 MBC2_MBC::MBC2_MBC(byte* pROM) :
-    MBC(pROM, new byte[0x1FF + 1]),
+    MBC(pROM, 0x10000, nullptr, 0),
+    m_ROMBank(0x01),
+    m_OwnedRAM(new byte[MBC2RAMSize]())
+{
+    m_RAM = m_OwnedRAM.get();
+    m_RAMSize = MBC2RAMSize;
+}
+
+MBC2_MBC::MBC2_MBC(byte* pROM, unsigned int romSize, byte* pRAM, unsigned int ramSize) :
+    MBC(
+        pROM,
+        romSize,
+        ramSize >= MBC2RAMSize ? pRAM : nullptr,
+        ramSize >= MBC2RAMSize ? MBC2RAMSize : 0),
     m_ROMBank(0x01)
 {
 }
 
-MBC2_MBC::~MBC2_MBC()
-{
-}
-
-// IMemoryUnit
 byte MBC2_MBC::ReadByte(const ushort& address)
 {
     if (address <= 0x3FFF)
     {
-        /*
-        0000-3FFF - ROM Bank 00 (Read Only)
-        This area always contains the first 16KBytes of the cartridge ROM.
-        */
-        return m_ROM[address];
+        return ReadROM(0, address);
     }
-    else if (address <= 0x7FFF)
+    if (address <= 0x7FFF)
     {
-        /*
-        4000-7FFF - ROM Bank 01-7F (Read Only)
-        This area may contain any of the further 16KByte banks of the ROM, allowing to address up to 16 ROM
-        Banks (almost 256KByte).
-        */
-        unsigned int target = (address - 0x4000);
-        target += (0x4000 * m_ROMBank);
-        return m_ROM[target];
+        return ReadROM(m_ROMBank, address - 0x4000);
     }
-    else if (address >= 0xA000 && address <= 0xA1FF)
+    if (address >= 0xA000 && address <= 0xBFFF)
     {
-        /*
-        A000-A1FF - 512x4bits RAM, built-in into the MBC2 chip (Read/Write)
-        The MBC2 doesn't support external RAM, instead it includes 512x4 bits of built-in RAM (in the MBC2
-        chip itself). It still requires an external battery to save data during power-off though.
-        As the data consists of 4bit values, only the lower 4 bits of the "bytes" in this memory area are used.
-        */
-        if (!m_isRAMEnabled)
+        if (!m_isRAMEnabled || m_RAM == nullptr || m_RAMSize == 0)
         {
-            //Logger::Log("MBC2_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
             return 0xFF;
         }
-
-        return m_RAM[address - 0xA000];
+        return 0xF0 | (m_RAM[(address - 0xA000) & 0x01FF] & 0x0F);
     }
-
-    Logger::Log("MBC2_MBC::ReadByte doesn't support reading from 0x%04X", address);
-    return 0x00;
+    return 0xFF;
 }
 
 bool MBC2_MBC::WriteByte(const ushort& address, const byte val)
 {
-    if (address <= 0x1FFF)
+    if (address <= 0x3FFF)
     {
-        /*
-        0000-1FFF - RAM Enable (Write Only)
-        The least significant bit of the upper address byte must be zero to enable/disable cart RAM. For
-        example the following addresses can be used to enable/disable cart RAM: 0000-00FF, 0200-02FF,
-        0400-04FF, ..., 1E00-1EFF.
-        The suggested address range to use for MBC2 ram enable/disable is 0000-00FF.
-        */
-        if ((address & 0x0100) == 0x0000)
+        if ((address & 0x0100) == 0)
         {
-            m_isRAMEnabled = ((val & EnableRAM) == EnableRAM);
-            return true;
+            m_isRAMEnabled = IsRAMEnableValue(val);
         }
-    }
-    else if (address <= 0x3FFF)
-    {
-        /*
-        2000-3FFF - ROM Bank Number (Write Only)
-        Writing a value (XXXXBBBB - X = Don't cares, B = bank select bits) into 2000-3FFF area will select
-        an appropriate ROM bank at 4000-7FFF.
-
-        The least significant bit of the upper address byte must be one to select a ROM bank. For example
-        the following addresses can be used to select a ROM bank: 2100-21FF, 2300-23FF, 2500-25FF, ...,
-        3F00-3FFF.
-        The suggested address range to use for MBC2 rom bank selection is 2100-21FF.
-        */
-        if ((address & 0x0100) == 0x0000)
+        else
         {
-            m_ROMBank = (val & 0x0F);
-            return true;
+            m_ROMBank = val & 0x0F;
+            if (m_ROMBank == 0)
+            {
+                m_ROMBank = 1;
+            }
         }
-    }
-    else if (address >= 0xA000 && address <= 0xA1FF)
-    {
-        /*
-        A000-A1FF - 512x4bits RAM, built-in into the MBC2 chip (Read/Write)
-        The MBC2 doesn't support external RAM, instead it includes 512x4 bits of built-in RAM (in the MBC2
-        chip itself). It still requires an external battery to save data during power-off though.
-        As the data consists of 4bit values, only the lower 4 bits of the "bytes" in this memory area are used.
-        */
-        if (!m_isRAMEnabled)
-        {
-            //Logger::Log("MBC2_MBC::ReadByte doesn't support writing to 0x%04X, RAM disabled.", address);
-            return false;
-        }
-
-        m_RAM[address - 0xA000] = (val & 0x0F);
         return true;
     }
-
-    Logger::Log("MBC2_MBC::WriteByte doesn't support writing to 0x%04X", address);
+    if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        if (!m_isRAMEnabled || m_RAM == nullptr || m_RAMSize == 0)
+        {
+            return false;
+        }
+        m_RAM[(address - 0xA000) & 0x01FF] = val & 0x0F;
+        return true;
+    }
     return false;
 }
 
-
-/*
-MBC3 (max 2MByte ROM and/or 32KByte RAM and Timer)
-
-Beside for the ability to access up to 2MB ROM (128 banks), and 32KB RAM (4 banks), the MBC3 also
-includes a built-in Real Time Clock (RTC). The RTC requires an external 32.768 kHz Quartz
-Oscillator, and an external battery (if it should continue to tick when the gameboy is turned off).
-*/
-
-// TODO: Implement a timer
-
-/*
-The Clock Counter Registers
-08h  RTC S   Seconds   0-59 (0-3Bh)
-09h  RTC M   Minutes   0-59 (0-3Bh)
-0Ah  RTC H   Hours     0-23 (0-17h)
-0Bh  RTC DL  Lower 8 bits of Day Counter (0-FFh)
-0Ch  RTC DH  Upper 1 bit of Day Counter, Carry Bit, Halt Flag
-Bit 0  Most significant bit of Day Counter (Bit 8)
-Bit 6  Halt (0=Active, 1=Stop Timer)
-Bit 7  Day Counter Carry Bit (1=Counter Overflow)
-The Halt Flag is supposed to be set before <writing> to the RTC Registers.
-
-The Day Counter
-The total 9 bits of the Day Counter allow to count days in range from 0-511 (0-1FFh). The Day
-Counter Carry Bit becomes set when this value overflows. In that case the Carry Bit remains set
-until the program does reset it.
-Note that you can store an offset to the Day Counter in battery RAM. For example, every time you
-read a non-zero Day Counter, add this Counter to the offset in RAM, and reset the Counter to zero.
-This method allows to count any number of days, making your program Year-10000-Proof, provided that
-the cartridge gets used at least every 511 days.
-
-Delays
-When accessing the RTC Registers it is recommended to execute a 4ms delay (4 Cycles in Normal
-Speed Mode) between the separate accesses.
-*/
-
 MBC3_MBC::MBC3_MBC(byte* pROM, byte* pRAM) :
-    MBC(pROM, pRAM),
+    MBC3_MBC(pROM, 0x10000, pRAM, pRAM == nullptr ? 0 : 0x8000, true)
+{
+}
+
+MBC3_MBC::MBC3_MBC(
+    byte* pROM,
+    unsigned int romSize,
+    byte* pRAM,
+    unsigned int ramSize,
+    bool hasRTC) :
+    MBC(pROM, romSize, pRAM, ramSize),
     m_ROMBank(0x01),
-    m_RAMBank(0x00)
+    m_RAMRTCSelect(0x00),
+    m_LastLatchWrite(0xFF),
+    m_HasRTC(hasRTC),
+    m_IsMBC30(romSize > 0x200000 || ramSize > 0x8000),
+    m_HasLatchedRTC(false),
+    m_RTCCycles(0),
+    m_LastRTCUpdate(std::time(nullptr))
 {
-    memset(m_RTCRegisters, 0x00, ARRAYSIZE(m_RTCRegisters));
+    std::memset(m_RTCRegisters, 0, sizeof(m_RTCRegisters));
+    std::memset(m_LatchedRTCRegisters, 0, sizeof(m_LatchedRTCRegisters));
 }
 
-MBC3_MBC::~MBC3_MBC()
+void MBC3_MBC::AddSeconds(unsigned long long seconds)
 {
+    while (seconds != 0 &&
+        (m_RTCRegisters[0] > 59 ||
+         m_RTCRegisters[1] > 59 ||
+         m_RTCRegisters[2] > 23))
+    {
+        IncrementRTC();
+        --seconds;
+    }
+
+    if (seconds == 0)
+    {
+        return;
+    }
+
+    unsigned long long day = m_RTCRegisters[3] | ((m_RTCRegisters[4] & 0x01) << 8);
+    unsigned long long total =
+        m_RTCRegisters[0] +
+        (static_cast<unsigned long long>(m_RTCRegisters[1]) * 60) +
+        (static_cast<unsigned long long>(m_RTCRegisters[2]) * 3600) +
+        seconds;
+
+    day += total / 86400;
+    total %= 86400;
+    if (day > 0x01FF)
+    {
+        m_RTCRegisters[4] |= 0x80;
+        day %= 0x0200;
+    }
+
+    m_RTCRegisters[0] = static_cast<byte>(total % 60);
+    total /= 60;
+    m_RTCRegisters[1] = static_cast<byte>(total % 60);
+    m_RTCRegisters[2] = static_cast<byte>(total / 60);
+    m_RTCRegisters[3] = static_cast<byte>(day & 0xFF);
+    m_RTCRegisters[4] =
+        (m_RTCRegisters[4] & 0xC0) |
+        static_cast<byte>((day >> 8) & 0x01);
 }
 
-// IMemoryUnit
+void MBC3_MBC::IncrementRTC()
+{
+    const byte seconds = m_RTCRegisters[0] & 0x3F;
+    if (seconds != 59 && seconds != 63)
+    {
+        m_RTCRegisters[0] = seconds + 1;
+        return;
+    }
+    m_RTCRegisters[0] = 0;
+    if (seconds == 63)
+    {
+        return;
+    }
+
+    const byte minutes = m_RTCRegisters[1] & 0x3F;
+    if (minutes != 59 && minutes != 63)
+    {
+        m_RTCRegisters[1] = minutes + 1;
+        return;
+    }
+    m_RTCRegisters[1] = 0;
+    if (minutes == 63)
+    {
+        return;
+    }
+
+    const byte hours = m_RTCRegisters[2] & 0x1F;
+    if (hours != 23 && hours != 31)
+    {
+        m_RTCRegisters[2] = hours + 1;
+        return;
+    }
+    m_RTCRegisters[2] = 0;
+    if (hours == 31)
+    {
+        return;
+    }
+
+    unsigned int day = m_RTCRegisters[3] | ((m_RTCRegisters[4] & 0x01) << 8);
+    ++day;
+    if (day > 0x01FF)
+    {
+        day = 0;
+        m_RTCRegisters[4] |= 0x80;
+    }
+    m_RTCRegisters[3] = static_cast<byte>(day & 0xFF);
+    m_RTCRegisters[4] =
+        (m_RTCRegisters[4] & 0xC0) |
+        static_cast<byte>((day >> 8) & 0x01);
+}
+
+void MBC3_MBC::Step(unsigned long cycles)
+{
+    if (!m_HasRTC || (m_RTCRegisters[4] & 0x40) != 0)
+    {
+        return;
+    }
+
+    m_RTCCycles += cycles;
+    if (m_RTCCycles >= GameBoyClock)
+    {
+        AddSeconds(m_RTCCycles / GameBoyClock);
+        m_RTCCycles %= GameBoyClock;
+    }
+}
+
+void MBC3_MBC::LatchRTC()
+{
+    std::memcpy(m_LatchedRTCRegisters, m_RTCRegisters, sizeof(m_RTCRegisters));
+    m_HasLatchedRTC = true;
+}
+
+byte MBC3_MBC::ReadRTC(byte index)
+{
+    if (!m_HasRTC || index >= sizeof(m_RTCRegisters))
+    {
+        return 0xFF;
+    }
+    return m_HasLatchedRTC ? m_LatchedRTCRegisters[index] : m_RTCRegisters[index];
+}
+
+void MBC3_MBC::WriteRTC(byte index, byte val)
+{
+    if (!m_HasRTC || index >= sizeof(m_RTCRegisters))
+    {
+        return;
+    }
+
+    switch (index)
+    {
+    case 0:
+        m_RTCRegisters[index] = val & 0x3F;
+        m_RTCCycles = 0;
+        break;
+    case 1:
+        m_RTCRegisters[index] = val & 0x3F;
+        break;
+    case 2:
+        m_RTCRegisters[index] = val & 0x1F;
+        break;
+    case 3:
+        m_RTCRegisters[index] = val;
+        break;
+    case 4:
+        m_RTCRegisters[index] = val & 0xC1;
+        m_LastRTCUpdate = std::time(nullptr);
+        break;
+    }
+}
+
 byte MBC3_MBC::ReadByte(const ushort& address)
 {
     if (address <= 0x3FFF)
     {
-        /*
-        0000-3FFF - ROM Bank 00 (Read Only)
-        Same as for MBC1.
-        */
-        return m_ROM[address];
+        return ReadROM(0, address);
     }
-    else if (address <= 0x7FFF)
+    if (address <= 0x7FFF)
     {
-        /*
-        4000-7FFF - ROM Bank 01-7F (Read Only)
-        Same as for MBC1, except that accessing banks 20h, 40h, and 60h is supported now.
-        */
-        unsigned int target = (address - 0x4000);
-        target += (0x4000 * m_ROMBank);
-        return m_ROM[target];
+        return ReadROM(m_ROMBank, address - 0x4000);
     }
-    else if (address >= 0xA000 && address <= 0xBFFF)
+    if (address >= 0xA000 && address <= 0xBFFF)
     {
-        /*
-        A000-BFFF - RAM Bank 00-03, if any (Read/Write)
-        A000-BFFF - RTC Register 08-0C (Read/Write)
-        Depending on the current Bank Number/RTC Register selection (see below), this memory space is used
-        to access an 8KByte external RAM Bank, or a single RTC Register.
-        */
         if (!m_isRAMEnabled)
         {
-            //Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM disabled.", address);
             return 0xFF;
         }
-
-        if (m_RAM == nullptr)
+        if (m_RAMRTCSelect <= (m_IsMBC30 ? 0x07 : 0x03))
         {
-            //Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X, RAM not initialized.", address);
-            return 0xFF;
+            return ReadRAM(m_RAMRTCSelect, address - 0xA000);
         }
-
-        if (m_RAMBank <= 0x03)
+        if (m_RAMRTCSelect >= 0x08 && m_RAMRTCSelect <= 0x0C)
         {
-            unsigned int target = address - 0xA000;
-            // Offset based on the bank number
-            target += (0x2000 * m_RAMBank);
-            return m_RAM[target];
+            return ReadRTC(m_RAMRTCSelect - 0x08);
         }
-        else if (m_RAMBank >= 0x08 && m_RAMBank <= 0x0C)
-        {
-            return m_RTCRegisters[m_RAMBank - 0x08];
-        }
+        return 0xFF;
     }
-
-    Logger::Log("MBC3_MBC::ReadByte doesn't support reading from 0x%04X", address);
-    return 0x00;
+    return 0xFF;
 }
 
 bool MBC3_MBC::WriteByte(const ushort& address, const byte val)
 {
     if (address <= 0x1FFF)
     {
-        /*
-        0000-1FFF - RAM and Timer Enable (Write Only)
-        Mostly the same as for MBC1, a value of 0Ah will enable reading and writing to external RAM - and
-        to the RTC Registers! A value of 00h will disable either.
-        */
-        m_isRAMEnabled = ((val & EnableRAM) == EnableRAM);
+        m_isRAMEnabled = IsRAMEnableValue(val);
         return true;
     }
-    else if (address <= 0x3FFF)
+    if (address <= 0x3FFF)
     {
-        /*
-        2000-3FFF - ROM Bank Number (Write Only)
-        Same as for MBC1, except that the whole 7 bits of the RAM Bank Number are written directly to this
-        address. As for the MBC1, writing a value of 00h, will select Bank 01h instead. All other values
-        01-7Fh select the corresponding ROM Banks.
-        */
-        m_ROMBank = (val & 0x7F);
-        if (m_ROMBank == 0x00)
+        m_ROMBank = m_IsMBC30 ? val : val & 0x7F;
+        if (m_ROMBank == 0)
         {
-            m_ROMBank = 0x01;
+            m_ROMBank = 1;
         }
-
         return true;
     }
-    else if (address <= 0x5FFF)
+    if (address <= 0x5FFF)
     {
-        /*
-        4000-5FFF - RAM Bank Number - or - RTC Register Select (Write Only)
-        As for the MBC1s RAM Banking Mode, writing a value in range for 00h-03h maps the corresponding
-        external RAM Bank (if any) into memory at A000-BFFF.
-        When writing a value of 08h-0Ch, this will map the corresponding RTC register into memory at
-        A000-BFFF. That register could then be read/written by accessing any address in that area,
-        typically that is done by using address A000.
-        */
-        m_RAMBank = val;
+        m_RAMRTCSelect = val;
         return true;
     }
-    else if (address <= 0x7FFF)
+    if (address <= 0x7FFF)
     {
-        /*
-        6000-7FFF - Latch Clock Data (Write Only)
-        When writing 00h, and then 01h to this register, the current time becomes latched into the RTC
-        registers. The latched data will not change until it becomes latched again, by repeating the
-        write 00h->01h procedure.
-        This is supposed for <reading> from the RTC registers. It is proof to read the latched (frozen)
-        time from the RTC registers, while the clock itself continues to tick in background.
-        */
-
-        // TODO: Look at this for ideas:
-        // https://github.com/creker/Cookieboy/blob/a476f8ec5baffd176ee1572885edb7f41b241571/CookieboyMBC3.h
-        Logger::Log("MBC3_MBC::WriteByte doesn't support Latch Clock Data yet. 0x%04X", address);
-        return false;
+        if (m_HasRTC && m_LastLatchWrite == 0 && val == 1)
+        {
+            LatchRTC();
+        }
+        m_LastLatchWrite = val;
+        return true;
     }
-    else if (address >= 0xA000 && address <= 0xBFFF)
+    if (address >= 0xA000 && address <= 0xBFFF)
     {
-        /*
-        A000-BFFF - RAM Bank 00-03, if any (Read/Write)
-        A000-BFFF - RTC Register 08-0C (Read/Write)
-        Depending on the current Bank Number/RTC Register selection (see below), this memory space is used
-        to access an 8KByte external RAM Bank, or a single RTC Register.
-        */
-
         if (!m_isRAMEnabled)
         {
-            //Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM disabled.", address);
             return false;
         }
-
-        if (m_RAM == nullptr)
+        if (m_RAMRTCSelect <= (m_IsMBC30 ? 0x07 : 0x03))
         {
-            //Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X, RAM not initialized.", address);
-            return false;
+            return WriteRAM(m_RAMRTCSelect, address - 0xA000, val);
         }
-
-        if (m_RAMBank <= 0x03)
+        if (m_RAMRTCSelect >= 0x08 && m_RAMRTCSelect <= 0x0C && m_HasRTC)
         {
-            unsigned int target = address - 0xA000;
-            // Offset based on the bank number
-            target += (0x2000 * m_RAMBank);
-            m_RAM[target] = val;
-            return true;
-        }
-        else if (m_RAMBank >= 0x08 && m_RAMBank <= 0x0C)
-        {
-            m_RTCRegisters[m_RAMBank - 0x08] = val;
+            WriteRTC(m_RAMRTCSelect - 0x08, val);
             return true;
         }
     }
-
-    Logger::Log("MBC3_MBC::WriteByte doesn't support writing to 0x%04X", address);
     return false;
 }
 
-/*
-MBC5 (max 2MByte ROM and/or 32KByte RAM and Timer)
+bool MBC3_MBC::LoadRTC(std::istream& stream)
+{
+    if (!m_HasRTC)
+    {
+        return false;
+    }
 
-- ROM upto 64MBit (8MByte) divided into 512 banks, each 16kByte.
-- RAM upto 1MBit (128kByte) divided into 16 banks, each 8kByte
-*/
+    char magic[6] = {};
+    byte registers[5] = {};
+    byte timestampBytes[8] = {};
+    if (!stream.read(magic, sizeof(magic)) ||
+        std::memcmp(magic, "GLRTC1", sizeof(magic)) != 0 ||
+        !stream.read(reinterpret_cast<char*>(registers), sizeof(registers)) ||
+        !stream.read(reinterpret_cast<char*>(timestampBytes), sizeof(timestampBytes)))
+    {
+        return false;
+    }
+
+    std::uint64_t timestamp = 0;
+    for (unsigned int index = 0; index < sizeof(timestampBytes); ++index)
+    {
+        timestamp |= static_cast<std::uint64_t>(timestampBytes[index]) << (index * 8);
+    }
+
+    const std::uint64_t maxTimestamp =
+        static_cast<std::uint64_t>((std::numeric_limits<std::time_t>::max)());
+    const std::time_t now = std::time(nullptr);
+    if (timestamp > maxTimestamp || now == static_cast<std::time_t>(-1))
+    {
+        return false;
+    }
+
+    std::memcpy(m_RTCRegisters, registers, sizeof(m_RTCRegisters));
+    m_RTCRegisters[0] &= 0x3F;
+    m_RTCRegisters[1] &= 0x3F;
+    m_RTCRegisters[2] &= 0x1F;
+    m_RTCRegisters[4] &= 0xC1;
+    m_LastRTCUpdate = static_cast<std::time_t>(timestamp);
+    if ((m_RTCRegisters[4] & 0x40) == 0 && now > m_LastRTCUpdate)
+    {
+        AddSeconds(static_cast<unsigned long long>(now - m_LastRTCUpdate));
+    }
+    m_LastRTCUpdate = now;
+    m_RTCCycles = 0;
+    m_HasLatchedRTC = false;
+    return true;
+}
+
+bool MBC3_MBC::SaveRTC(std::ostream& stream)
+{
+    if (!m_HasRTC)
+    {
+        return false;
+    }
+
+    m_LastRTCUpdate = std::time(nullptr);
+    if (m_LastRTCUpdate == static_cast<std::time_t>(-1))
+    {
+        return false;
+    }
+    byte timestampBytes[8] = {};
+    const std::uint64_t timestamp = static_cast<std::uint64_t>(m_LastRTCUpdate);
+    for (unsigned int index = 0; index < sizeof(timestampBytes); ++index)
+    {
+        timestampBytes[index] = static_cast<byte>((timestamp >> (index * 8)) & 0xFF);
+    }
+
+    stream.write("GLRTC1", 6);
+    stream.write(reinterpret_cast<const char*>(m_RTCRegisters), sizeof(m_RTCRegisters));
+    stream.write(reinterpret_cast<const char*>(timestampBytes), sizeof(timestampBytes));
+    return stream.good();
+}
 
 MBC5_MBC::MBC5_MBC(byte* pROM, byte* pRAM) :
-    MBC(pROM, pRAM),
-    m_RAMG(0x00),
-    m_ROMBank(0x0000),
-    m_RAMBank(0x00)
+    MBC5_MBC(pROM, 0x10000, pRAM, pRAM == nullptr ? 0 : 0x8000, false)
 {
 }
 
-MBC5_MBC::~MBC5_MBC()
+MBC5_MBC::MBC5_MBC(
+    byte* pROM,
+    unsigned int romSize,
+    byte* pRAM,
+    unsigned int ramSize,
+    bool hasRumble) :
+    MBC(pROM, romSize, pRAM, ramSize),
+    m_ROMBank(0x0001),
+    m_RAMBank(0x00),
+    m_HasRumble(hasRumble),
+    m_RumbleEnabled(false)
 {
 }
 
-// IMemoryUnit
 byte MBC5_MBC::ReadByte(const ushort& address)
 {
     if (address <= 0x3FFF)
     {
-        /*
-        0000-3FFF - ROM Bank 00 (Read Only)
-        Same as for MBC1.
-        */
-        return m_ROM[address];
+        return ReadROM(0, address);
     }
-    else if (address <= 0x7FFF)
+    if (address <= 0x7FFF)
     {
-        /*
-        16kByte switchable ROM bank (Latched to MBC5 pins "RA")
-        Bank 0-511 (The 0 bank here is a MBC5 speciality)
-        HLLLLLL LLAAAAAA AAAAAAAA (64MBit)
-        (i/o resides in this bank, see below)
-        */
-        unsigned int target = (address - 0x4000);
-        target += (0x4000 * m_ROMBank);
-        return m_ROM[target];
+        return ReadROM(m_ROMBank, address - 0x4000);
     }
-    else if (address >= 0xA000 && address <= 0xBFFF)
+    if (address >= 0xA000 && address <= 0xBFFF)
     {
-        /*
-        8kByte switchable RAM bank (Latched via MBC5 pins "AA")
-        This is 17 bit wide in order to access 1MBit.
-        B BBBAAAAA AAAAAAAA
-        */
-        unsigned int target = address - 0xA000;
-        target += (0x2000 * m_RAMBank);
-        return m_RAM[target];
+        return m_isRAMEnabled ? ReadRAM(m_RAMBank, address - 0xA000) : 0xFF;
     }
-
-    Logger::Log("MBC5_MBC::ReadByte doesn't support reading from 0x%04X", address);
-    return 0x00;
+    return 0xFF;
 }
 
 bool MBC5_MBC::WriteByte(const ushort& address, const byte val)
 {
     if (address <= 0x1FFF)
     {
-        /*
-        External Extended Memory Register (RAMG)
-        (This is ram enable on original MBC5 with 0x0A)
-
-        7  6  5  4  3  2  1  0
-        |  |              |
-        |  |           1 = RAM write enable
-        |  |           0 = RAM write inhibit
-        |  |
-        |  1 = LED on
-        |  0 = LED off
-        |
-        1 = IO enable
-        0 = IO disable
-        */
-        m_RAMG = val;
+        m_isRAMEnabled = IsRAMEnableValue(val);
         return true;
     }
-    else if (address <= 0x2FFF)
+    if (address <= 0x2FFF)
     {
-        /*
-        Lower ROM Bank Register (ROMB0)
-        Switchable ROM bank low select (First 8 RA bits)
-        LLLL LLLL
-        */
-        m_ROMBank = (m_ROMBank & 0xFF00) | val;
+        m_ROMBank = (m_ROMBank & 0x0100) | val;
         return true;
     }
-    else if (address <= 0x3FFF)
+    if (address <= 0x3FFF)
     {
-        /*
-        Upper ROM Bank Register (ROMB1)
-        Switchable ROM bank high select (9th RA bit)
-        XXXX XXXH
-        */
-        ushort upper = (ushort)(val & 0x01);
-        m_ROMBank = (m_ROMBank & 0x00FF) | (upper << 8);
+        m_ROMBank = (m_ROMBank & 0x00FF) | ((val & 0x01) << 8);
         return true;
     }
-    else if (address <= 0x4FFF)
+    if (address <= 0x5FFF)
     {
-        /*
-        RAM Bank Register (RAMB)
-        Switchable RAM bank select (4 AA bits)
-        XXXX BBBB
-        */
-        m_RAMBank = (val & 0x0F);
+        m_RumbleEnabled = m_HasRumble && (val & 0x08) != 0;
+        m_RAMBank = val & (m_HasRumble ? 0x07 : 0x0F);
         return true;
     }
-    else if (address >= 0xA000 && address <= 0xBFFF)
+    if (address <= 0x7FFF)
     {
-        /*
-        8kByte switchable RAM bank (Latched via MBC5 pins "AA")
-        This is 17 bit wide in order to access 1MBit.
-        B BBBAAAAA AAAAAAAA
-        */
-        unsigned int target = address - 0xA000;
-        target += (0x2000 * m_RAMBank);
-        m_RAM[target] = val;
         return true;
     }
-
-    Logger::Log("MBC5_MBC::WriteByte doesn't support writing to 0x%04X", address);
+    if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        return m_isRAMEnabled && WriteRAM(m_RAMBank, address - 0xA000, val);
+    }
     return false;
 }

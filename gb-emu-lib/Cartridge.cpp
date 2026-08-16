@@ -3,196 +3,407 @@
 
 #include "MBC.hpp"
 
-Cartridge::Cartridge() :
-    m_MBCType(ROMOnly)
+#include <limits>
+
+namespace
 {
+bool DecodeROMSize(byte flag, unsigned int& size)
+{
+    switch (flag)
+    {
+    case ROM_32KB:  size = 32 * 1024; return true;
+    case ROM_64KB:  size = 64 * 1024; return true;
+    case ROM_128KB: size = 128 * 1024; return true;
+    case ROM_256KB: size = 256 * 1024; return true;
+    case ROM_512KB: size = 512 * 1024; return true;
+    case ROM_1MB:   size = 1024 * 1024; return true;
+    case ROM_2MB:   size = 2 * 1024 * 1024; return true;
+    case ROM_4MB:   size = 4 * 1024 * 1024; return true;
+    case ROM_8MB:   size = 8 * 1024 * 1024; return true;
+    case ROM_1_1MB: size = 72 * 16 * 1024; return true;
+    case ROM_1_2MB: size = 80 * 16 * 1024; return true;
+    case ROM_1_5MB: size = 96 * 16 * 1024; return true;
+    default: return false;
+    }
 }
 
-Cartridge::~Cartridge()
+bool DecodeRAMSize(byte flag, unsigned int& size)
 {
-    switch (m_MBCType)
+    switch (flag)
     {
+    case RAM_None:  size = 0; return true;
+    case RAM_2KB:   size = 2 * 1024; return true;
+    case RAM_8KB:   size = 8 * 1024; return true;
+    case RAM_32KB:  size = 32 * 1024; return true;
+    case RAM_128KB: size = 128 * 1024; return true;
+    case RAM_64KB:  size = 64 * 1024; return true;
+    default: return false;
+    }
+}
+
+bool IsSupportedPhysicalROMSize(unsigned int size)
+{
+    unsigned int decodedSize = 0;
+    const byte flags[] =
+    {
+        ROM_32KB, ROM_64KB, ROM_128KB, ROM_256KB, ROM_512KB,
+        ROM_1MB, ROM_2MB, ROM_4MB, ROM_8MB, ROM_1_1MB, ROM_1_2MB, ROM_1_5MB
+    };
+    for (unsigned int index = 0; index < sizeof(flags); ++index)
+    {
+        if (DecodeROMSize(flags[index], decodedSize) && decodedSize == size)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CartridgeTypeHasRAM(byte type)
+{
+    switch (type)
+    {
+    case ROMRAM:
+    case ROMRAMBattery:
+    case MBC1RAM:
     case MBC1RAMBattery:
+    case MBC2:
+    case MBC2Battery:
+    case MBC3TimerRAMBattery:
+    case MBC3RAM:
+    case MBC3RAMBattery:
+    case MBC5RAM:
+    case MBC5RAMBattery:
+    case MBC5RumbleRAM:
+    case MBC5RumbleRAMBattery:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool CartridgeTypeHasBattery(byte type)
+{
+    switch (type)
+    {
+    case ROMRAMBattery:
+    case MBC1RAMBattery:
+    case MBC2Battery:
     case MBC3TimerBattery:
     case MBC3TimerRAMBattery:
     case MBC3RAMBattery:
     case MBC5RAMBattery:
     case MBC5RumbleRAMBattery:
-        // Theses all have batteries to backup the ram, save now
-        std::ofstream file(m_Path + "_RAM", std::ios::out | std::ios::binary | std::ios::trunc);
-        if (file.is_open())
-        {
-            file.write((char*)m_RAM.get(), m_RAMSize);
-            file.close();
-        }
-        break;
+        return true;
+    default:
+        return false;
     }
+}
 
-    m_MBC.reset();
-    m_ROM.reset();
-    m_RAM.reset();
+bool CartridgeTypeHasRTC(byte type)
+{
+    return type == MBC3TimerBattery || type == MBC3TimerRAMBattery;
+}
+}
+
+Cartridge::Cartridge() :
+    m_MBCType(ROMOnly),
+    m_ROMSize(0),
+    m_RAMSize(0),
+    m_HasBattery(false),
+    m_HasRTC(false)
+{
+}
+
+Cartridge::~Cartridge()
+{
+    SavePersistentData();
 }
 
 bool Cartridge::LoadROM(const char* path)
 {
-    m_Path = path;
-    bool succeeded = false;
-    std::streampos size;
-
-    std::ifstream file(path, std::ios::in | std::ios::binary | std::ios::ate);
-    if (file.is_open())
+    if (path == nullptr || path[0] == '\0')
     {
-        size = file.tellg();
-#if WINDOWS
-        int iSize = static_cast<int>(size.seekpos());
-#else
-        int iSize = size;
-#endif
-
-        file.seekg(0, std::ios::beg);
-
-        m_ROM = std::unique_ptr<byte>(new byte[static_cast<unsigned int>(iSize)]);
-
-        if (file.read(reinterpret_cast<char*>(m_ROM.get()), size))
-        {
-            Logger::Log("Loaded game ROM %s (%d bytes)", path, iSize);
-
-            if (iSize < 0x014F)
-            {
-                Logger::Log("Cartridge doesn't have enough data!", path, iSize);
-                succeeded = false;
-            }
-            else
-            {
-                succeeded = LoadMBC(static_cast<unsigned int>(iSize));
-            }
-        }
-        else
-        {
-            Logger::Log("Failed to load game rom %s", path);
-        }
-
-        file.close();
+        Logger::LogError("Cartridge::LoadROM - Invalid ROM path.");
+        return false;
     }
 
-    return succeeded;
+    SavePersistentData();
+    m_MBC.reset();
+    m_ROM.reset();
+    m_RAM.reset();
+    m_ROMSize = 0;
+    m_RAMSize = 0;
+    m_HasBattery = false;
+    m_HasRTC = false;
+    m_Path.clear();
+
+    std::ifstream file(path, std::ios::in | std::ios::binary | std::ios::ate);
+    if (!file.is_open())
+    {
+        Logger::LogError("Failed to open game ROM %s", path);
+        return false;
+    }
+
+    const std::streampos streamSize = file.tellg();
+    if (streamSize < static_cast<std::streampos>(0x0150) ||
+        streamSize > static_cast<std::streampos>(std::numeric_limits<unsigned int>::max()))
+    {
+        Logger::LogError("Cartridge ROM has an invalid size: %s", path);
+        return false;
+    }
+
+    const unsigned int actualSize = static_cast<unsigned int>(streamSize);
+    std::unique_ptr<byte[]> rom(new byte[actualSize]);
+    file.seekg(0, std::ios::beg);
+    if (!file.read(reinterpret_cast<char*>(rom.get()), actualSize))
+    {
+        Logger::LogError("Failed to read game ROM %s", path);
+        return false;
+    }
+
+    m_Path = path;
+    m_ROM = std::move(rom);
+    if (!LoadMBC(actualSize))
+    {
+        m_MBC.reset();
+        m_ROM.reset();
+        m_RAM.reset();
+        m_ROMSize = 0;
+        m_RAMSize = 0;
+        m_HasBattery = false;
+        m_HasRTC = false;
+        m_Path.clear();
+        return false;
+    }
+
+    Logger::Log("Loaded game ROM %s (%u bytes)", path, actualSize);
+    LoadPersistentData();
+    return true;
 }
 
-// IMemoryUnit
 byte Cartridge::ReadByte(const ushort& address)
 {
-    return m_MBC->ReadByte(address);
+    return m_MBC == nullptr ? 0xFF : m_MBC->ReadByte(address);
 }
 
 bool Cartridge::WriteByte(const ushort& address, const byte val)
 {
-    return m_MBC->WriteByte(address, val);
+    return m_MBC != nullptr && m_MBC->WriteByte(address, val);
+}
+
+void Cartridge::Step(unsigned long cycles)
+{
+    MBC3_MBC* mbc3 = dynamic_cast<MBC3_MBC*>(m_MBC.get());
+    if (mbc3 != nullptr)
+    {
+        mbc3->Step(cycles);
+    }
+}
+
+byte Cartridge::GetCGBFlag() const
+{
+    if (m_ROM == nullptr || m_ROMSize <= CGBFlagAddress)
+    {
+        return 0x00;
+    }
+
+    return m_ROM[CGBFlagAddress];
+}
+
+bool Cartridge::IsCGBCartridge() const
+{
+    return IsCGBCartridgeFlag(GetCGBFlag());
+}
+
+bool Cartridge::IsCGBOnlyCartridge() const
+{
+    return IsCGBOnlyCartridgeFlag(GetCGBFlag());
+}
+
+bool Cartridge::IsMBC1Multicart() const
+{
+    const unsigned int logoOffset = 0x0104;
+    const unsigned int logoSize = 0x30;
+    const unsigned int secondHeader = (0x10 * 0x4000) + logoOffset;
+    return m_ROM != nullptr &&
+        m_ROMSize >= secondHeader + logoSize &&
+        std::memcmp(m_ROM.get() + logoOffset, m_ROM.get() + secondHeader, logoSize) == 0;
 }
 
 bool Cartridge::LoadMBC(unsigned int actualSize)
 {
-    m_MBCType = m_ROM.get()[CartridgeTypeAddress];
-    byte romSizeFlag = m_ROM.get()[ROMSizeAddress];
-    byte ramSizeFlag = m_ROM.get()[RAMSizeAddress];
+    m_MBCType = m_ROM[CartridgeTypeAddress];
+    const byte romSizeFlag = m_ROM[ROMSizeAddress];
+    const byte ramSizeFlag = m_ROM[RAMSizeAddress];
 
-    unsigned int romSize = (32 * 1024) << romSizeFlag;
-    switch (romSizeFlag)
+    if (!DecodeROMSize(romSizeFlag, m_ROMSize))
     {
-    case ROM_1_1MB:
-        romSize = 1179648;
-        break;
-    case ROM_1_2MB:
-        romSize = 1310720;
-        break;
-    case ROM_1_5MB:
-        romSize = 1572864;
-        break;
+        Logger::LogError("Cartridge::LoadMBC - Unsupported ROM size flag: 0x%02X", romSizeFlag);
+        return false;
+    }
+    if (actualSize != m_ROMSize)
+    {
+        if (!IsSupportedPhysicalROMSize(actualSize))
+        {
+            Logger::LogError(
+                "Cartridge::LoadMBC - ROM size mismatch. Got: %u Expected: %u",
+                actualSize,
+                m_ROMSize);
+            return false;
+        }
+        Logger::Log(
+            "Cartridge::LoadMBC - Header ROM size differs from physical image. Got: %u Header: %u",
+            actualSize,
+            m_ROMSize);
+        m_ROMSize = actualSize;
     }
 
-    if (actualSize != romSize)
+    unsigned int declaredRAMSize = 0;
+    if (!DecodeRAMSize(ramSizeFlag, declaredRAMSize))
     {
-        Logger::Log("Cartridge::LoadMBC - Unexpected ROM file size. Got: %d   Expected: %d", actualSize, romSize);
-        return true;
-    }
-
-    switch (ramSizeFlag)
-    {
-    case RAM_None:
-        m_RAMSize = 0;
-        break;
-    case RAM_2KB:
-        m_RAMSize = (1024 * 2);
-        break;
-    case RAM_8KB:
-        m_RAMSize = (1024 * 8);
-        break;
-    case RAM_32KB:
-        m_RAMSize = (1024 * 32);
-        break;
-    default:
-        Logger::Log("Cartridge::LoadMBC - Unexpected RAM size flag: 0x%02X", ramSizeFlag);
+        Logger::LogError("Cartridge::LoadMBC - Unsupported RAM size flag: 0x%02X", ramSizeFlag);
         return false;
     }
 
-    if (m_RAMSize > 0)
+    m_HasBattery = CartridgeTypeHasBattery(m_MBCType);
+    m_HasRTC = CartridgeTypeHasRTC(m_MBCType);
+    m_RAMSize = CartridgeTypeHasRAM(m_MBCType) ? declaredRAMSize : 0;
+    if (m_MBCType == MBC2 || m_MBCType == MBC2Battery)
     {
-        std::string ramPath = m_Path + "_RAM";
-        m_RAM = std::unique_ptr<byte>(new byte[m_RAMSize]);
-        // If _RAM file exists
-        std::ifstream file(ramPath, std::ios::in | std::ios::binary | std::ios::ate);
-        if (file.is_open())
-        {
-            std::streampos size = file.tellg();
-#if WINDOWS
-            unsigned int iSize = static_cast<int>(size.seekpos());
-#else
-            unsigned int iSize = size;
-#endif
-            file.seekg(0, std::ios::beg);
-
-            if (iSize != m_RAMSize)
-            {
-                Logger::Log("Cartridge::LoadMBC - Saved RAM was not the expected size. Got: %d   Expected : %d", iSize, m_RAMSize);
-            }
-            else if (file.read(reinterpret_cast<char*>(m_RAM.get()), size))
-            {
-                Logger::Log("Loaded game RAM %s (%d bytes)", ramPath.data(), m_RAMSize);
-            }
-        }
+        m_RAMSize = 0x0200;
+    }
+    if (m_RAMSize != 0)
+    {
+        m_RAM.reset(new byte[m_RAMSize]());
     }
 
     switch (m_MBCType)
     {
     case ROMOnly:
-        m_MBC = std::unique_ptr<ROMOnly_MBC>(new ROMOnly_MBC(m_ROM.get(), m_RAM.get()));
-        return true;
+    case ROMRAM:
+    case ROMRAMBattery:
+        m_MBC.reset(new ROMOnly_MBC(m_ROM.get(), m_ROMSize, m_RAM.get(), m_RAMSize));
+        break;
     case MBC1:
     case MBC1RAM:
     case MBC1RAMBattery:
-        m_MBC = std::unique_ptr<MBC1_MBC>(new MBC1_MBC(m_ROM.get(), m_RAM.get()));
-        return true;
+        m_MBC.reset(new MBC1_MBC(
+            m_ROM.get(),
+            m_ROMSize,
+            m_RAM.get(),
+            m_RAMSize,
+            IsMBC1Multicart()));
+        break;
     case MBC2:
     case MBC2Battery:
-        m_RAM.reset();
-        m_MBC = std::unique_ptr<MBC2_MBC>(new MBC2_MBC(m_ROM.get()));
-        return true;
+        m_MBC.reset(new MBC2_MBC(m_ROM.get(), m_ROMSize, m_RAM.get(), m_RAMSize));
+        break;
     case MBC3TimerBattery:
     case MBC3TimerRAMBattery:
     case MBC3:
     case MBC3RAM:
     case MBC3RAMBattery:
-        m_MBC = std::unique_ptr<MBC3_MBC>(new MBC3_MBC(m_ROM.get(), m_RAM.get()));
-        return true;
+        m_MBC.reset(new MBC3_MBC(
+            m_ROM.get(),
+            m_ROMSize,
+            m_RAM.get(),
+            m_RAMSize,
+            m_HasRTC));
+        break;
     case MBC5:
     case MBC5RAM:
     case MBC5RAMBattery:
     case MBC5Rumble:
     case MBC5RumbleRAM:
     case MBC5RumbleRAMBattery:
-        m_MBC = std::unique_ptr<MBC5_MBC>(new MBC5_MBC(m_ROM.get(), m_RAM.get()));
-        return true;
+        m_MBC.reset(new MBC5_MBC(
+            m_ROM.get(),
+            m_ROMSize,
+            m_RAM.get(),
+            m_RAMSize,
+            m_MBCType == MBC5Rumble ||
+                m_MBCType == MBC5RumbleRAM ||
+                m_MBCType == MBC5RumbleRAMBattery));
+        break;
     default:
-        Logger::Log("Unsupported Cartridge MBC type: 0x%02X", m_MBCType);
+        Logger::LogError("Unsupported Cartridge MBC type: 0x%02X", m_MBCType);
         return false;
+    }
+
+    return m_MBC != nullptr;
+}
+
+void Cartridge::LoadPersistentData()
+{
+    if (!m_HasBattery)
+    {
+        return;
+    }
+
+    if (m_RAM != nullptr && m_RAMSize != 0)
+    {
+        const std::string ramPath = m_Path + "_RAM";
+        std::ifstream ramFile(ramPath, std::ios::in | std::ios::binary | std::ios::ate);
+        if (ramFile.is_open())
+        {
+            const std::streampos size = ramFile.tellg();
+            if (size == static_cast<std::streampos>(m_RAMSize))
+            {
+                ramFile.seekg(0, std::ios::beg);
+                if (!ramFile.read(reinterpret_cast<char*>(m_RAM.get()), m_RAMSize))
+                {
+                    std::memset(m_RAM.get(), 0, m_RAMSize);
+                    Logger::LogError("Failed to load saved RAM %s", ramPath.c_str());
+                }
+            }
+            else
+            {
+                Logger::LogError(
+                    "Saved RAM has the wrong size. Got: %lld Expected: %u",
+                    static_cast<long long>(size),
+                    m_RAMSize);
+            }
+        }
+    }
+
+    if (m_HasRTC)
+    {
+        MBC3_MBC* mbc3 = dynamic_cast<MBC3_MBC*>(m_MBC.get());
+        std::ifstream rtcFile(m_Path + "_RTC", std::ios::in | std::ios::binary);
+        if (mbc3 != nullptr && rtcFile.is_open() && !mbc3->LoadRTC(rtcFile))
+        {
+            Logger::LogError("Failed to load saved RTC %s", (m_Path + "_RTC").c_str());
+        }
+    }
+}
+
+void Cartridge::SavePersistentData()
+{
+    if (!m_HasBattery || m_Path.empty() || m_MBC == nullptr)
+    {
+        return;
+    }
+
+    if (m_RAM != nullptr && m_RAMSize != 0)
+    {
+        const std::string ramPath = m_Path + "_RAM";
+        std::ofstream ramFile(ramPath, std::ios::out | std::ios::binary | std::ios::trunc);
+        if (!ramFile.is_open() ||
+            !ramFile.write(reinterpret_cast<const char*>(m_RAM.get()), m_RAMSize))
+        {
+            Logger::LogError("Failed to save cartridge RAM %s", ramPath.c_str());
+        }
+    }
+
+    if (m_HasRTC)
+    {
+        MBC3_MBC* mbc3 = dynamic_cast<MBC3_MBC*>(m_MBC.get());
+        const std::string rtcPath = m_Path + "_RTC";
+        std::ofstream rtcFile(rtcPath, std::ios::out | std::ios::binary | std::ios::trunc);
+        if (mbc3 == nullptr || !rtcFile.is_open() || !mbc3->SaveRTC(rtcFile))
+        {
+            Logger::LogError("Failed to save cartridge RTC %s", rtcPath.c_str());
+        }
     }
 }

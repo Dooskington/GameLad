@@ -14,7 +14,25 @@ public:
     virtual bool LoadROM(const char* bootROMPath, const char* cartridgePath) = 0;
     virtual int Step() = 0;
     virtual void TriggerInterrupt(byte interrupt) = 0;
+    virtual void QueueInterrupt(byte interrupt) { TriggerInterrupt(interrupt); }
     virtual byte* GetCurrentFrame() = 0;
     virtual void SetInput(byte input, byte buttons) = 0;
     virtual void SetVSyncCallback(void(*pCallback)()) = 0;
+
+    // Host audio playback wiring. Samples are interleaved stereo floats
+    // (Left, Right, Left, Right, ...); pInterleavedBuffer must have room for
+    // maxFrames * 2 floats. This is a thin adapter over the APU's own
+    // testable, thread-independent sample buffer (see APU::ConsumeSamples())
+    // - the emulated audio hardware state never depends on when or whether
+    // a host pulls from it.
+    virtual void SetAudioSampleRate(unsigned int sampleRate) = 0;
+    virtual size_t ConsumeAudioSamples(float* pInterleavedBuffer, size_t maxFrames) = 0;
+
+    // Called by Timer once per real falling edge of its shared DIV/system
+    // counter's bit 12 (including edges synthesized by a DIV write/reset),
+    // so the APU's frame sequencer can be driven by the real hardware clock
+    // relationship. Timer intentionally has no direct APU dependency - this
+    // keeps that coupling mediated through the CPU, mirroring the existing
+    // TriggerInterrupt() pattern.
+    virtual void ClockAPUFrameSequencer() = 0;
 };

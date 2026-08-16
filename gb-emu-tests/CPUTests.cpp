@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include <CPU.hpp>
+#include <GPU.hpp>
 
 TEST_CLASS(CPUTests)
 {
@@ -10,6 +11,7 @@ private:
     {
     public:
         CPUTestsMMU(byte* memory, int size)
+            : m_writeCount(0)
         {
             memset(m_data, 0x00, ARRAYSIZE(m_data));
             if (memory != nullptr)
@@ -46,6 +48,16 @@ private:
             return true;
         }
 
+        // Model plumbing. The CPU test MMU is a flat memory array, so the mode
+        // is simply remembered and the speed switch is modelled directly; this
+        // lets the double-speed tests drive KEY1 without a full MMU.
+        void SetGameBoyMode(GameBoyMode mode) { m_mode = mode; }
+        GameBoyMode GetGameBoyMode() const { return m_mode; }
+        bool IsSpeedSwitchArmed() const { return m_speedSwitchArmed; }
+        void CompleteSpeedSwitch() { m_doubleSpeed = !m_doubleSpeed; m_speedSwitchArmed = false; }
+        bool IsDoubleSpeed() const { return m_doubleSpeed; }
+        void ArmSpeedSwitch(bool armed) { m_speedSwitchArmed = armed; }
+
         byte Read(const ushort& address)
         {
             return m_data[address];
@@ -54,11 +66,36 @@ private:
         bool Write(const ushort& address, const byte val)
         {
             m_data[address] = val;
+            if (m_writeCount < ARRAYSIZE(m_writeAddresses))
+            {
+                m_writeAddresses[m_writeCount] = address;
+            }
+            m_writeCount++;
             return true;
+        }
+
+        void ResetWrites()
+        {
+            m_writeCount = 0;
+        }
+
+        int GetWriteCount() const
+        {
+            return m_writeCount;
+        }
+
+        ushort GetWriteAddress(int index) const
+        {
+            return m_writeAddresses[index];
         }
 
     private:
         byte m_data[0xFFFF + 1];
+        ushort m_writeAddresses[8];
+        int m_writeCount;
+        GameBoyMode m_mode = GameBoyMode::DMG;
+        bool m_speedSwitchArmed = false;
+        bool m_doubleSpeed = false;
     };
 
 public:
@@ -188,6 +225,37 @@ public:
             Assert::AreEqual((int)cbOpTimes[opCode] * 4, (int)spCPU->m_cycles);
         }
 
+    }
+
+    TEST_METHOD(UndefinedOpcodeLockTest)
+    {
+        byte memory[] = { 0xD3, 0x00 };
+        std::unique_ptr<CPU> cpu = std::make_unique<CPU>();
+        cpu->Initialize(new CPUTestsMMU(memory, ARRAYSIZE(memory)), true);
+
+        Assert::AreEqual(4, cpu->Step());
+        Assert::IsTrue(cpu->m_isLocked);
+        Assert::AreEqual(0x0001, (int)cpu->m_PC);
+
+        cpu->m_IME = 1;
+        cpu->m_MMU->Write(0xFF0F, 0x01);
+        cpu->m_MMU->Write(0xFFFF, 0x01);
+
+        Assert::AreEqual(4, cpu->Step());
+        Assert::IsTrue(cpu->m_isLocked);
+        Assert::AreEqual(0x0001, (int)cpu->m_PC);
+        Assert::AreEqual(0x0000, (int)cpu->m_SP);
+        Assert::AreEqual(8, (int)cpu->m_cycles);
+    }
+
+    TEST_METHOD(PostBootInterruptFlagsTest)
+    {
+        std::unique_ptr<CPU> cpu = std::make_unique<CPU>();
+        Assert::IsTrue(cpu->Initialize());
+
+        cpu->ApplyPostBootState();
+
+        Assert::AreEqual(0x01, (int)(cpu->m_MMU->Read(0xFF0F) & 0x1F));
     }
 
     TEST_METHOD(Endian_Test)
@@ -1264,9 +1332,10 @@ public:
     // 0x10
     TEST_METHOD(STOP_Test)
     {
-        byte m_Mem[] = { 0x10 };
+        byte m_Mem[] = { 0x10, 0x00, 0x00 };
         std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
         spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+        spCPU->m_MMU->Write(0xFF04, 0x77);
 
         // Verify expectations before we run
         Assert::AreEqual(0, (int)spCPU->m_cycles);
@@ -1277,10 +1346,147 @@ public:
 
         // Verify expectations after
         Assert::AreEqual(4, (int)spCPU->m_cycles);
-        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
-        Assert::IsTrue(spCPU->m_isHalted);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x00, (int)spCPU->m_MMU->Read(0xFF04));
+        Assert::IsTrue(spCPU->m_isStopped);
+        Assert::IsFalse(spCPU->m_isHalted);
+
+        Assert::AreEqual(4, spCPU->Step());
+        Assert::AreEqual(4, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
 
         spCPU.reset();
+    }
+
+    TEST_METHOD(CGBSpeedSwitchStallTest)
+    {
+        byte m_Mem[] = { 0x10, 0x00, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        CPUTestsMMU* pMMU = new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem));
+        pMMU->SetGameBoyMode(GameBoyMode::CGB);
+        pMMU->ArmSpeedSwitch(true);
+        spCPU->Initialize(pMMU, true);
+        spCPU->m_mode = GameBoyMode::CGB;
+
+        spCPU->Step();
+
+        Assert::AreEqual((int)(4 + SpeedSwitchStallCycles), (int)spCPU->m_cycles);
+        Assert::AreEqual(8200, (int)(4 + SpeedSwitchStallCycles));
+        Assert::IsTrue(pMMU->IsDoubleSpeed());
+        Assert::IsFalse(pMMU->IsSpeedSwitchArmed());
+        Assert::IsFalse(spCPU->m_isStopped);
+
+        byte stopMem[] = { 0x10, 0x00, 0x00 };
+        std::unique_ptr<CPU> spPlain = std::make_unique<CPU>();
+        CPUTestsMMU* pPlainMMU = new CPUTestsMMU(stopMem, ARRAYSIZE(stopMem));
+        pPlainMMU->SetGameBoyMode(GameBoyMode::CGB);
+        spPlain->Initialize(pPlainMMU, true);
+        spPlain->m_mode = GameBoyMode::CGB;
+
+        spPlain->Step();
+
+        Assert::AreEqual(4, (int)spPlain->m_cycles);
+        Assert::IsTrue(spPlain->m_isStopped);
+        Assert::IsFalse(pPlainMMU->IsDoubleSpeed());
+    }
+
+    TEST_METHOD(CGBSpeedSwitchAdvancesPPUAcrossStallTest)
+    {
+        byte m_Mem[] = { 0x10, 0x00, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        CPUTestsMMU* pMMU = new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem));
+        pMMU->SetGameBoyMode(GameBoyMode::CGB);
+        pMMU->ArmSpeedSwitch(true);
+        spCPU->Initialize(pMMU, true);
+        spCPU->m_mode = GameBoyMode::CGB;
+        spCPU->m_GPU = std::unique_ptr<GPU>(new GPU(pMMU, spCPU.get()));
+        spCPU->m_GPU->SetGameBoyMode(GameBoyMode::CGB);
+        spCPU->m_GPU->WriteByte(0xFF40, 0x80);
+
+        spCPU->Step();
+
+        Assert::AreEqual(8, (int)spCPU->m_GPU->ReadByte(0xFF44));
+    }
+
+    TEST_METHOD(STOPWake_Test)
+    {
+        byte m_Mem[] = { 0x10, 0x00, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->Step();
+        spCPU->TriggerInterrupt(INT60);
+        spCPU->Step();
+
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0003, (int)spCPU->m_PC);
+        Assert::IsFalse(spCPU->m_isStopped);
+        Assert::AreEqual(0x10, (int)(spCPU->m_MMU->Read(0xFF0F) & 0x10));
+    }
+
+    TEST_METHOD(InterruptEntry_Test)
+    {
+        byte m_Mem[] = { 0x00 };
+        CPUTestsMMU* pMMU = new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem));
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(pMMU, true);
+
+        spCPU->m_PC = 0x1234;
+        spCPU->m_SP = 0xFFFE;
+        spCPU->m_IME = 0x01;
+        pMMU->Write(0xFFFF, 0x1F);
+        pMMU->Write(0xFF0F, 0x05);
+        pMMU->ResetWrites();
+
+        int cycles = spCPU->Step();
+
+        Assert::AreEqual(20, cycles);
+        Assert::AreEqual(20, (int)spCPU->m_cycles);
+        Assert::AreEqual(20, (int)spCPU->m_instructionCycles);
+        Assert::AreEqual(INT40, (int)spCPU->m_PC);
+        Assert::AreEqual(0xFFFC, (int)spCPU->m_SP);
+        Assert::AreEqual(0x12, (int)pMMU->Read(0xFFFD));
+        Assert::AreEqual(0x34, (int)pMMU->Read(0xFFFC));
+        Assert::AreEqual(0x04, (int)(pMMU->Read(0xFF0F) & 0x1F));
+        Assert::AreEqual(3, pMMU->GetWriteCount());
+        Assert::AreEqual(0xFFFD, (int)pMMU->GetWriteAddress(0));
+        Assert::AreEqual(0xFFFC, (int)pMMU->GetWriteAddress(1));
+        Assert::AreEqual(0xFF0F, (int)pMMU->GetWriteAddress(2));
+    }
+
+    TEST_METHOD(InterruptIEPushResampleTest)
+    {
+        {
+            CPUTestsMMU* mmu = new CPUTestsMMU(nullptr, 0);
+            std::unique_ptr<CPU> cpu = std::make_unique<CPU>();
+            cpu->Initialize(mmu, true);
+            cpu->m_PC = 0x0200;
+            cpu->m_SP = 0x0000;
+            cpu->m_IME = 1;
+            mmu->Write(0xFFFF, 0x04);
+            mmu->Write(0xFF0F, 0x04);
+
+            Assert::AreEqual(20, (int)cpu->ServiceInterrupt(0x04));
+            Assert::AreEqual(0x0000, (int)cpu->m_PC);
+            Assert::AreEqual(0x04, (int)mmu->Read(0xFF0F));
+            Assert::AreEqual(0x02, (int)mmu->Read(0xFFFF));
+            Assert::AreEqual(0, (int)cpu->m_IME);
+        }
+
+        {
+            CPUTestsMMU* mmu = new CPUTestsMMU(nullptr, 0);
+            std::unique_ptr<CPU> cpu = std::make_unique<CPU>();
+            cpu->Initialize(mmu, true);
+            cpu->m_PC = 0x0200;
+            cpu->m_SP = 0x0000;
+            cpu->m_IME = 1;
+            mmu->Write(0xFFFF, 0x03);
+            mmu->Write(0xFF0F, 0x03);
+
+            Assert::AreEqual(20, (int)cpu->ServiceInterrupt(0x03));
+            Assert::AreEqual(INT48, (int)cpu->m_PC);
+            Assert::AreEqual(0x01, (int)mmu->Read(0xFF0F));
+        }
     }
 
     // 0x12
@@ -2892,6 +3098,88 @@ public:
         Assert::IsTrue(spCPU->m_isHalted);
 
         spCPU.reset();
+    }
+
+    TEST_METHOD(HALTBug_Test)
+    {
+        byte m_Mem[] = { 0x76, 0x3E, 0x12 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+        spCPU->m_MMU->Write(0xFFFF, 0x01);
+        spCPU->m_MMU->Write(0xFF0F, 0x01);
+
+        spCPU->Step();
+
+        Assert::IsFalse(spCPU->m_isHalted);
+        Assert::IsTrue(spCPU->m_haltBug);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+
+        spCPU->Step();
+
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x3E, (int)CPU::GetHighByte(spCPU->m_AF));
+        Assert::IsFalse(spCPU->m_haltBug);
+    }
+
+    TEST_METHOD(HALTWake_Test)
+    {
+        byte m_Mem[] = { 0x76, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->Step();
+        Assert::IsTrue(spCPU->m_isHalted);
+
+        spCPU->m_MMU->Write(0xFFFF, 0x01);
+        spCPU->m_MMU->Write(0xFF0F, 0x01);
+        spCPU->Step();
+
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::IsFalse(spCPU->m_isHalted);
+        Assert::AreEqual(0x01, (int)(spCPU->m_MMU->Read(0xFF0F) & 0x01));
+    }
+
+    TEST_METHOD(HALTDisabledRequest_Test)
+    {
+        byte m_Mem[] = { 0x76, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+
+        spCPU->Step();
+        spCPU->m_MMU->Write(0xFF0F, 0x01);
+        spCPU->Step();
+
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0001, (int)spCPU->m_PC);
+        Assert::IsTrue(spCPU->m_isHalted);
+
+        spCPU->m_MMU->Write(0xFFFF, 0x01);
+        spCPU->Step();
+
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::IsFalse(spCPU->m_isHalted);
+    }
+
+    TEST_METHOD(HALTInterrupt_Test)
+    {
+        byte m_Mem[] = { 0x76, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+        spCPU->m_SP = 0xFFFE;
+        spCPU->m_IME = 0x01;
+
+        spCPU->Step();
+        spCPU->m_MMU->Write(0xFFFF, 0x01);
+        spCPU->m_MMU->Write(0xFF0F, 0x01);
+        Assert::AreEqual(24, spCPU->Step());
+
+        Assert::AreEqual(28, (int)spCPU->m_cycles);
+        Assert::AreEqual(INT40, (int)spCPU->m_PC);
+        Assert::AreEqual(0x0001, (int)spCPU->m_MMU->ReadUShort(0xFFFC));
+        Assert::IsFalse(spCPU->m_isHalted);
     }
 
     TEST_METHOD(ADDAr_Test)
@@ -4846,6 +5134,49 @@ public:
         Assert::AreEqual(0x01, (int)(spCPU->m_IME));
 
         spCPU.reset();
+    }
+
+    TEST_METHOD(EIDICancellation_Test)
+    {
+        byte m_Mem[] = { 0xFB, 0xF3, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+        spCPU->m_SP = 0xFFFE;
+        spCPU->m_MMU->Write(0xFFFF, 0x01);
+        spCPU->m_MMU->Write(0xFF0F, 0x01);
+
+        spCPU->Step();
+        spCPU->Step();
+        spCPU->Step();
+
+        Assert::AreEqual(12, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0003, (int)spCPU->m_PC);
+        Assert::AreEqual(0xFFFE, (int)spCPU->m_SP);
+        Assert::AreEqual(0x00, (int)spCPU->m_IME);
+        Assert::IsFalse(spCPU->m_imePending);
+    }
+
+    TEST_METHOD(EIDelayedInterrupt_Test)
+    {
+        byte m_Mem[] = { 0xFB, 0x00, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+        spCPU->m_SP = 0xFFFE;
+        spCPU->m_MMU->Write(0xFFFF, 0x01);
+        spCPU->m_MMU->Write(0xFF0F, 0x01);
+
+        spCPU->Step();
+        spCPU->Step();
+
+        Assert::AreEqual(8, (int)spCPU->m_cycles);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x01, (int)spCPU->m_IME);
+
+        spCPU->Step();
+
+        Assert::AreEqual(28, (int)spCPU->m_cycles);
+        Assert::AreEqual(INT40, (int)spCPU->m_PC);
+        Assert::AreEqual(0x0002, (int)spCPU->m_MMU->ReadUShort(0xFFFC));
     }
 
     // 0xD9

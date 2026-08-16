@@ -1,5 +1,6 @@
 #include "PCH.hpp"
 #include <Emulator.hpp>
+#include <vector>
 
 // 60 FPS or 16.67ms
 const double TimePerFrame = 1.0 / 60.0;
@@ -66,6 +67,39 @@ void Render(SDL_Renderer* pRenderer, SDL_Texture* pTexture, Emulator& emulator)
 std::unique_ptr<SDL_Renderer, SDLRendererDeleter> spRenderer;
 std::unique_ptr<SDL_Texture, SDLTextureDeleter> spTexture;
 Emulator emulator;
+
+// Reused scratch buffer for pulling pending samples out of the APU's own
+// sample buffer each frame and pushing them to the SDL audio device. The
+// emulated audio hardware state is never touched from SDL's audio thread -
+// this push (SDL_QueueAudio) happens from the main thread, once per video
+// frame, entirely on the producer side.
+const size_t AudioScratchFrames = 8192;
+std::vector<float> audioScratchBuffer(AudioScratchFrames * 2);
+SDL_AudioDeviceID audioDeviceId = 0;
+
+void PumpAudio()
+{
+    if (audioDeviceId == 0)
+    {
+        return;
+    }
+
+    for (;;)
+    {
+        size_t framesConsumed = emulator.ConsumeAudioSamples(audioScratchBuffer.data(), AudioScratchFrames);
+        if (framesConsumed == 0)
+        {
+            break;
+        }
+
+        SDL_QueueAudio(audioDeviceId, audioScratchBuffer.data(), (Uint32)(framesConsumed * 2 * sizeof(float)));
+
+        if (framesConsumed < AudioScratchFrames)
+        {
+            break;
+        }
+    }
+}
 
 // The emulator will call this whenever we hit VBlank
 void VSyncCallback()
@@ -217,8 +251,34 @@ int main(int argc, char** argv)
     spTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(
         SDL_CreateTexture(spRenderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144));
 
+    // Open the audio device as a playback-only queue (no callback thread):
+    // we push already-generated samples from the main thread in PumpAudio(),
+    // keeping the emulated APU state fully independent of SDL's own audio
+    // thread/timing.
+    SDL_AudioSpec desiredSpec = {};
+    desiredSpec.freq = 44100;
+    desiredSpec.format = AUDIO_F32SYS;
+    desiredSpec.channels = 2;
+    desiredSpec.samples = 2048;
+
+    SDL_AudioSpec obtainedSpec = {};
+    audioDeviceId = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, 0);
+    if (audioDeviceId == 0)
+    {
+        Logger::LogError("Audio device could not be opened! SDL error: '%s'", SDL_GetError());
+    }
+    else
+    {
+        SDL_PauseAudioDevice(audioDeviceId, 0);
+    }
+
     if (emulator.Initialize(bootROM.empty() ? nullptr : bootROM.data(), romPath.data()))
     {
+        if (audioDeviceId != 0)
+        {
+            emulator.SetAudioSampleRate(obtainedSpec.freq);
+        }
+
         emulator.SetVSyncCallback(&VSyncCallback);
 
         unsigned int cycles = 0;
@@ -249,6 +309,8 @@ int main(int argc, char** argv)
 
             cycles -= CyclesPerFrame;
 
+            PumpAudio();
+
             Uint64 frameEnd = SDL_GetPerformanceCounter();
             // Loop until we use up the rest of our frame time
             while (true)
@@ -268,6 +330,12 @@ int main(int argc, char** argv)
     }
 
     emulator.Stop();
+
+    if (audioDeviceId != 0)
+    {
+        SDL_CloseAudioDevice(audioDeviceId);
+        audioDeviceId = 0;
+    }
 
     spTexture.reset();
     spRenderer.reset();

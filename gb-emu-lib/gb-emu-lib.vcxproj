@@ -33,6 +33,7 @@
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="Emulator.hpp" />
     <ClInclude Include="GPU.hpp" />
+    <ClInclude Include="HardwareModel.hpp" />
     <ClInclude Include="ICPU.hpp" />
     <ClInclude Include="IMemoryUnit.hpp" />
     <ClInclude Include="IMMU.hpp" />

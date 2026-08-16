@@ -6,6 +6,10 @@
 #include "GPUTests.cpp"
 #include "JoypadTests.cpp"
 #include "MBCTests.cpp"
+#include "MMUTests.cpp"
+#include "SerialTests.cpp"
+#include "APUTests.cpp"
+#include "CGBTests.cpp"
 
 int main(int arg, char** argv)
 {
@@ -17,6 +21,8 @@ int main(int arg, char** argv)
 
     // Misc Tests
     TEST_CALL(CPUTests, Timing_Test);
+    TEST_CALL(CPUTests, UndefinedOpcodeLockTest);
+    TEST_CALL(CPUTests, PostBootInterruptFlagsTest);
     TEST_CALL(CPUTests, Endian_Test);
     TEST_CALL(CPUTests, GetHighByte_Test);
     TEST_CALL(CPUTests, GetLowByte_Test);
@@ -38,6 +44,11 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDSPnn_Test);
     TEST_CALL(CPUTests, LDDn_Test);
     TEST_CALL(CPUTests, STOP_Test);
+    TEST_CALL(CPUTests, CGBSpeedSwitchStallTest);
+    TEST_CALL(CPUTests, CGBSpeedSwitchAdvancesPPUAcrossStallTest);
+    TEST_CALL(CPUTests, STOPWake_Test);
+    TEST_CALL(CPUTests, InterruptEntry_Test);
+    TEST_CALL(CPUTests, InterruptIEPushResampleTest);
     TEST_CALL(CPUTests, RLA_Test);
     TEST_CALL(CPUTests, RRA2_Test);
     TEST_CALL(CPUTests, LDA_DE__Test);
@@ -53,6 +64,10 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, LDDA_HL__Test);
     TEST_CALL(CPUTests, LDAn_Test);
     TEST_CALL(CPUTests, HALT_Test);
+    TEST_CALL(CPUTests, HALTBug_Test);
+    TEST_CALL(CPUTests, HALTWake_Test);
+    TEST_CALL(CPUTests, HALTDisabledRequest_Test);
+    TEST_CALL(CPUTests, HALTInterrupt_Test);
     TEST_CALL(CPUTests, POPBC_Test);
     TEST_CALL(CPUTests, POPDE_Test);
     TEST_CALL(CPUTests, POPHL_Test);
@@ -144,6 +159,8 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, DI_Test);
     TEST_CALL(CPUTests, LDA_nn_Test);
     TEST_CALL(CPUTests, EI_Test);
+    TEST_CALL(CPUTests, EIDICancellation_Test);
+    TEST_CALL(CPUTests, EIDelayedInterrupt_Test);
     TEST_CALL(CPUTests, RETI_Test);
     TEST_CALL(CPUTests, SBCA_HL__Test);
     TEST_CALL(CPUTests, SBCAr_Test);
@@ -245,10 +262,36 @@ int main(int arg, char** argv)
 
     TEST_SETUP(GPUTests);
     TEST_CALL(GPUTests, GPUCycleTest);
+    TEST_CALL(GPUTests, Line153LYResetTest);
+    TEST_CALL(GPUTests, DMABusConflictTest);
+    TEST_CALL(GPUTests, WindowRightEdgeTimingTest);
+    TEST_CALL(GPUTests, CGBWindowYLatchesWhileDisabledTest);
+    TEST_CALL(GPUTests, CGBWindowEnableDeadlineTest);
+    TEST_CALL(GPUTests, InternalMode2STATEventTest);
     TEST_CLEANUP();
 
     TEST_SETUP(JoypadTests);
     TEST_CALL(JoypadTests, FullInputTest);
+    TEST_CALL(JoypadTests, RegisterMaskTest);
+    TEST_CALL(JoypadTests, FallingEdgeInterruptTest);
+    TEST_CALL(JoypadTests, CombinedRowsUseLineEdgesTest);
+    TEST_CLEANUP();
+
+    TEST_SETUP(SerialTests);
+    TEST_CALL(SerialTests, RegisterMaskTest);
+    TEST_CALL(SerialTests, InternalClockTimingTest);
+    TEST_CALL(SerialTests, ExternalClockTransferTest);
+    TEST_CALL(SerialTests, InternalClockPhaseAlignmentTest);
+    TEST_CALL(SerialTests, InternalClockUsesFullDividerPhaseTest);
+    TEST_CALL(SerialTests, PreBootClockPhaseTest);
+    TEST_CALL(SerialTests, DividerWriteClocksAndResetsSerialPhaseTest);
+    TEST_CALL(SerialTests, CGBFastClockTest);
+    TEST_CALL(SerialTests, InterruptAcknowledgeWindowTest);
+    TEST_CALL(SerialTests, ControlWriteRestartsTransferTest);
+    TEST_CLEANUP();
+
+    TEST_SETUP(MMUTests);
+    TEST_CALL(MMUTests, InterruptRegisterMaskTest);
     TEST_CLEANUP();
 
     TEST_SETUP(MBCTests);
@@ -256,6 +299,66 @@ int main(int arg, char** argv)
     TEST_CALL(MBCTests, MBC1Test);
     TEST_CALL(MBCTests, MBC2Test);
     TEST_CALL(MBCTests, MBC3Test);
+    TEST_CALL(MBCTests, MBC30Test);
+    TEST_CALL(MBCTests, MBC5Test);
+    TEST_CLEANUP();
+
+    TEST_SETUP(APUTests);
+    TEST_CALL(APUTests, NR52PowerOnOffTest);
+    TEST_CALL(APUTests, WaveRAMSurvivesPowerOffTest);
+    TEST_CALL(APUTests, LengthCounterWritableWhilePoweredOffTest);
+    TEST_CALL(APUTests, DutyBitsIgnoredWhilePoweredOffTest);
+    TEST_CALL(APUTests, DacDisabledPreventsTriggerTest);
+    TEST_CALL(APUTests, NRx2WriteDisablesActiveChannelTest);
+    TEST_CALL(APUTests, FrameSequencerCadenceTest);
+    TEST_CALL(APUTests, SweepOverflowDisablesChannelOnTriggerTest);
+    TEST_CALL(APUTests, WaveChannelAmplitudeTest);
+    TEST_CALL(APUTests, WaveChannelShortPeriodTest);
+    TEST_CALL(APUTests, WaveRamTwoCycleApertureTest);
+    TEST_CALL(APUTests, WaveChannelRetriggerOverlapTest);
+    TEST_CALL(APUTests, WaveChannelRetriggerDoesNotRefreshBufferTest);
+    TEST_CALL(APUTests, DutyStepSilentUntilFirstAdvanceTest);
+    TEST_CALL(APUTests, EnvelopeTimerReloadQuirkOnTriggerTest);
+    TEST_CALL(APUTests, NoiseChannelClockShift14NoClocksTest);
+    TEST_CALL(APUTests, WaveChannelMuteVolumeTest);
+    TEST_CALL(APUTests, NoiseChannelTriggerAmplitudeTest);
+    TEST_CALL(APUTests, PanningAndVolumeMixingTest);
+    TEST_CALL(APUTests, SilentWhenPoweredOffTest);
+    TEST_CALL(APUTests, RegisterReadMasksTest);
+    TEST_CLEANUP();
+
+    TEST_SETUP(CGBTests);
+    TEST_CALL(CGBTests, ModeResolutionTest);
+    TEST_CALL(CGBTests, WRAMBankingTest);
+    TEST_CALL(CGBTests, WRAMEchoFollowsBankTest);
+    TEST_CALL(CGBTests, DMGIgnoresWRAMBankingTest);
+    TEST_CALL(CGBTests, KEY1SpeedSwitchTest);
+    TEST_CALL(CGBTests, KEY1UnavailableOnDMGTest);
+    TEST_CALL(CGBTests, CGBOnlyIORegisterMasksTest);
+    TEST_CALL(CGBTests, CompatibilityModeHidesCGBRegistersTest);
+    TEST_CALL(CGBTests, VRAMBankSelectTest);
+    TEST_CALL(CGBTests, DMGHasSingleVRAMBankTest);
+    TEST_CALL(CGBTests, PaletteAutoIncrementTest);
+    TEST_CALL(CGBTests, PalettesUnavailableOnDMGTest);
+    TEST_CALL(CGBTests, GeneralPurposeDMATest);
+    TEST_CALL(CGBTests, HBlankDMATransfersOneBlockPerHBlankTest);
+    TEST_CALL(CGBTests, HBlankDMATerminationWindowAbsorbsLateDisableTest);
+    TEST_CALL(CGBTests, HBlankDMACancelTest);
+    TEST_CALL(CGBTests, SpeedSwitchAbortsOnlyUnstartedHBlankDMATest);
+    TEST_CALL(CGBTests, SpeedSwitchTerminatesUnstartedHBlankDMATest);
+    TEST_CALL(CGBTests, VRAMDMASourceUsesExternalBusTest);
+    TEST_CALL(CGBTests, VRAMDMAUnavailableOnDMGTest);
+    TEST_CALL(CGBTests, STATInterruptLineIsEdgeTriggeredTest);
+    TEST_CALL(CGBTests, SerialFastClockTest);
+    TEST_CALL(CGBTests, SerialFastClockIgnoredOnDMGTest);
+    TEST_CALL(CGBTests, TimerPostBootDividerTest);
+    TEST_CALL(CGBTests, DoubleSpeedFrameSequencerTapTest);
+    TEST_CALL(CGBTests, PCMRegistersTest);
+    TEST_CALL(CGBTests, PCMReportsChannelAmplitudeTest);
+    TEST_CALL(CGBTests, PoweredOffLengthWriteIsCGBBlockedTest);
+    TEST_CALL(CGBTests, PowerOffClearsLengthCountersOnCGBTest);
+    TEST_CALL(CGBTests, CGBWaveRAMIsAccessibleWhileChannelIsOnTest);
+    TEST_CALL(CGBTests, DMGWaveRAMIsOpenBusWhileChannelIsOnTest);
     TEST_CLEANUP();
 
     std::cout << "----------------------------------" << std::endl;

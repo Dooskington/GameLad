@@ -56,3 +56,13 @@ void Emulator::SetVSyncCallback(void(*pCallback)())
 {
     m_cpu->SetVSyncCallback(pCallback);
 }
+
+void Emulator::SetAudioSampleRate(unsigned int sampleRate)
+{
+    m_cpu->SetAudioSampleRate(sampleRate);
+}
+
+size_t Emulator::ConsumeAudioSamples(float* pInterleavedBuffer, size_t maxFrames)
+{
+    return m_cpu->ConsumeAudioSamples(pInterleavedBuffer, maxFrames);
+}

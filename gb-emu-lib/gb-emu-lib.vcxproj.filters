@@ -64,6 +64,9 @@
     <ClInclude Include="GPU.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HardwareModel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="IMemoryUnit.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

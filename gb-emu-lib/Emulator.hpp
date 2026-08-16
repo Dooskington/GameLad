@@ -26,6 +26,9 @@ public:
     void SetInput(byte input, byte buttons);
     void SetVSyncCallback(void(*pCallback)());
 
+    void SetAudioSampleRate(unsigned int sampleRate);
+    size_t ConsumeAudioSamples(float* pInterleavedBuffer, size_t maxFrames);
+
 private:
     std::unique_ptr<ICPU> m_cpu;
 };

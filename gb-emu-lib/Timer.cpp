@@ -10,111 +10,105 @@
 #define TimerModulo 0xFF06
 #define TimerControl 0xFF07
 
-/*
-00:   4096 Hz(~4194 Hz SGB)     (1024 cycles)
-01 : 262144 Hz(~268400 Hz SGB)  (16 cycles)
-10 : 65536 Hz(~67110 Hz SGB)    (64 cycles)
-11 : 16384 Hz(~16780 Hz SGB)    (256 cycles)
-*/
-
-const int FrequencyCounts[]
-{
-    1024, 16, 64, 256
-};
-
-#define Frequency4096   0x00
-#define Frequency262144 0x01
-#define Frequency65536  0x02
-#define Frequency16384  0x03
-
-Timer::Counter::Counter(byte frequency) :
-    m_IsRunning(true),
-    m_Value(0x00),
-    m_Frequency(frequency),
-    m_Cycles(FrequencyCounts[frequency])
-{
-}
-
-bool Timer::Counter::Step(unsigned int cycles)
-{
-    if (!m_IsRunning)
-    {
-        return false;
-    }
-
-    // Count cycles until we reach the correct number for this timer frequency
-    m_Cycles -= cycles;
-    while (m_Cycles <= 0)
-    {
-        // Subtract cycles and increment value
-        m_Cycles += FrequencyCounts[m_Frequency];
-        m_Value++;
-        if (m_Value == 0x00)
-        {
-            // If this overflowed, return true
-            return true;
-        }
-    }
-
-    return false;
-}
-
-byte Timer::Counter::GetValue()
-{
-    return m_Value;
-}
-
-void Timer::Counter::SetValue(byte value)
-{
-    m_Value = value;
-}
-
-void Timer::Counter::SetFrequency(byte frequency)
-{
-    m_Frequency = frequency;
-    m_Cycles = FrequencyCounts[frequency];
-}
-
-void Timer::Counter::Start()
-{
-    m_IsRunning = true;
-}
-
-void Timer::Counter::Stop()
-{
-    m_IsRunning = false;
-}
-
 Timer::Timer(ICPU* pCPU) :
     m_CPU(pCPU),
+    m_mode(GameBoyMode::DMG),
+    m_doubleSpeed(false),
+    m_SystemCounter(0x0000),
+    m_TimerCounter(0x00),
     m_TimerModulo(0x00),
-    m_TimerControl(0x00)
+    m_TimerControl(0x00),
+    m_OverflowDelay(0),
+    m_ReloadedThisCycle(false)
 {
-    m_DividerCounter = std::unique_ptr<Counter>(new Counter(Frequency16384));
-    m_TimerCounter = std::unique_ptr<Counter>(new Counter(Frequency4096));
 }
 
 Timer::~Timer()
 {
-    m_DividerCounter.reset();
-    m_TimerCounter.reset();
 }
 
+void Timer::PreBoot()
+{
+    /*
+        The next T-cycle advances to the documented post-boot divider phase.
+        DMG leaves its boot ROM with the system counter at 0xABCC; a CGB runs a
+        much longer boot ROM and leaves it at 0x267C (the values asserted by
+        mooneye-gb's boot_div tests for each console).
+    */
+    m_SystemCounter = IsCGBHardware(m_mode) ? 0x267B : 0xABCB;
+}
+
+bool Timer::TimerInput() const
+{
+    if (!ISBITSET(m_TimerControl, 2))
+    {
+        return false;
+    }
+
+    static const byte dividerBits[] = { 9, 3, 5, 7 };
+    return ISBITSET(m_SystemCounter, dividerBits[m_TimerControl & 0x03]);
+}
+
+bool Timer::DivApuInput() const
+{
+    return ISBITSET(m_SystemCounter, (m_doubleSpeed ? 13 : 12));
+}
+
+void Timer::IncrementTimer()
+{
+    if (m_OverflowDelay != 0 || m_ReloadedThisCycle)
+    {
+        return;
+    }
+
+    if (m_TimerCounter == 0xFF)
+    {
+        m_TimerCounter = 0x00;
+        m_OverflowDelay = 4;
+        return;
+    }
+
+    m_TimerCounter++;
+}
+
+void Timer::Tick()
+{
+    m_ReloadedThisCycle = false;
+
+    if (m_OverflowDelay != 0)
+    {
+        m_OverflowDelay--;
+        if (m_OverflowDelay == 0)
+        {
+            m_TimerCounter = m_TimerModulo;
+            m_ReloadedThisCycle = true;
+
+            if (m_CPU != nullptr)
+            {
+                m_CPU->TriggerInterrupt(INT50);
+            }
+        }
+    }
+
+    bool oldTimerInput = TimerInput();
+    bool oldDivApuInput = DivApuInput();
+    m_SystemCounter++;
+    if (oldTimerInput && !TimerInput())
+    {
+        IncrementTimer();
+    }
+
+    if (oldDivApuInput && !DivApuInput() && m_CPU != nullptr)
+    {
+        m_CPU->ClockAPUFrameSequencer();
+    }
+}
 
 void Timer::Step(unsigned long cycles)
 {
-    m_DividerCounter->Step(cycles);
-
-    // If the timer counter overflows, reset to TimerModulo and trigger interrupt
-    if (m_TimerCounter->Step(cycles))
+    while (cycles-- != 0)
     {
-        // If the timer counter overflows, set back to this value
-        m_TimerCounter->SetValue(m_TimerModulo);
-
-        if (m_CPU != nullptr)
-        {
-            m_CPU->TriggerInterrupt(INT50);
-        }
+        Tick();
     }
 }
 
@@ -124,13 +118,13 @@ byte Timer::ReadByte(const ushort& address)
     switch (address)
     {
     case Divider:
-        return m_DividerCounter->GetValue();
+        return static_cast<byte>(m_SystemCounter >> 8);
     case TimerCounter:
-        return m_TimerCounter->GetValue();
+        return m_TimerCounter;
     case TimerModulo:
         return m_TimerModulo;
     case TimerControl:
-        return m_TimerControl;
+        return m_TimerControl | 0xF8;
     default:
         Logger::Log("Timer::ReadByte cannot read from address 0x%04X", address);
         return 0x00;
@@ -142,28 +136,49 @@ bool Timer::WriteByte(const ushort& address, const byte val)
     switch (address)
     {
     case Divider:
-        m_DividerCounter->SetValue(0x00);
+    {
+        bool oldTimerInput = TimerInput();
+        bool oldDivApuInput = DivApuInput();
+        m_SystemCounter = 0x0000;
+        if (oldTimerInput && !TimerInput())
+        {
+            IncrementTimer();
+        }
+
+        if (oldDivApuInput && m_CPU != nullptr)
+        {
+            m_CPU->ClockAPUFrameSequencer();
+        }
         return true;
+    }
     case TimerCounter:
-        m_TimerCounter->SetValue(val);
+        if (m_ReloadedThisCycle)
+        {
+            return true;
+        }
+
+        m_TimerCounter = val;
+        m_OverflowDelay = 0;
         return true;
     case TimerModulo:
         m_TimerModulo = val;
+        if (m_ReloadedThisCycle)
+        {
+            m_TimerCounter = val;
+        }
         return true;
     case TimerControl:
-        if (ISBITSET(val, 2))
+    {
+        bool oldTimerInput = TimerInput();
+        m_TimerControl = val & 0x07;
+        if (oldTimerInput && !TimerInput())
         {
-            m_TimerCounter->Start();
+            IncrementTimer();
         }
-        else
-        {
-            m_TimerCounter->Stop();
-        }
-
-        m_TimerCounter->SetFrequency(val & 0x03);
         return true;
+    }
     default:
-        Logger::Log("Timer::ReadByte cannot write to address 0x%04X", address);
+        Logger::Log("Timer::WriteByte cannot write to address 0x%04X", address);
         return false;
     }
 }

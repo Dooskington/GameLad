@@ -5,8 +5,23 @@
 
 CPU::CPU() :
     m_cycles(0),
+    m_instructionCycles(0),
+    m_baseClockCycles(0),
+    m_baseClockRemainder(0),
+    m_pendingDMAStallCycles(0),
+    m_modelPreference(ModelPreference::Auto),
+    m_mode(GameBoyMode::DMG),
     m_isHalted(false),
+    m_isStopped(false),
+    m_isLocked(false),
+    m_haltBug(false),
+    m_stopWakeRequested(false),
     m_imePending(false),
+    m_StatAckSuppressCycles(0),
+    m_InterruptAcceptanceBlocked(0),
+    m_InterruptAcceptanceDelayCycles(0),
+    m_lastInput(0x00),
+    m_lastButtons(0x00),
     m_AF(0x0000),
     m_BC(0x0000),
     m_DE(0x0000),
@@ -673,12 +688,13 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
 
         // Create the APU
         m_APU = std::make_unique<APU>();
+        m_APU->SetFrameSequencerSelfClocked(false);
 
         // Create the Joypad
         m_joypad = std::make_unique<Joypad>(this);
 
         // Create the Serial
-        m_serial = std::make_unique<Serial>();
+        m_serial = std::make_unique<Serial>(this);
 
         // Create the Timer
         m_timer = std::unique_ptr<Timer>(new Timer(this));
@@ -698,6 +714,8 @@ bool CPU::Initialize(IMMU* pMMU, bool isFromTest)
         m_MMU->RegisterMemoryUnit(0xFF51, 0xFF55, m_GPU.get());
         m_MMU->RegisterMemoryUnit(0xFF57, 0xFF6B, m_GPU.get());
         m_MMU->RegisterMemoryUnit(0xFF6D, 0xFF6F, m_GPU.get());
+        // 0xFF76-0xFF77 - PCM12/PCM34, CGB-only taps on the APU's channel output
+        m_MMU->RegisterMemoryUnit(0xFF76, 0xFF77, m_APU.get());
     }
 
     return true;
@@ -715,148 +733,293 @@ bool CPU::LoadROM(const char* bootROMPath, const char* cartridgePath)
         return false;
     }
 
+    /*
+        The cartridge has to be loaded before anything else, because its header
+        is what decides which console we are. Post-boot state, I/O masks and the
+        renderer all depend on the resolved mode, so nothing model-dependent may
+        happen above this point.
+    */
+    if (!m_cartridge->LoadROM(cartridgePath))
+    {
+        return false;
+    }
+
+    m_mode = ResolveGameBoyMode(m_modelPreference, m_cartridge->GetCGBFlag());
+    PropagateGameBoyMode();
+
     // If we are already booted
     if (m_MMU->Read(0xFF50) != 0x00)
     {
-        m_PC = 0x0100;
+        ApplyPostBootState();
+    }
 
+    return true;
+}
+
+void CPU::PropagateGameBoyMode()
+{
+    m_MMU->SetGameBoyMode(m_mode);
+
+    if (m_GPU != nullptr) { m_GPU->SetGameBoyMode(m_mode); }
+    if (m_APU != nullptr) { m_APU->SetGameBoyMode(m_mode); }
+    if (m_serial != nullptr) { m_serial->SetGameBoyMode(m_mode); }
+    if (m_timer != nullptr)
+    {
+        m_timer->SetGameBoyMode(m_mode);
+        m_timer->SetDoubleSpeed(m_MMU->IsDoubleSpeed());
+    }
+}
+
+/*
+    Register and I/O state as left behind by the console's own boot ROM, applied
+    when the emulator is started without one.
+
+    The CPU register values are the documented post-boot values for each console
+    (Pan Docs, "Console state after boot ROM"). The DMG values are unchanged from
+    the pre-CGB implementation, so DMG behaviour is bit-identical.
+*/
+void CPU::ApplyPostBootState()
+{
+    m_PC = 0x0100;
+    m_SP = 0xFFFE;
+
+    switch (m_mode)
+    {
+    case GameBoyMode::CGB:
+        m_AF = 0x1180;
+        m_BC = 0x0000;
+        m_DE = 0xFF56;
+        m_HL = 0x000D;
+        break;
+    case GameBoyMode::CGBCompatibility:
+        // A CGB running a monochrome cartridge. A still reports 0x11 - this is
+        // exactly how a game detects it is on CGB hardware - but the rest of the
+        // register file differs from true CGB mode.
+        m_AF = 0x1180;
+        m_BC = 0x0000;
+        m_DE = 0x0008;
+        m_HL = 0x007C;
+        break;
+    case GameBoyMode::DMG:
+    default:
         m_AF = 0x01B0;
         m_BC = 0x0013;
         m_DE = 0x00D8;
         m_HL = 0x014D;
-
-        m_SP = 0xFFFE;
-
-        m_MMU->Write(0xFF05, 0x00);  // TIMA
-        m_MMU->Write(0xFF06, 0x00);  // TMA
-        m_MMU->Write(0xFF07, 0x00);  // TAC
-
-        m_MMU->Write(0xFF10, 0x80);  // NR10
-        m_MMU->Write(0xFF11, 0xBF);  // NR11
-        m_MMU->Write(0xFF12, 0xF3);  // NR12
-        m_MMU->Write(0xFF14, 0xBF);  // NR14
-        m_MMU->Write(0xFF16, 0x3F);  // NR21
-        m_MMU->Write(0xFF17, 0x00);  // NR22
-        m_MMU->Write(0xFF19, 0xBF);  // NR24
-        m_MMU->Write(0xFF1A, 0x7F);  // NR30
-        m_MMU->Write(0xFF1B, 0xFF);  // NR31
-        m_MMU->Write(0xFF1C, 0x9F);  // NR32
-        m_MMU->Write(0xFF1E, 0xBF);  // NR33
-        m_MMU->Write(0xFF20, 0xFF);  // NR41
-        m_MMU->Write(0xFF21, 0x00);  // NR42
-        m_MMU->Write(0xFF22, 0x00);  // NR43
-        m_MMU->Write(0xFF23, 0xBF);  // NR30
-        m_MMU->Write(0xFF24, 0x77);  // NR50
-        m_MMU->Write(0xFF25, 0xF3);  // NR51
-        m_MMU->Write(0xFF26, 0xF1);  // NR52
-
-        m_MMU->Write(0xFF40, 0x91);  // LCDC
-        m_MMU->Write(0xFF42, 0x00);  // SCY
-        m_MMU->Write(0xFF43, 0x00);  // SCX
-        m_MMU->Write(0xFF45, 0x00);  // LYC
-        m_MMU->Write(0xFF47, 0xFC);  // BGP
-        m_MMU->Write(0xFF48, 0xFF);  // OBP0
-        m_MMU->Write(0xFF49, 0xFF);  // OBP1
-        m_MMU->Write(0xFF4A, 0x00);  // WY
-        m_MMU->Write(0xFF4B, 0x00);  // WX
-
-        m_MMU->Write(0xFFFF, 0x00);  // IE
-
-        m_GPU->PreBoot();
+        break;
     }
 
-    return m_cartridge->LoadROM(cartridgePath);
+    m_MMU->Write(0xFF05, 0x00);  // TIMA
+    m_MMU->Write(0xFF06, 0x00);  // TMA
+    m_MMU->Write(0xFF07, 0x00);  // TAC
+    m_MMU->Write(0xFF0F, 0x01);  // IF
+
+    m_MMU->Write(0xFF10, 0x80);  // NR10
+    m_MMU->Write(0xFF11, 0xBF);  // NR11
+    m_MMU->Write(0xFF12, 0xF3);  // NR12
+    m_MMU->Write(0xFF14, 0xBF);  // NR14
+    m_MMU->Write(0xFF16, 0x3F);  // NR21
+    m_MMU->Write(0xFF17, 0x00);  // NR22
+    m_MMU->Write(0xFF19, 0xBF);  // NR24
+    m_MMU->Write(0xFF1A, 0x7F);  // NR30
+    m_MMU->Write(0xFF1B, 0xFF);  // NR31
+    m_MMU->Write(0xFF1C, 0x9F);  // NR32
+    m_MMU->Write(0xFF1E, 0xBF);  // NR33
+    m_MMU->Write(0xFF20, 0xFF);  // NR41
+    m_MMU->Write(0xFF21, 0x00);  // NR42
+    m_MMU->Write(0xFF22, 0x00);  // NR43
+    m_MMU->Write(0xFF23, 0xBF);  // NR30
+    m_MMU->Write(0xFF24, 0x77);  // NR50
+    m_MMU->Write(0xFF25, 0xF3);  // NR51
+    m_MMU->Write(0xFF26, 0xF1);  // NR52
+
+    m_MMU->Write(0xFF40, 0x91);  // LCDC
+    m_MMU->Write(0xFF42, 0x00);  // SCY
+    m_MMU->Write(0xFF43, 0x00);  // SCX
+    m_MMU->Write(0xFF45, 0x00);  // LYC
+    m_MMU->Write(0xFF47, 0xFC);  // BGP
+    m_MMU->Write(0xFF48, 0xFF);  // OBP0
+    m_MMU->Write(0xFF49, 0xFF);  // OBP1
+    m_MMU->Write(0xFF4A, 0x00);  // WY
+    m_MMU->Write(0xFF4B, 0x00);  // WX
+
+    m_MMU->Write(0xFFFF, 0x00);  // IE
+
+    m_timer->PreBoot();
+    m_serial->PreBoot();
+    m_GPU->PreBoot();
 }
 
 int CPU::Step()
 {
-    unsigned long cycles = 0x00;
+    m_instructionCycles = 0;
 
-    bool imePending = m_imePending;
+    if (m_isLocked)
+    {
+        AdvanceHardware(4);
+        m_cycles += 4;
+        return 4;
+    }
+
+    if (m_isStopped)
+    {
+        if (!m_stopWakeRequested)
+        {
+            // The DMG system clock is stopped. Return a host scheduling quantum
+            // without advancing emulated clocks.
+            return 4;
+        }
+
+        m_isStopped = false;
+        m_stopWakeRequested = false;
+    }
+
+    byte activeInterrupts = GetPendingInterrupts();
+    if (m_isHalted && activeInterrupts != 0x00)
+    {
+        m_isHalted = false;
+        if (m_IME != 0x00)
+        {
+            IdleMachineCycle();
+            m_cycles += 4;
+            return static_cast<int>(ServiceInterrupt(activeInterrupts) + 4);
+        }
+    }
 
     if (m_isHalted)
     {
-        // While halted, the CPU spins on NOP
-        // The CPU will be unhalted on any triggered interrupt
-        // Thanks to /r/binjimint for finding this pesky bug!
-        cycles = NOP(0x00);
+        IdleMachineCycle();
+        activeInterrupts = GetPendingInterrupts();
+        if (activeInterrupts != 0x00)
+        {
+            m_isHalted = false;
+            if (m_IME != 0x00)
+            {
+                m_cycles += 4;
+                return static_cast<int>(ServiceInterrupt(activeInterrupts) + 4);
+            }
+        }
+
+        m_cycles += 4;
+        return 4;
+    }
+
+    unsigned long cycles = 0x00;
+    bool imePending = m_imePending;
+
+    ushort addr = m_PC;
+    byte opCode = ReadBytePC();
+    byte fetchedInterrupts = GetPendingInterrupts();
+    if ((m_IME != 0x00) && (fetchedInterrupts != 0x00))
+    {
+        return static_cast<int>(ServiceInterrupt(fetchedInterrupts, true));
+    }
+
+    opCodeFunction instruction;
+
+    if (opCode == 0xCB)
+    {
+        opCode = ReadBytePC();
+        instruction = m_operationMapCB[opCode];
     }
     else
     {
-        ushort addr = m_PC;
-        // Read through the memory, starting at m_PC
-        byte opCode = ReadBytePC();
-        opCodeFunction instruction; // Execute the correct function for each OpCode
-
-        if (opCode == 0xCB)
-        {
-            opCode = ReadBytePC();
-            instruction = m_operationMapCB[opCode];
-        }
-        else
-        {
-            instruction = m_operationMap[opCode];
-        }
-
-        if (instruction != nullptr)
-        {
-            cycles = (this->*instruction)(opCode);
-        }
-        else
-        {
-            Logger::LogError("OpCode 0x%02X at address 0x%04X could not be interpreted.", opCode, addr);
-            HALT(0x76);
-        }
+        instruction = m_operationMap[opCode];
     }
 
-    m_cycles += cycles;
+    if (instruction != nullptr)
+    {
+        cycles = (this->*instruction)(opCode);
+    }
+    else
+    {
+        // The eleven unassigned LR35902 opcodes electrically lock the CPU
+        // until reset. Interrupts and joypad edges cannot wake this state.
+        Logger::LogError("OpCode 0x%02X at address 0x%04X locked the CPU.", opCode, addr);
+        m_isLocked = true;
+        cycles = 4;
+    }
 
-    if (imePending)
+    if (m_instructionCycles < cycles)
+    {
+        AdvanceHardware(cycles - m_instructionCycles);
+    }
+    else if (m_instructionCycles > cycles)
+    {
+        Logger::LogError(
+            "Instruction at 0x%04X used %lu bus cycles but reports %lu total cycles.",
+            m_PC,
+            m_instructionCycles,
+            cycles);
+    }
+
+    if (imePending && m_imePending)
     {
         m_IME = 0x01;
         m_imePending = false;
     }
 
+    /*
+        Pay off any VRAM DMA bus time the PPU charged us during this
+        instruction. Running it here (rather than mid-instruction) keeps the
+        instruction's own bus timing untouched while still stopping the CPU for
+        the right number of cycles.
+    */
+    while (m_pendingDMAStallCycles != 0)
+    {
+        const unsigned long stall = m_pendingDMAStallCycles;
+        m_pendingDMAStallCycles = 0;
+
+        for (unsigned long done = 0; done < stall; done += DMAStallStepCycles)
+        {
+            const unsigned long remaining = stall - done;
+            const unsigned long step =
+                (remaining < DMAStallStepCycles) ? remaining : DMAStallStepCycles;
+            AdvanceHardware(step);
+        }
+
+        cycles += stall;
+    }
+
     if (m_GPU != nullptr)
     {
-        // Step GPU by # of elapsed cycles
-        m_GPU->Step(cycles);
+        m_GPU->NotifyDMAStallPaid();
     }
 
-    if (m_timer != nullptr)
-    {
-        // Step the timer by the # of elapsed cycles
-        m_timer->Step(cycles);
-    }
-
-    if (m_APU != nullptr)
-    {
-        // Step the audio processing unit by the # of elapsed cycles
-        m_APU->Step(cycles);
-    }
-
-    HandleInterrupts();
+    m_cycles += cycles;
     return cycles;
 }
 
 void CPU::TriggerInterrupt(byte interrupt)
 {
+    if ((interrupt == INT48) && (m_StatAckSuppressCycles != 0))
+    {
+        return;
+    }
+
     byte IF = m_MMU->Read(0xFF0F);
-    byte IE = m_MMU->Read(0xFFFF);
 
     if (interrupt == INT40) IF = SETBIT(IF, 0);
     else if (interrupt == INT48) IF = SETBIT(IF, 1);
     else if (interrupt == INT50) IF = SETBIT(IF, 2);
     else if (interrupt == INT58) IF = SETBIT(IF, 3);
-    else if (interrupt == INT60) IF = SETBIT(IF, 4);
-
-    if (m_isHalted)
+    else if (interrupt == INT60)
     {
-        // If we were halted, wake up if enabled
-        m_isHalted = (IE & IF) == 0x00;
+        IF = SETBIT(IF, 4);
+        m_stopWakeRequested = true;
     }
 
     m_MMU->Write(0xFF0F, IF);
+}
+
+void CPU::QueueInterrupt(byte interrupt)
+{
+    TriggerInterrupt(interrupt);
+
+    byte interruptBit = static_cast<byte>((interrupt - INT40) / 8);
+    m_InterruptAcceptanceBlocked =
+        SETBIT(m_InterruptAcceptanceBlocked, interruptBit);
+    m_InterruptAcceptanceDelayCycles = IsDoubleSpeed() ? 8 : 4;
 }
 
 byte* CPU::GetCurrentFrame()
@@ -864,14 +1027,59 @@ byte* CPU::GetCurrentFrame()
     return m_GPU->GetCurrentFrame();
 }
 
+const ushort* CPU::GetCurrentNativeFrame() const
+{
+    return (m_GPU != nullptr) ? m_GPU->GetCurrentNativeFrame() : nullptr;
+}
+
 void CPU::SetInput(byte input, byte buttons)
 {
-    m_joypad->SetInput(input, buttons);
+    byte newlyPressed = static_cast<byte>(
+        (input & static_cast<byte>(~m_lastInput)) |
+        (buttons & static_cast<byte>(~m_lastButtons)));
+    m_lastInput = input;
+    m_lastButtons = buttons;
+
+    if (newlyPressed != 0x00)
+    {
+        m_stopWakeRequested = true;
+    }
+
+    if (m_joypad != nullptr)
+    {
+        m_joypad->SetInput(input, buttons);
+    }
 }
 
 void CPU::SetVSyncCallback(void(*pCallback)())
 {
     m_GPU->SetVSyncCallback(pCallback);
+}
+
+void CPU::SetAudioSampleRate(unsigned int sampleRate)
+{
+    if (m_APU != nullptr)
+    {
+        m_APU->SetSampleRate(sampleRate);
+    }
+}
+
+size_t CPU::ConsumeAudioSamples(float* pInterleavedBuffer, size_t maxFrames)
+{
+    if (m_APU == nullptr)
+    {
+        return 0;
+    }
+
+    return m_APU->ConsumeSamples(reinterpret_cast<APU::Sample*>(pInterleavedBuffer), maxFrames);
+}
+
+void CPU::ClockAPUFrameSequencer()
+{
+    if (m_APU != nullptr)
+    {
+        m_APU->ClockFrameSequencerEdge();
+    }
 }
 
 byte CPU::GetHighByte(ushort dest)
@@ -942,7 +1150,7 @@ bool CPU::IsFlagSet(byte flag)
 void CPU::PushByteToSP(byte val)
 {
     m_SP--;
-    m_MMU->Write(m_SP, val);
+    WriteMemory(m_SP, val);
 }
 
 void CPU::PushUShortToSP(ushort val)
@@ -953,30 +1161,227 @@ void CPU::PushUShortToSP(ushort val)
 
 ushort CPU::PopUShort()
 {
-    ushort val = m_MMU->ReadUShort(m_SP);
-    m_SP += 2;
+    byte low = PopByte();
+    byte high = PopByte();
+    ushort val = (static_cast<ushort>(high) << 8) | low;
     return val;
 }
 
 byte CPU::PopByte()
 {
-    byte val = m_MMU->Read(m_SP);
+    byte val = ReadMemory(m_SP);
     m_SP++;
     return val;
 }
 
+byte CPU::ReadMemory(ushort address)
+{
+    if (address >= 0xFF30 && address <= 0xFF3F)
+    {
+        byte value = IsAddressBlockedByDMA(address) ? 0xFF : m_MMU->Read(address);
+        AdvanceHardware(4);
+        m_instructionCycles += 4;
+        return value;
+    }
+
+    AdvanceHardware(4);
+    m_instructionCycles += 4;
+
+    if ((m_GPU != nullptr) && m_GPU->IsOAMDMAActive() && IsCGBHardware(m_mode))
+    {
+        const ushort dmaSource = m_GPU->GetOAMDMASourceAddress();
+        if ((dmaSource >= 0xF000) && (dmaSource < 0xFE00) &&
+            ((address < 0x8000) || ((address >= 0xA000) && (address < 0xC000))))
+        {
+            return 0xFF;
+        }
+    }
+
+    if (IsAddressBlockedByDMA(address))
+    {
+        if ((address >= 0xFE00) && (address <= 0xFEFF))
+        {
+            return 0xFF;
+        }
+        if (IsCGBHardware(m_mode) && IsDoubleSpeed())
+        {
+            return m_GPU->GetOAMDMASourceAddress() < 0xF000
+                ? m_MMU->Read(address)
+                : 0xFF;
+        }
+        // The CPU sees the byte the DMA engine is driving when both contend
+        // for the same bus. GPU models the model-specific bus topology.
+        return m_GPU->GetOAMDMASnoopByte();
+    }
+
+    return m_MMU->Read(address);
+}
+
+bool CPU::WriteMemory(ushort address, byte val)
+{
+    if ((address == 0xFF1A) || (address == 0xFF1E) ||
+        (address >= 0xFF30 && address <= 0xFF3F))
+    {
+        bool result = IsAddressBlockedByDMA(address) ? false : m_MMU->Write(address, val);
+        AdvanceHardware(4);
+        m_instructionCycles += 4;
+        return result;
+    }
+
+    AdvanceHardware(4);
+    m_instructionCycles += 4;
+
+    if (IsAddressBlockedByDMA(address))
+    {
+        return false;
+    }
+
+    if ((address == 0xFF04) && (m_serial != nullptr))
+    {
+        m_serial->ResetDivider();
+    }
+
+    return m_MMU->Write(address, val);
+}
+
+bool CPU::IsAddressBlockedByDMA(ushort address) const
+{
+    if (m_GPU == nullptr)
+    {
+        return false;
+    }
+
+    return m_GPU->IsCPUAddressBlockedByOAMDMA(address);
+}
+
 byte CPU::ReadBytePC()
 {
-    byte val = m_MMU->Read(m_PC);
-    m_PC++;
+    byte val = ReadMemory(m_PC);
+    if (m_haltBug)
+    {
+        m_haltBug = false;
+    }
+    else
+    {
+        m_PC++;
+    }
     return val;
 }
 
 ushort CPU::ReadUShortPC()
 {
-    ushort val = m_MMU->ReadUShort(m_PC);
-    m_PC += 2;
+    byte low = ReadBytePC();
+    byte high = ReadBytePC();
+    ushort val = (static_cast<ushort>(high) << 8) | low;
     return val;
+}
+
+void CPU::IdleMachineCycle()
+{
+    AdvanceHardware(4);
+    m_instructionCycles += 4;
+}
+
+bool CPU::IsDoubleSpeed() const
+{
+    return m_MMU != nullptr && m_MMU->IsDoubleSpeed();
+}
+
+/*
+    Clock domains.
+
+    'cycles' is always in CPU T-cycles. On a CGB in double speed the CPU core
+    (and everything derived from the system counter: DIV, TIMA, and the serial
+    internal clock) runs at 8.4 MHz, while the PPU, APU, DMA and the cartridge's
+    real-time clock stay on the 4.2 MHz base clock. So the timer and serial get
+    the raw CPU cycle count, and everything else gets half of it.
+
+    In single speed the two domains are identical, which keeps the DMG path
+    exactly as it was.
+*/
+void CPU::AdvanceHardware(unsigned long cycles, bool clockSystemCounter)
+{
+    if (cycles >= m_InterruptAcceptanceDelayCycles)
+    {
+        m_InterruptAcceptanceBlocked = 0;
+        m_InterruptAcceptanceDelayCycles = 0;
+    }
+    else
+    {
+        m_InterruptAcceptanceDelayCycles -= cycles;
+    }
+
+    unsigned long baseCycles = cycles;
+
+    if (IsDoubleSpeed())
+    {
+        const unsigned long total = cycles + m_baseClockRemainder;
+        baseCycles = total / 2;
+        m_baseClockRemainder = total % 2;
+    }
+    else
+    {
+        m_baseClockRemainder = 0;
+    }
+
+    m_baseClockCycles += baseCycles;
+
+    if (m_cartridge != nullptr)
+    {
+        m_cartridge->Step(baseCycles);
+    }
+
+    if (m_GPU != nullptr)
+    {
+        m_GPU->Step(baseCycles);
+    }
+
+    if ((m_timer != nullptr) && clockSystemCounter)
+    {
+        m_timer->Step(cycles);
+    }
+
+    if ((m_serial != nullptr) && clockSystemCounter)
+    {
+        m_serial->Step(cycles);
+    }
+
+    if (m_APU != nullptr)
+    {
+        m_APU->Step(baseCycles);
+    }
+
+    if (cycles >= m_StatAckSuppressCycles)
+    {
+        m_StatAckSuppressCycles = 0;
+    }
+    else
+    {
+        m_StatAckSuppressCycles -= cycles;
+    }
+
+    /*
+        A VRAM DMA block has already been copied by the PPU; the CPU has to pay
+        for the bus time it used. The debt is expressed in base-clock cycles, so
+        in double speed it costs twice as many CPU cycles. GDMA's fixed setup
+        overhead is already in CPU cycles and is applied without scaling.
+    */
+    if (m_GPU != nullptr)
+    {
+        const unsigned long stall = m_GPU->ConsumeDMAStallCycles();
+        if (stall != 0)
+        {
+            m_pendingDMAStallCycles += IsDoubleSpeed() ? (stall * 2) : stall;
+        }
+
+        const unsigned long transfers = m_GPU->ConsumeGDMATransferCount();
+        if (transfers != 0)
+        {
+            m_pendingDMAStallCycles += transfers * (IsDoubleSpeed()
+                ? GDMASetupCyclesDoubleSpeed
+                : GDMASetupCyclesSingleSpeed);
+        }
+    }
 }
 
 byte CPU::AddByte(byte b1, byte b2)
@@ -1065,58 +1470,140 @@ void CPU::SBC(byte val)
     SetHighByte(&m_AF, (byte)ua);
 }
 
-void CPU::HandleInterrupts()
+byte CPU::GetPendingInterrupts()
 {
-    // If the IME is enabled, some interrupts are enabled in IE, and
-    // an interrupt flag is set, handle the interrupt.
-    if (m_IME == 0x01)
+    byte IE = m_MMU->Read(0xFFFF);
+    byte IF = m_MMU->Read(0xFF0F);
+    return static_cast<byte>(
+        (IE & IF & ~m_InterruptAcceptanceBlocked) & 0x1F);
+}
+
+unsigned long CPU::ServiceInterrupt(byte activeInterrupts, bool opcodeFetched)
+{
+    auto selectInterrupt = [](byte pending, byte& bit, ushort& vector)
     {
-        byte IE = m_MMU->Read(0xFFFF);
-        byte IF = m_MMU->Read(0xFF0F);
-
-        // This will only match valid interrupts
-        byte activeInterrupts = ((IE & IF) & 0x1F);
-        if (activeInterrupts > 0x00)
+        bit = 0;
+        while (!ISBITSET(pending, bit))
         {
-            m_IME = 0x00; // Disable further interrupts
+            bit++;
+        }
+        vector = static_cast<ushort>(INT40 + (bit * 8));
+    };
 
-            PushUShortToSP(m_PC); // Push current PC onto stack
+    byte interruptBit = 0;
+    ushort interruptVector = INT40;
+    selectInterrupt(activeInterrupts, interruptBit, interruptVector);
 
-            // Jump to the correct handler
-            if (ISBITSET(activeInterrupts, 0))
-            {
-                // VBlank
-                m_PC = INT40;
-                IF = CLEARBIT(IF, 0);
-            }
-            else if (ISBITSET(activeInterrupts, 1))
-            {
-                // LCD status
-                m_PC = INT48;
-                IF = CLEARBIT(IF, 1);
-            }
-            else if (ISBITSET(activeInterrupts, 2))
-            {
-                // Timer
-                m_PC = INT50;
-                IF = CLEARBIT(IF, 2);
-            }
-            else if (ISBITSET(activeInterrupts, 3))
-            {
-                // Serial
-                m_PC = INT58;
-                IF = CLEARBIT(IF, 3);
-            }
-            else if (ISBITSET(activeInterrupts, 4))
-            {
-                // Joypad
-                m_PC = INT60;
-                IF = CLEARBIT(IF, 4);
-            }
+    m_IME = 0x00;
+    m_imePending = false;
+    m_isHalted = false;
+    m_haltBug = false;
 
-            m_MMU->Write(0xFF0F, IF);
+    if (opcodeFetched)
+    {
+        m_PC--;
+    }
+    else
+    {
+        IdleMachineCycle();
+    }
+
+    IdleMachineCycle();
+    PushByteToSP(GetHighByte(m_PC));
+
+    // The upper stack write can hit IE when SP starts at 0000. Resample
+    // priority before the lower write, cancelling to PC 0000 if none remain.
+    activeInterrupts = GetPendingInterrupts();
+    const bool dispatchCancelled = activeInterrupts == 0;
+    if (dispatchCancelled)
+    {
+        interruptVector = 0x0000;
+    }
+    else
+    {
+        selectInterrupt(activeInterrupts, interruptBit, interruptVector);
+    }
+
+    PushByteToSP(GetLowByte(m_PC));
+
+    if (!dispatchCancelled)
+    {
+        byte IF = m_MMU->Read(0xFF0F);
+        m_MMU->Write(0xFF0F, CLEARBIT(IF, interruptBit));
+        if ((interruptBit == 3) && (m_serial != nullptr))
+        {
+            m_serial->AcknowledgeInterrupt(IsDoubleSpeed());
+        }
+        else if (interruptBit == 1)
+        {
+            // Fold a LY 153-to-0 STAT edge that overlaps this acknowledgement
+            // into the interrupt currently being serviced. This is a raw
+            // CPU-cycle window around the acknowledgement phase, not a
+            // base-clock duration; double-speed late-retrigger tests require
+            // the shorter four-cycle window.
+            m_StatAckSuppressCycles =
+                (m_GPU != nullptr) && m_GPU->IsLine153STATPhase()
+                    ? (IsDoubleSpeed() ? 4 : 6)
+                    : 0;
         }
     }
+
+    IdleMachineCycle();
+
+    m_PC = interruptVector;
+    m_cycles += 20;
+    return 20;
+}
+
+/*
+    STOP with KEY1 bit 0 set performs a CGB speed switch instead of stopping the
+    clock. The CPU is halted for the switch while the base-clock hardware keeps
+    running. DIV is reset only after the system counter's final release window.
+
+    Returns the number of extra cycles the switch consumed, or 0 when the STOP
+    was not consumed by a speed switch (so the caller enters the stopped state).
+*/
+unsigned long CPU::HandleStopSpeedSwitch()
+{
+    if (!IsCGBHardware(m_mode) || !m_MMU->IsSpeedSwitchArmed())
+    {
+        return 0;
+    }
+
+    m_MMU->CompleteSpeedSwitch();
+
+    if (m_GPU != nullptr)
+    {
+        m_GPU->AbortHBlankDMAForSpeedSwitch();
+    }
+
+    if (m_timer != nullptr)
+    {
+        m_timer->SetDoubleSpeed(m_MMU->IsDoubleSpeed());
+    }
+
+    /*
+        The stall happens in the new speed domain and spans several PPU mode
+        transitions. Advance it one machine cycle at a time so the PPU state
+        machine, APU, cartridge and DMA engines remain in phase. Timer and
+        Serial stay frozen until the final counter-release window.
+    */
+    for (unsigned long done = 0; done < SpeedSwitchStallCycles; done += SpeedSwitchStallStepCycles)
+    {
+        const unsigned long remaining = SpeedSwitchStallCycles - done;
+        const unsigned long step =
+            (remaining < SpeedSwitchStallStepCycles) ? remaining : SpeedSwitchStallStepCycles;
+        AdvanceHardware(step, remaining <= SpeedSwitchCounterReleaseCycles);
+    }
+    m_instructionCycles += SpeedSwitchStallCycles;
+
+    if (m_serial != nullptr)
+    {
+        m_serial->ResetDivider();
+    }
+    m_MMU->Write(0xFF04, 0x00);
+
+    return SpeedSwitchStallCycles;
 }
 
 /*
@@ -1143,7 +1630,7 @@ unsigned long CPU::NOP(const byte& opCode)
 */
 unsigned long CPU::LD_BC_A(const byte& opCode)
 {
-    m_MMU->Write(m_BC, GetHighByte(m_AF));
+    WriteMemory(m_BC, GetHighByte(m_AF));
     return 8;
 }
 
@@ -1236,7 +1723,7 @@ unsigned long CPU::LDr_HL_(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode >> 3);
 
-    (*r) = m_MMU->Read(m_HL);
+    (*r) = ReadMemory(m_HL);
 
     return 8;
 }
@@ -1256,7 +1743,7 @@ unsigned long CPU::LDr_HL_(const byte& opCode)
 unsigned long CPU::LD_HL_r(const byte& opCode)
 {
     byte* r = GetByteRegister(opCode);
-    m_MMU->Write(m_HL, (*r)); // Load r into the address pointed at by HL.
+    WriteMemory(m_HL, (*r)); // Load r into the address pointed at by HL.
 
     return 8;
 }
@@ -1359,6 +1846,8 @@ unsigned long CPU::CALLccnn(const byte& opCode)
 
     if (check)
     {
+        // Internal M-cycle occurs before the return address is pushed.
+        IdleMachineCycle();
         PushUShortToSP(m_PC);
         m_PC = nn;
         return 24;
@@ -1402,6 +1891,10 @@ unsigned long CPU::RETcc(const byte& opCode)
         break;
     }
 
+    // The branch condition is evaluated during an internal M-cycle before any
+    // taken-path stack reads.
+    IdleMachineCycle();
+
     if (check)
     {
         m_PC = PopUShort();
@@ -1428,8 +1921,8 @@ unsigned long CPU::LD_nn_SP(const byte& opCode)
     ushort nn = ReadUShortPC();
 
     // Load A into (nn)
-    m_MMU->Write(nn + 1, GetHighByte(m_SP));
-    m_MMU->Write(nn, GetLowByte(m_SP));
+    WriteMemory(nn, GetLowByte(m_SP));
+    WriteMemory(nn + 1, GetHighByte(m_SP));
 
     return 20;
 }
@@ -1633,6 +2126,8 @@ unsigned long CPU::RSTn(const byte& opCode)
 {
     byte t = ((opCode >> 3) & 0x07);
 
+    // The internal SP-decrement M-cycle precedes both stack writes.
+    IdleMachineCycle();
     PushUShortToSP(m_PC);
     m_PC = (ushort)(t * 0x08);
     return 16;
@@ -1780,7 +2275,7 @@ unsigned long CPU::XORr(const byte& opCode)
 */
 unsigned long CPU::XOR_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
     SetHighByte(&m_AF, r ^ GetHighByte(m_AF));
 
     // Affects Z and clears NHC
@@ -1846,7 +2341,7 @@ unsigned long CPU::ORr(const byte& opCode)
 */
 unsigned long CPU::OR_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
     SetHighByte(&m_AF, r | GetHighByte(m_AF));
 
     // Affects Z and clears NHC
@@ -1884,6 +2379,10 @@ unsigned long CPU::OR_HL_(const byte& opCode)
 unsigned long CPU::PUSHrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, true);
+
+    // Real hardware performs the internal SP-decrement M-cycle before either
+    // byte is written to the stack.
+    IdleMachineCycle();
     PushUShortToSP(*rr);
 
     return 16;
@@ -2001,12 +2500,12 @@ unsigned long CPU::DECr(const byte& opCode)
 */
 unsigned long CPU::INC_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     bool isBit3Before = ISBITSET(HL, 3);
     HL += 1;
     bool isBit3After = ISBITSET(HL, 3);
 
-    m_MMU->Write(m_HL, HL);
+    WriteMemory(m_HL, HL);
 
     if (HL == 0x00)
     {
@@ -2042,7 +2541,7 @@ unsigned long CPU::INC_HL_(const byte& opCode)
 */
 unsigned long CPU::DEC_HL_(const byte& opCode)
 {
-    byte val = m_MMU->Read(m_HL);
+    byte val = ReadMemory(m_HL);
     byte calc = (val - 1);
 
     SetFlag(SubtractFlag);
@@ -2057,7 +2556,7 @@ unsigned long CPU::DEC_HL_(const byte& opCode)
         ClearFlag(HalfCarryFlag);
     }
 
-    m_MMU->Write(m_HL, calc);
+    WriteMemory(m_HL, calc);
 
     return 12;
 }
@@ -2075,7 +2574,7 @@ unsigned long CPU::DEC_HL_(const byte& opCode)
 unsigned long CPU::LD_HL_n(const byte& opCode)
 {
     byte n = ReadBytePC();
-    m_MMU->Write(m_HL, n); // Load n into the address pointed at by HL.
+    WriteMemory(m_HL, n); // Load n into the address pointed at by HL.
 
     return 12;
 }
@@ -2163,15 +2662,28 @@ unsigned long CPU::SBCAr(const byte& opCode)
 /*
     STOP - 0x10
 
-    For the purposes of this emulator, this is identical to HALT.
-
-    0 Cycles
+    Consume the padding byte and stop the DMG system clock until a joypad edge.
 
     Flags affected(znhc): ----
 */
 unsigned long CPU::STOP(const byte& opCode)
 {
-    return HALT(opCode);
+    m_PC++;
+
+    const unsigned long switchCycles = HandleStopSpeedSwitch();
+
+    if (switchCycles == 0)
+    {
+        if (m_serial != nullptr)
+        {
+            m_serial->ResetDivider();
+        }
+        m_MMU->Write(0xFF04, 0x00);
+        m_isStopped = true;
+        m_stopWakeRequested = false;
+    }
+
+    return 4 + switchCycles;
 }
 
 /*
@@ -2187,7 +2699,7 @@ unsigned long CPU::STOP(const byte& opCode)
 */
 unsigned long CPU::LD_DE_A(const byte& opCode)
 {
-    m_MMU->Write(m_DE, GetHighByte(m_AF));
+    WriteMemory(m_DE, GetHighByte(m_AF));
     return 8;
 }
 
@@ -2244,7 +2756,7 @@ unsigned long CPU::JRe(const byte& opCode)
 */
 unsigned long CPU::LDA_DE_(const byte& opCode)
 {
-    byte val = m_MMU->Read(m_DE);
+    byte val = ReadMemory(m_DE);
     SetHighByte(&m_AF, val);
     return 8;
 }
@@ -2260,7 +2772,7 @@ unsigned long CPU::LDA_DE_(const byte& opCode)
 */
 unsigned long CPU::LDA_BC_(const byte& opCode)
 {
-    byte val = m_MMU->Read(m_BC);
+    byte val = ReadMemory(m_BC);
     SetHighByte(&m_AF, val);
 
     return 8;
@@ -2343,7 +2855,7 @@ unsigned long CPU::RRA(const byte& opCode)
 */
 unsigned long CPU::LDI_HL_A(const byte& opCode)
 {
-    m_MMU->Write(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
+    WriteMemory(m_HL, GetHighByte(m_AF)); // Load A into the address pointed at by HL.
 
     m_HL++;
 
@@ -2432,7 +2944,7 @@ unsigned long CPU::DAA(const byte& opCode)
 */
 unsigned long CPU::LDIA_HL_(const byte& opCode)
 {
-    SetHighByte(&m_AF, m_MMU->Read(m_HL));
+    SetHighByte(&m_AF, ReadMemory(m_HL));
     m_HL++;
 
     return 8;
@@ -2470,7 +2982,7 @@ unsigned long CPU::CPL(const byte& opCode)
 */
 unsigned long CPU::LDD_HL_A(const byte& opCode)
 {
-    m_MMU->Write(m_HL, GetHighByte(m_AF));
+    WriteMemory(m_HL, GetHighByte(m_AF));
 
     m_HL--;
     return 8;
@@ -2487,7 +2999,7 @@ unsigned long CPU::LDD_HL_A(const byte& opCode)
 */
 unsigned long CPU::LDDA_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     SetHighByte(&m_AF, HL);
 
     m_HL--;
@@ -2497,14 +3009,23 @@ unsigned long CPU::LDDA_HL_(const byte& opCode)
 /*
     HALT - 0x76
 
-    0 Cycles
+    Halt until an enabled interrupt request, or trigger the HALT bug when IME is
+    clear and a request is already pending.
 
     Flags affected(znhc): ----
 */
 unsigned long CPU::HALT(const byte& opCode)
 {
-    m_isHalted = true;
-    //m_IFWhenHalted = m_MMU->Read(0xFF0F);
+    if ((m_IME == 0x00) && (GetPendingInterrupts() != 0x00))
+    {
+        m_haltBug = true;
+        m_isHalted = false;
+    }
+    else
+    {
+        m_isHalted = true;
+    }
+
     return 4;
 }
 
@@ -2522,7 +3043,7 @@ unsigned long CPU::HALT(const byte& opCode)
 unsigned long CPU::ADDA_HL_(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     SetHighByte(&m_AF, AddByte(A, HL));
 
     return 8;
@@ -2541,7 +3062,7 @@ unsigned long CPU::ADDA_HL_(const byte& opCode)
 */
 unsigned long CPU::ADCA_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     ADC(HL);
     return 8;
 }
@@ -2560,7 +3081,7 @@ unsigned long CPU::ADCA_HL_(const byte& opCode)
 unsigned long CPU::SUB_HL_(const byte& opCode)
 {
     byte A = GetHighByte(m_AF);
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     byte result = A - HL;
     SetHighByte(&m_AF, result);
 
@@ -2585,7 +3106,7 @@ unsigned long CPU::SUB_HL_(const byte& opCode)
 */
 unsigned long CPU::SBCA_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     SBC(HL);
     return 8;
 }
@@ -2603,7 +3124,7 @@ unsigned long CPU::SBCA_HL_(const byte& opCode)
 */
 unsigned long CPU::AND_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     byte result = HL & GetHighByte(m_AF);
     SetHighByte(&m_AF, result);
 
@@ -2636,7 +3157,7 @@ unsigned long CPU::AND_HL_(const byte& opCode)
 */
 unsigned long CPU::CP_HL_(const byte& opCode)
 {
-    byte HL = m_MMU->Read(m_HL);
+    byte HL = ReadMemory(m_HL);
     byte A = GetHighByte(m_AF);
     byte result = A - HL;
 
@@ -2714,6 +3235,9 @@ unsigned long CPU::RET(const byte& opCode)
 unsigned long CPU::CALLnn(const byte& opCode)
 {
     ushort nn = ReadUShortPC(); // Read nn
+
+    // M4 is internal; the return address is written during M5-M6.
+    IdleMachineCycle();
     PushUShortToSP(m_PC); // Push PC to SP
     m_PC = nn; // Set the PC to the target address
 
@@ -2772,8 +3296,10 @@ unsigned long CPU::SUBn(const byte& opCode)
 */
 unsigned long CPU::RETI(const byte& opCode)
 {
-    m_IME = 0x01; // Restore interrupts
-    m_PC = PopUShort(); // Return
+    m_PC = PopUShort();
+    IdleMachineCycle();
+    m_IME = 0x01;
+    m_imePending = false;
 
     return 16;
 }
@@ -2808,7 +3334,7 @@ unsigned long CPU::LD_0xFF00n_A(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
 
-    m_MMU->Write(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
+    WriteMemory(0xFF00 + n, GetHighByte(m_AF)); // Load A into 0xFF00 + n
 
     return 12;
 }
@@ -2824,7 +3350,7 @@ unsigned long CPU::LD_0xFF00n_A(const byte& opCode)
 */
 unsigned long CPU::LD_0xFF00C_A(const byte& opCode)
 {
-    m_MMU->Write(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
+    WriteMemory(0xFF00 + GetLowByte(m_BC), GetHighByte(m_AF)); // Load A into 0xFF00 + C
 
     return 8;
 }
@@ -2843,7 +3369,7 @@ unsigned long CPU::LD_nn_A(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
 
-    m_MMU->Write(nn, GetHighByte(m_AF)); // Load A into (nn)
+    WriteMemory(nn, GetHighByte(m_AF)); // Load A into (nn)
 
     return 16;
 }
@@ -2892,7 +3418,7 @@ unsigned long CPU::XORn(const byte& opCode)
 unsigned long CPU::LDA_0xFF00n_(const byte& opCode)
 {
     byte n = ReadBytePC(); // Read n
-    SetHighByte(&m_AF, m_MMU->Read(0xFF00 + n));
+    SetHighByte(&m_AF, ReadMemory(0xFF00 + n));
 
     return 12;
 }
@@ -2908,7 +3434,7 @@ unsigned long CPU::LDA_0xFF00n_(const byte& opCode)
 */
 unsigned long CPU::LDA_0xFF00C_(const byte& opCode)
 {
-    SetHighByte(&m_AF, m_MMU->Read(0xFF00 + GetLowByte(m_BC)));
+    SetHighByte(&m_AF, ReadMemory(0xFF00 + GetLowByte(m_BC)));
 
     return 8;
 }
@@ -2925,6 +3451,7 @@ unsigned long CPU::LDA_0xFF00C_(const byte& opCode)
 unsigned long CPU::DI(const byte& opCode)
 {
     m_IME = 0x00;
+    m_imePending = false;
 
     return 4;
 }
@@ -3016,7 +3543,7 @@ unsigned long CPU::LDHLSPe(const byte& opCode)
 unsigned long CPU::LDA_nn_(const byte& opCode)
 {
     ushort nn = ReadUShortPC();
-    SetHighByte(&m_AF, m_MMU->Read(nn));
+    SetHighByte(&m_AF, ReadMemory(nn));
 
     return 16;
 }
@@ -3108,7 +3635,7 @@ unsigned long CPU::RLCr(const byte& opCode)
 */
 unsigned long CPU::RLC_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Grab bit 7 and store it in the carryflag
     ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
@@ -3119,7 +3646,7 @@ unsigned long CPU::RLC_HL_(const byte& opCode)
     // Set bit 0 of r to the old CarryFlag
     r = IsFlagSet(CarryFlag) ? SETBIT((r), 0) : CLEARBIT((r), 0);
 
-    m_MMU->Write(m_HL, r);
+    WriteMemory(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3171,7 +3698,7 @@ unsigned long CPU::RRCr(const byte& opCode)
 */
 unsigned long CPU::RRC_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Grab bit 0 and store it in the carryflag
     ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
@@ -3182,7 +3709,7 @@ unsigned long CPU::RRC_HL_(const byte& opCode)
     // Set bit 0 of r to the old CarryFlag
     r = IsFlagSet(CarryFlag) ? SETBIT((r), 7) : CLEARBIT((r), 7);
 
-    m_MMU->Write(m_HL, r);
+    WriteMemory(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3237,7 +3764,7 @@ unsigned long CPU::RLr(const byte& opCode)
 */
 unsigned long CPU::RL_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
@@ -3251,7 +3778,7 @@ unsigned long CPU::RL_HL_(const byte& opCode)
     // Set bit 0 of r to the old CarryFlag
     r = carry ? SETBIT((r), 0) : CLEARBIT((r), 0);
 
-    m_MMU->Write(m_HL, r);
+    WriteMemory(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3306,7 +3833,7 @@ unsigned long CPU::RRr(const byte& opCode)
 */
 unsigned long CPU::RR_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Grab the current CarryFlag val
     bool carry = IsFlagSet(CarryFlag);
@@ -3320,7 +3847,7 @@ unsigned long CPU::RR_HL_(const byte& opCode)
     // Set bit 7 of r to the old CarryFlag
     r = carry ? SETBIT((r), 7) : CLEARBIT((r), 7);
 
-    m_MMU->Write(m_HL, r);
+    WriteMemory(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3368,14 +3895,14 @@ unsigned long CPU::SLAr(const byte& opCode)
 */
 unsigned long CPU::SLA_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Grab bit 7 and store it in the carryflag
     ISBITSET(r, 7) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r left
     r = r << 1;
-    m_MMU->Write(m_HL, r);
+    WriteMemory(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3423,14 +3950,14 @@ unsigned long CPU::SRAr(const byte& opCode)
 */
 unsigned long CPU::SRA_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Grab bit 0 and store it in the carryflag
     ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
 
     // Shift r right
     r = (r >> 1) | (r & 0x80);
-    m_MMU->Write(m_HL, r);
+    WriteMemory(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3479,7 +4006,7 @@ unsigned long CPU::SRLr(const byte& opCode)
 */
 unsigned long CPU::SRL_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Grab bit 0 and store it in the carryflag
     ISBITSET(r, 0) ? SetFlag(CarryFlag) : ClearFlag(CarryFlag);
@@ -3487,7 +4014,7 @@ unsigned long CPU::SRL_HL_(const byte& opCode)
     // Shift r right
     r = r >> 1;
     r = CLEARBIT(r, 7);
-    m_MMU->Write(m_HL, r);
+    WriteMemory(m_HL, r);
 
     // Affects Z, clears N, clears H, affects C
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3531,7 +4058,7 @@ unsigned long CPU::BITbr(const byte& opCode)
 unsigned long CPU::BITb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
 
     // Test bit b in r
     (!ISBITSET(r, bit)) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
@@ -3571,8 +4098,8 @@ unsigned long CPU::RESbr(const byte& opCode)
 unsigned long CPU::RESb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
-    byte r = m_MMU->Read(m_HL);
-    m_MMU->Write(m_HL, CLEARBIT(r, bit));
+    byte r = ReadMemory(m_HL);
+    WriteMemory(m_HL, CLEARBIT(r, bit));
 
     return 16;
 }
@@ -3606,8 +4133,8 @@ unsigned long CPU::SETbr(const byte& opCode)
 unsigned long CPU::SETb_HL_(const byte& opCode)
 {
     byte bit = (opCode >> 3) & 0x07;
-    byte r = m_MMU->Read(m_HL);
-    m_MMU->Write(m_HL, SETBIT(r, bit));
+    byte r = ReadMemory(m_HL);
+    WriteMemory(m_HL, SETBIT(r, bit));
 
     return 16;
 }
@@ -3649,11 +4176,11 @@ unsigned long CPU::SWAPr(const byte& opCode)
 */
 unsigned long CPU::SWAP_HL_(const byte& opCode)
 {
-    byte r = m_MMU->Read(m_HL);
+    byte r = ReadMemory(m_HL);
     byte lowNibble = (r & 0x0F);
     byte highNibble = (r & 0xF0);
 
-    m_MMU->Write(m_HL, (lowNibble << 4) | (highNibble >> 4));
+    WriteMemory(m_HL, (lowNibble << 4) | (highNibble >> 4));
 
     (r == 0x00) ? SetFlag(ZeroFlag) : ClearFlag(ZeroFlag);
     ClearFlag(SubtractFlag);

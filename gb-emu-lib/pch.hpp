@@ -14,6 +14,7 @@ typedef signed char sbyte;
 typedef unsigned short ushort;
 
 #include "Logger.hpp"
+#include "HardwareModel.hpp"
 #include "IMemoryUnit.hpp"
 #include "ICPU.hpp"
 #include "IMMU.hpp"

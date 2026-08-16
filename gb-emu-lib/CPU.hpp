@@ -22,6 +22,36 @@
 #define HalfCarryFlag   5
 #define CarryFlag       4
 
+/*
+    A CGB speed switch costs 2050 machine cycles (8200 T-cycles) measured from
+    the STOP that triggers it. STOP's own fetch is 4 of those, so the additional
+    stall is 8196 cycles.
+
+    The PPU, APU, cartridge and DMA engines run throughout the stall. The system
+    counter feeding DIV, TIMA and serial remains frozen until the final 8 cycles.
+*/
+const unsigned long SpeedSwitchStallCycles = 8196;
+const unsigned long SpeedSwitchCounterReleaseCycles = 8;
+
+/*
+    The PPU resolves at most one mode transition per Step(), so the speed-switch
+    stall is delivered one machine cycle at a time to keep LY and STAT in phase.
+*/
+const unsigned long SpeedSwitchStallStepCycles = 4;
+
+/*
+    VRAM DMA debt is also paid one machine cycle at a time because the PPU can
+    resolve only one mode transition per Step().
+*/
+const unsigned long DMAStallStepCycles = 4;
+
+/*
+    GDMA has a fixed CPU-domain setup cost in addition to its 32 base cycles per
+    block. The setup cost does not scale with the base clock.
+*/
+const unsigned long GDMASetupCyclesSingleSpeed = 7;
+const unsigned long GDMASetupCyclesDoubleSpeed = 4;
+
 class CPU : public ICPU
 {
     friend class CPUTests;
@@ -38,10 +68,35 @@ public:
     bool LoadROM(const char* bootROMPath, const char* cartridgePath);
     int Step();
     void TriggerInterrupt(byte interrupt);
+    void QueueInterrupt(byte interrupt);
     byte* GetCurrentFrame();
     void SetInput(byte input, byte buttons);
     void SetVSyncCallback(void(*pCallback)());
     ushort GetPC() { return m_PC; }
+    void SetAudioSampleRate(unsigned int sampleRate);
+    size_t ConsumeAudioSamples(float* pInterleavedBuffer, size_t maxFrames);
+    void ClockAPUFrameSequencer();
+
+    /*
+        Hardware model selection. The preference must be set before LoadROM();
+        the concrete mode is resolved from the cartridge header at load time and
+        then pushed down to every component exactly once.
+    */
+    void SetModelPreference(ModelPreference preference) { m_modelPreference = preference; }
+    ModelPreference GetModelPreference() const { return m_modelPreference; }
+    GameBoyMode GetGameBoyMode() const { return m_mode; }
+    bool IsDoubleSpeed() const;
+
+    /*
+        Cycle counter in the base 4.194304 MHz clock domain. m_cycles counts CPU
+        cycles, which run twice as fast in CGB double speed, so anything that
+        wants wall-clock time (frame windows, audio windows) must use this.
+    */
+    unsigned long long GetBaseClockCycles() const { return m_baseClockCycles; }
+
+    // Native (unconverted) frame: RGB555 little-endian per pixel on CGB, DMG
+    // shade index 0-3 per pixel otherwise. 160*144 ushorts.
+    const ushort* GetCurrentNativeFrame() const;
 
 private:
     static byte GetHighByte(ushort dest);
@@ -61,15 +116,24 @@ private:
     void PushUShortToSP(ushort val);
     ushort PopUShort();
     byte PopByte();
+    byte ReadMemory(ushort address);
+    bool WriteMemory(ushort address, byte val);
+    bool IsAddressBlockedByDMA(ushort address) const;
     byte ReadBytePC();
     ushort ReadUShortPC();
+    void IdleMachineCycle();
+    void AdvanceHardware(unsigned long cycles, bool clockSystemCounter = true);
 
     byte AddByte(byte b1, byte b2);
     ushort AddUShort(ushort u1, ushort u2);
     void ADC(byte val);
     void SBC(byte val);
 
-    void HandleInterrupts();
+    byte GetPendingInterrupts();
+    unsigned long ServiceInterrupt(byte activeInterrupts, bool opcodeFetched = false);
+    unsigned long HandleStopSpeedSwitch();
+    void ApplyPostBootState();
+    void PropagateGameBoyMode();
 
     // TODO: Organize the following...
     // Z80 Instruction Set
@@ -205,8 +269,28 @@ private:
 
     // Clock cycles
     unsigned long m_cycles; // The current number of cycles
+    unsigned long m_instructionCycles;
+    // Cycles in the base (non-doubled) clock domain. Advances at half the rate
+    // of m_cycles while CGB double speed is active.
+    unsigned long long m_baseClockCycles;
+    // Carries the odd base-domain cycle across AdvanceHardware() calls so that
+    // halving the CPU cycle count can never silently lose time.
+    unsigned long m_baseClockRemainder;
+    // VRAM DMA bus time the PPU has charged but the CPU has not yet paid.
+    unsigned long m_pendingDMAStallCycles;
+    ModelPreference m_modelPreference;
+    GameBoyMode m_mode;
     bool m_isHalted;
+    bool m_isStopped;
+    bool m_isLocked;
+    bool m_haltBug;
+    bool m_stopWakeRequested;
     bool m_imePending;
+    unsigned long m_StatAckSuppressCycles;
+    byte m_InterruptAcceptanceBlocked;
+    unsigned long m_InterruptAcceptanceDelayCycles;
+    byte m_lastInput;
+    byte m_lastButtons;
 
     // Registers
     ushort m_AF; // Accumulator & flags

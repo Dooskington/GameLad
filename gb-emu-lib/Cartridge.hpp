@@ -5,6 +5,16 @@
 #define RAMSizeAddress 0x0149
 
 /*
+0x0143 - CGB flag
+0x80 - the cartridge uses CGB features but still boots on a DMG
+0xC0 - the cartridge is CGB only
+Any other value is the last character of the legacy 16-byte title field, so the
+cartridge predates the CGB and is monochrome only. Only bit 7 is decoded on
+real hardware; bit 6 distinguishes "CGB enhanced" from "CGB only".
+*/
+#define CGBFlagAddress 0x0143
+
+/*
 0x0147 - Cartridge Type
 Specifies which Memory Bank Controller (if any) is used in the cartridge, and if further external hardware exists in the cartridge.
 00h  ROM ONLY                 13h  MBC3+RAM+BATTERY
@@ -48,6 +58,7 @@ Specifies the ROM Size of the cartridge. Typically calculated as "32KB shl N".
 #define ROM_1MB         0x05
 #define ROM_2MB         0x06
 #define ROM_4MB         0x07
+#define ROM_8MB         0x08
 #define ROM_1_1MB       0x52
 #define ROM_1_2MB       0x53
 #define ROM_1_5MB       0x54
@@ -66,6 +77,8 @@ RAM of 512 x 4 bits.
 #define RAM_2KB         0x01
 #define RAM_8KB         0x02
 #define RAM_32KB        0x03
+#define RAM_128KB       0x04
+#define RAM_64KB        0x05
 
 class Cartridge : public IMemoryUnit
 {
@@ -74,6 +87,13 @@ public:
     ~Cartridge();
 
     bool LoadROM(const char* path);
+    void Step(unsigned long cycles);
+
+    // Raw cartridge CGB flag (0x0143). Returns 0x00 when no ROM is loaded so
+    // model resolution falls back to DMG rather than to an undefined value.
+    byte GetCGBFlag() const;
+    bool IsCGBCartridge() const;
+    bool IsCGBOnlyCartridge() const;
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
@@ -81,12 +101,18 @@ public:
 
 private:
     bool LoadMBC(unsigned int actualSize);
+    bool IsMBC1Multicart() const;
+    void LoadPersistentData();
+    void SavePersistentData();
 
 private:
     std::string m_Path;
     byte m_MBCType;
+    unsigned int m_ROMSize;
     unsigned int m_RAMSize;
-    std::unique_ptr<byte> m_ROM;
-    std::unique_ptr<byte> m_RAM;
+    bool m_HasBattery;
+    bool m_HasRTC;
+    std::unique_ptr<byte[]> m_ROM;
+    std::unique_ptr<byte[]> m_RAM;
     std::unique_ptr<IMemoryUnit> m_MBC;
 };
