@@ -1,6 +1,6 @@
 # GameLad Emulator Fix Summary
 
-Checkpoint date: **2026-08-16**
+Checkpoint date: **2026-08-17**
 
 Review branch: **`ai-audit-and-fixes`**
 
@@ -10,7 +10,7 @@ update one section and rerun the same validation gates.
 
 ## Validation checkpoint
 
-- Unit tests: **298/298**
+- Unit tests: **299/299**
 - ROM manifest: **4,528** unique ROMs, **6,680** executions per sweep
 - Clean full sweep: **PASS 4,128**, **FAIL 2,288**,
   **UNSUPPORTED_MODEL 169**, **UNVERIFIABLE_NO_ORACLE 95**
@@ -18,6 +18,8 @@ update one section and rerun the same validation gates.
 - Two additional 12-worker full sweeps had identical non-timeout membership.
   Their three affected cases passed in the clean six-worker sweep; the two
   repeatedly affected long CPU cases also passed in isolation.
+- A second clean six-worker sweep after the Spy vs. Spy OAM-DMA clock-domain
+  fix reproduced every prior status and evidence value.
 - No crash, load-error, runner-error, timeout, or missing-result executions.
 
 The reporting checkpoints distinguish source behavior from harness coverage:
@@ -30,6 +32,7 @@ The reporting checkpoints distinguish source behavior from harness coverage:
 | CGB wave3 | Chunked speed-switch progression and selective HDMA behavior | None | 4,105 |
 | Final CGB residual | GDMA setup/debt timing and HDMA termination window | None | 4,122 |
 | PCM register correction | Corrected zero-based PCM12/PCM34 channel routing | None | 4,128 |
+| Double-speed OAM DMA | Clocked OAM DMA from CPU cycles while retaining base-clock PPU timing | None | 4,128 |
 
 The final residual source delta is **+17/-0** against PASS4105, all in CGB mode;
 the PCM correction is a further **+6/-0**, also in CGB mode. DMG membership is
@@ -88,6 +91,10 @@ ROM-specific exceptions.
 - Made OAM DMA a timed bus participant with startup delay, CPU bus blocking,
   source-domain arbitration, next-byte snooping, and CGB open-bus behavior.
   Writes remain blocked during contention.
+- Separated the PPU base-clock and CPU-cycle domains when stepping GPU state.
+  OAM DMA now remains 160 CPU M-cycles in CGB double speed (320 PPU dots)
+  instead of incorrectly lasting 640 dots. This prevents DMA bus contention
+  from corrupting Spy vs. Spy's WRAM stack return during startup.
 - Implemented GDMA/HDMA source validation, per-HBlank block transfer, CPU stall
   accounting, cancellation/readback, and speed-switch handling. A speed switch
   terminates only an HBlank transfer that has not completed a block; a transfer

@@ -225,9 +225,17 @@ ushort GPU::ReadCGBPalette(const byte* paletteRAM, int palette, int colorIndex) 
 */
 void GPU::Step(unsigned long cycles)
 {
-    // Progressive OAM DMA. This runs independently of the LCD/mode state
-    // machine below and independently of whether the LCD is even enabled.
-    StepOAMDMA(cycles);
+    Step(cycles, cycles);
+}
+
+void GPU::Step(unsigned long baseCycles, unsigned long cpuCycles)
+{
+    /*
+        OAM DMA moves one byte per CPU M-cycle. In CGB double speed that is two
+        base-clock dots, so it must use the CPU-domain count while the PPU state
+        machine continues to use the base-domain count.
+    */
+    StepOAMDMA(cpuCycles);
 
     // If the LCD screen is off, the whole mode state machine is frozen.
     // LY reads 0 and STAT reports mode 0 while disabled (PPU-001).
@@ -236,7 +244,7 @@ void GPU::Step(unsigned long cycles)
         return;
     }
 
-    m_ModeClock += cycles;
+    m_ModeClock += baseCycles;
 
     switch (GETMODE)
     {
@@ -250,7 +258,7 @@ void GPU::Step(unsigned long cycles)
         break;
     case ModeReadingOAMVRAM:
         // VRAM Read mode. Scanline active.
-        AdvancePixelTransfer(cycles);
+        AdvancePixelTransfer(baseCycles);
         if (m_ModeClock >= m_Mode3Cycles)
         {
             m_ModeClock -= m_Mode3Cycles;

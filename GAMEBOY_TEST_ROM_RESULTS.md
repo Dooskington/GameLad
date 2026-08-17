@@ -1,24 +1,25 @@
 # Game Boy Test ROM Results
 
-Checkpoint date: **2026-08-16**
+Checkpoint date: **2026-08-17**
 
 Review branch: **`ai-audit-and-fixes`**
 
 Base repository commit: `cbd8d1a5f403def76e65b85ebb98a61aba88adf6`
 
 This report describes the validated review branch state. The same 6,680-case
-manifest was run three times after clean Debug and Release builds. The
-authoritative six-worker run completed without host timeouts; two 12-worker
-confirmation runs had identical non-timeout membership. Their three affected
-cases passed in the clean run, and the two repeatedly affected long CPU cases
-also passed in isolation.
+manifest was run four times after clean Debug and Release builds. Two clean
+six-worker runs, including one after the Spy vs. Spy OAM-DMA clock-domain fix,
+had identical status and evidence values. Two 12-worker confirmation runs had
+identical non-timeout membership; their three affected cases passed in the
+clean runs, and the two repeatedly affected long CPU cases also passed in
+isolation.
 
 ## Summary
 
 - Discovered ROM files: **4528**
 - Executions: **6680** (2152 additional rtc3test subtest executions)
-- Full-sweep runs: **3** (**20040** total isolated executions)
-- Unit tests: **298/298**
+- Full-sweep runs: **4** (**26720** total isolated executions)
+- Unit tests: **299/299**
 - Objectively passed: **4128**
 - Objective failures/timeouts/errors: **2288**
 - Executed but excluded as unsupported or unverifiable: **264**
@@ -27,7 +28,7 @@ also passed in isolation.
 - Crash/load/runner errors, timeouts, and missing results: **0**
 - Repeatability: **identical non-host-timeout membership across all runs; all
   affected cases passed in the clean run**
-- Authoritative clean-run wall time: **199.8 seconds**
+- Latest clean-run wall time: **202.9 seconds**
 - ROM manifest SHA-256: `09d020b235f53cf3ccaba9303f8334ca03e3940db85176b350a13a43047a8dba`
 
 | Result | Executions |
@@ -55,12 +56,15 @@ are recorded separately:
 | CGB wave3 | Source (+31/-10) | 4105 | 1828 | 2277 |
 | Final CGB residual | Source (+17/-0) | 4122 | 1828 | 2294 |
 | PCM register correction | Source (+6/-0) | 4128 | 1828 | 2300 |
+| Double-speed OAM DMA clock domain | Source (real-game fix, no sweep transition) | 4128 | 1828 | 2300 |
 
 The six oracle-completion gains came from existing emulator behavior that the
 earlier harness could not score. Later totals are emulator behavior changes
 under the same oracle-complete harness. The final residual adds 17 CGB DMA
 passes, and corrected PCM12/PCM34 channel routing adds six CGB APU passes. Both
-changes have no former-pass loss and no DMG membership change.
+changes have no former-pass loss and no DMG membership change. Separating
+OAM-DMA CPU cycles from PPU base cycles fixes Spy vs. Spy startup in CGB double
+speed and produces no ROM-sweep status or evidence transition.
 
 ## Methodology
 

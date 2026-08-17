@@ -62,11 +62,11 @@
 #define ReadingOAMCycles 80
 #define ReadingOAMVRAMCycles 172
 
-// OAM DMA transfers one byte per M-cycle (4 T-cycles) for all 160 OAM bytes.
+// OAM DMA transfers one byte per CPU M-cycle for all 160 OAM bytes.
 #define OAMDMACycles 640
 #define OAMDMABytes 0xA0
 
-// A write to FF46 takes effect 2 M-cycles (8 T-cycles) after the write.
+// A write to FF46 takes effect 2 CPU M-cycles after the write.
 #define OAMDMAStartDelayCycles 8
 
 // While OAM DMA is in progress, the DMG CPU may only access High RAM
@@ -86,6 +86,7 @@ public:
     ~GPU();
 
     void Step(unsigned long cycles);
+    void Step(unsigned long baseCycles, unsigned long cpuCycles);
     byte* GetCurrentFrame();
 
     /*

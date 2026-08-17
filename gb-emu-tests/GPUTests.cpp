@@ -203,6 +203,31 @@ public:
         Assert::IsFalse(videoBusDMA.IsCPUAddressBlockedByOAMDMA(0xC000));
     }
 
+    TEST_METHOD(OAMDMADoubleSpeedClockDomainTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPU gpu(spMMU.get(), nullptr);
+        gpu.SetGameBoyMode(GameBoyMode::CGB);
+        gpu.m_LCDControl = 0x00;
+
+        gpu.LaunchDMATransfer(0xC0);
+        gpu.Step(4, 8);
+        Assert::IsTrue(gpu.IsOAMDMAActive());
+        Assert::AreEqual(0, (int)gpu.m_DMAOffset);
+
+        for (int byte = 0; byte < OAMDMABytes - 1; byte++)
+        {
+            gpu.Step(2, 4);
+        }
+
+        Assert::IsTrue(gpu.IsOAMDMAActive());
+        Assert::AreEqual(OAMDMABytes - 1, (int)gpu.m_DMAOffset);
+
+        gpu.Step(2, 4);
+        Assert::IsFalse(gpu.IsOAMDMAActive());
+        Assert::AreEqual(OAMDMABytes, (int)gpu.m_DMAOffset);
+    }
+
     TEST_METHOD(WindowRightEdgeTimingTest)
     {
         std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));

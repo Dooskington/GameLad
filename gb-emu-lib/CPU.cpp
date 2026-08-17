@@ -1333,7 +1333,7 @@ void CPU::AdvanceHardware(unsigned long cycles, bool clockSystemCounter)
 
     if (m_GPU != nullptr)
     {
-        m_GPU->Step(baseCycles);
+        m_GPU->Step(baseCycles, cycles);
     }
 
     if ((m_timer != nullptr) && clockSystemCounter)
