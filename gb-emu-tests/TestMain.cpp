@@ -161,6 +161,7 @@ int main(int arg, char** argv)
     TEST_CALL(CPUTests, EI_Test);
     TEST_CALL(CPUTests, EIDICancellation_Test);
     TEST_CALL(CPUTests, EIDelayedInterrupt_Test);
+    TEST_CALL(CPUTests, HaltBugInterruptReturnAddress_Test);
     TEST_CALL(CPUTests, RETI_Test);
     TEST_CALL(CPUTests, SBCA_HL__Test);
     TEST_CALL(CPUTests, SBCAr_Test);
@@ -324,6 +325,7 @@ int main(int arg, char** argv)
     TEST_CALL(APUTests, WaveChannelMuteVolumeTest);
     TEST_CALL(APUTests, NoiseChannelTriggerAmplitudeTest);
     TEST_CALL(APUTests, PanningAndVolumeMixingTest);
+    TEST_CALL(APUTests, DCOffsetIsRemovedFromOutputTest);
     TEST_CALL(APUTests, SilentWhenPoweredOffTest);
     TEST_CALL(APUTests, RegisterReadMasksTest);
     TEST_CLEANUP();

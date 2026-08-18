@@ -12,6 +12,11 @@ int Emulator::Step()
     return m_cpu->Step();
 }
 
+unsigned long long Emulator::GetBaseClockCycles() const
+{
+    return m_cpu->GetBaseClockCycles();
+}
+
 void Emulator::Stop()
 {
     m_cpu.reset();

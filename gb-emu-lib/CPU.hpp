@@ -92,7 +92,7 @@ public:
         cycles, which run twice as fast in CGB double speed, so anything that
         wants wall-clock time (frame windows, audio windows) must use this.
     */
-    unsigned long long GetBaseClockCycles() const { return m_baseClockCycles; }
+    unsigned long long GetBaseClockCycles() const override { return m_baseClockCycles; }
 
     // Native (unconverted) frame: RGB555 little-endian per pixel on CGB, DMG
     // shade index 0-3 per pixel otherwise. 160*144 ushorts.

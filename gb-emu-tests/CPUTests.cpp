@@ -5179,6 +5179,34 @@ public:
         Assert::AreEqual(0x0002, (int)spCPU->m_MMU->ReadUShort(0xFFFC));
     }
 
+    // A HALT that triggers the HALT bug leaves PC un-incremented on the next
+    // fetch. If an interrupt is dispatched at that point, the pushed return
+    // address must still be the fetched instruction rather than the HALT
+    // itself - otherwise RETI lands back on the HALT and stalls a frame.
+    TEST_METHOD(HaltBugInterruptReturnAddress_Test)
+    {
+        byte m_Mem[] = { 0xFB, 0x76, 0x00, 0x00, 0x00 };
+        std::unique_ptr<CPU> spCPU = std::make_unique<CPU>();
+        spCPU->Initialize(new CPUTestsMMU(m_Mem, ARRAYSIZE(m_Mem)), true);
+        spCPU->m_SP = 0xFFFE;
+        spCPU->m_MMU->Write(0xFFFF, 0x01); // IE: VBlank enabled
+        spCPU->m_MMU->Write(0xFF0F, 0x01); // IF: VBlank already pending
+
+        spCPU->Step(); // EI (IME becomes set only after the next instruction)
+        spCPU->Step(); // HALT sees IME == 0 with an interrupt pending
+
+        Assert::IsTrue(spCPU->m_haltBug);
+        Assert::IsFalse(spCPU->m_isHalted);
+        Assert::AreEqual(0x0002, (int)spCPU->m_PC);
+        Assert::AreEqual(0x01, (int)spCPU->m_IME);
+
+        // Fetches 0x0002 without advancing PC, then dispatches the interrupt.
+        spCPU->Step();
+
+        Assert::AreEqual(INT40, (int)spCPU->m_PC);
+        Assert::AreEqual(0x0002, (int)spCPU->m_MMU->ReadUShort(0xFFFC));
+    }
+
     // 0xD9
     TEST_METHOD(RETI_Test)
     {

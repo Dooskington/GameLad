@@ -1048,6 +1048,16 @@ void GPU::RenderPixel(byte x, byte bgColorIndex, byte bgAttributes)
             row = height - 1 - row;
         }
 
+        // The sprite list is selected at the end of the previous line, but Y
+        // and LCDC.2 are re-read here - an in-flight OAM DMA or a mid-line
+        // OBJ-size change can move the row outside the tile it was chosen
+        // for. A negative row would wrap the ushort index below and read past
+        // the VRAM bank.
+        if ((row < 0) || (row >= height))
+        {
+            continue;
+        }
+
         byte tileNumber = m_OAM[oamIndex + 2];
         if (height == 16)
         {

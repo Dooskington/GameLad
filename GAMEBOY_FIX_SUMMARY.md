@@ -41,6 +41,70 @@ remain: eight speed-switch PPU/STAT phase cases and two HDMA boundary cases.
 The hardware-grounded implementation was retained instead of adding
 ROM-specific exceptions.
 
+## Post-audit follow-up fixes
+
+Found while building the branch and play-testing commercial ROMs. Unit tests
+are **301/301** after these changes (two new regression tests).
+
+### CGB double-speed games ran at half speed (frontend)
+
+`gb-emu/Main.cpp` advanced the emulator with
+`while (cycles < CyclesPerFrame) cycles += emulator.Step();`, but `Step()`
+returns *CPU* cycles, which run twice as fast in CGB double speed, while
+`CyclesPerFrame` (70224) counts *base-clock* dots. A double-speed game
+therefore advanced only half a PPU frame per host frame: the game ran at half
+speed and produced audio at half the rate the device consumed it, so the
+output queue starved continuously and the result sounded like static.
+
+`ICPU`/`Emulator` now expose `GetBaseClockCycles()` (the `CPU` accessor already
+existed and documented this exact requirement), and the frame loop paces
+against it. The loop also detects a `Step()` that advances no emulated time -
+`STOP` halts the system clock - and resyncs instead of spinning forever.
+
+### Missing DC-blocking output stage (APU)
+
+A channel whose DAC is enabled but whose digital output is 0 still drives its
+DAC to a rail, so the raw mixer output carries a large constant offset; four
+idle-but-enabled DACs pin the mix at full scale. Hardware removes this with the
+output coupling capacitor, which was not modelled. Measured on the emulator's
+own sample stream, **96.6%** of total output power was DC: the signal sat at
++0.75 for 83% of samples, leaving the music as a small ripple at the rail and
+turning DAC-enable and NR51 routing changes into full-scale steps.
+
+`APU::GenerateSample()` now applies the standard one-pole high-pass
+(0.999958 decay per 4194304Hz tick, raised to the ticks per output sample).
+Measured over 12s of *Oracle of Ages*: mean DC **0.7035 -> 0.0004**, per-100ms
+DC spread **0.750 -> 0.054**, with signal RMS preserved and no clipping. The
+mixer stage is unchanged and is still asserted directly via
+`APU::GetMixerOutput()`.
+
+### Audio queue latency was unbounded (frontend)
+
+The frame loop paced to a flat `1.0/60.0`s while a Game Boy frame is
+70224/4194304s (59.7275Hz), so the emulator produced ~44,300 samples/s against
+44,100 consumed and nothing capped `SDL_QueueAudio`. `TimePerFrame` is now
+derived from the real clock, and `PumpAudio()` caps the queue at roughly four
+frames so host/emulator clock drift cannot accumulate into audible delay.
+
+### Interrupt after the HALT bug pushed the wrong return address (CPU)
+
+`ServiceInterrupt(..., opcodeFetched=true)` unconditionally did `m_PC--` to undo
+the speculative opcode fetch, but `ReadBytePC()` deliberately does *not* advance
+PC when `m_haltBug` is set. Via the canonical `EI; HALT` idiom with an interrupt
+already pending, the dispatch pushed the address of the `HALT` itself, so `RETI`
+returned onto it and re-halted - costing a frame per occurrence. `Step()` now
+restores the saved fetch address, which is correct on both paths. Covered by
+`CPUTests::HaltBugInterruptReturnAddress_Test` (verified to fail before the fix).
+
+### Sprite row index could read past the VRAM bank (PPU)
+
+`RenderPixel` recomputes a sprite's `row` from live OAM and LCDC.2, but the
+sprite list is selected at the end of the previous line. An in-flight OAM DMA
+writing OAM mid-line, or a mid-line OBJ-size change combined with Y-flip, can
+make `row` negative; the subsequent `ushort` cast wrapped the index far past the
+0x2000-byte VRAM bank. The row is now re-validated against `[0, height)` at draw
+time and the sprite is skipped when it falls outside.
+
 ## Implemented fixes
 
 ### CPU, scheduler, interrupts, HALT, and STOP

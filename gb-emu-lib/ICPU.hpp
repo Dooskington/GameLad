@@ -13,6 +13,18 @@ public:
     virtual bool Initialize() = 0;
     virtual bool LoadROM(const char* bootROMPath, const char* cartridgePath) = 0;
     virtual int Step() = 0;
+
+    /*
+        Elapsed cycles in the base (non-doubled) clock domain.
+
+        Step() reports raw CPU cycles, which run twice as fast while CGB
+        double speed is active. Anything pacing against wall-clock time - a
+        host frame loop or an audio window - must use this instead, or it
+        will emulate only half a frame per real frame once a game switches
+        to double speed.
+    */
+    virtual unsigned long long GetBaseClockCycles() const { return 0; }
+
     virtual void TriggerInterrupt(byte interrupt) = 0;
     virtual void QueueInterrupt(byte interrupt) { TriggerInterrupt(interrupt); }
     virtual byte* GetCurrentFrame() = 0;
