@@ -266,6 +266,8 @@ int main(int arg, char** argv)
     TEST_CALL(GPUTests, Line153LYResetTest);
     TEST_CALL(GPUTests, DMABusConflictTest);
     TEST_CALL(GPUTests, OAMDMADoubleSpeedClockDomainTest);
+    TEST_CALL(GPUTests, LCDEnableFirstLineTimingTest);
+    TEST_CALL(GPUTests, OAMCorruptionPatternTest);
     TEST_CALL(GPUTests, WindowRightEdgeTimingTest);
     TEST_CALL(GPUTests, CGBWindowYLatchesWhileDisabledTest);
     TEST_CALL(GPUTests, CGBWindowEnableDeadlineTest);

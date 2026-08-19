@@ -70,6 +70,7 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     m_StatInterruptLine(false),
     m_InternalMode2STATEventFired(false),
     m_Line153LYReset(false),
+    m_FirstLineAfterLCDEnable(false),
     m_WindowLineCounter(0),
     m_WindowYTriggered(false),
     m_lineSpriteCount(0),
@@ -292,6 +293,8 @@ void GPU::Step(unsigned long baseCycles, unsigned long cpuCycles)
         {
             m_ModeClock -= m_Mode0Cycles;
 
+            m_FirstLineAfterLCDEnable = false;
+
             // After the last HBlank, push the framebuffer to the window
             m_LCDControllerYCoordinate++;
             if (m_LCDControllerYCoordinate == 144)
@@ -407,6 +410,195 @@ void GPU::StepOAMDMA(unsigned long cycles)
 bool GPU::IsOAMDMAActive() const
 {
     return m_DMAActive;
+}
+
+int GPU::GetOAMBugRow(OAMBugOrigin origin) const
+{
+    if (m_mode != GameBoyMode::DMG ||
+        !IsLCDDisplayEnabled ||
+        m_DMAActive ||
+        m_FirstLineAfterLCDEnable)
+    {
+        return -1;
+    }
+
+    const unsigned long memoryBusDelay =
+        origin == OAMBugOrigin::MemoryBus ? 4 : 0;
+    const byte mode = GETMODE;
+
+    if (mode == ModeReadingOAM)
+    {
+        // A memory access is observed after its M-cycle has advanced the PPU.
+        // If that cycle crossed the line boundary, it still hit the first row.
+        if (m_ModeClock < memoryBusDelay)
+        {
+            return 1;
+        }
+
+        const unsigned long scanClock = m_ModeClock - memoryBusDelay;
+        if (scanClock < 76)
+        {
+            return static_cast<int>(scanClock / 4) + 1;
+        }
+    }
+
+    return -1;
+}
+
+ushort GPU::ReadOAMWord(int row, int word) const
+{
+    const int offset = row * 8 + word * 2;
+    return static_cast<ushort>(
+        m_OAM[offset] |
+        (static_cast<ushort>(m_OAM[offset + 1]) << 8));
+}
+
+void GPU::WriteOAMWord(int row, int word, ushort value)
+{
+    const int offset = row * 8 + word * 2;
+    m_OAM[offset] = static_cast<byte>(value & 0xFF);
+    m_OAM[offset + 1] = static_cast<byte>(value >> 8);
+}
+
+void GPU::CopyOAMRow(int sourceRow, int destinationRow)
+{
+    memcpy(
+        &m_OAM[destinationRow * 8],
+        &m_OAM[sourceRow * 8],
+        8);
+}
+
+void GPU::CorruptOAMWrite(int row)
+{
+    if (row < 1 || row > 19)
+    {
+        return;
+    }
+
+    const ushort current = ReadOAMWord(row, 0);
+    const ushort previous = ReadOAMWord(row - 1, 0);
+    const ushort previousMiddle = ReadOAMWord(row - 1, 2);
+    const ushort corrupted = static_cast<ushort>(
+        ((current ^ previousMiddle) & (previous ^ previousMiddle)) ^
+        previousMiddle);
+    WriteOAMWord(row, 0, corrupted);
+    memcpy(&m_OAM[row * 8 + 2], &m_OAM[(row - 1) * 8 + 2], 6);
+}
+
+void GPU::CorruptOAMRead(int row)
+{
+    if (row < 1 || row > 19)
+    {
+        return;
+    }
+
+    if ((row % 4) == 2)
+    {
+        if (row < 19)
+        {
+            const ushort a = ReadOAMWord(row - 2, 0);
+            const ushort b = ReadOAMWord(row - 1, 0);
+            const ushort c = ReadOAMWord(row, 0);
+            const ushort d = ReadOAMWord(row - 1, 2);
+            WriteOAMWord(
+                row - 1,
+                0,
+                static_cast<ushort>((b & (a | c | d)) | (a & c & d)));
+            CopyOAMRow(row - 1, row - 2);
+        }
+    }
+    else if ((row % 4) == 0)
+    {
+        if (row < 19)
+        {
+            ushort corrupted;
+            if (row == 8)
+            {
+                const ushort b = ReadOAMWord(row, 0);
+                const ushort c = ReadOAMWord(row - 1, 2);
+                const ushort d = ReadOAMWord(row - 1, 1);
+                const ushort e = ReadOAMWord(row - 1, 0);
+                const ushort f = ReadOAMWord(row - 2, 1);
+                const ushort g = ReadOAMWord(row - 2, 0);
+                const ushort h = ReadOAMWord(row - 4, 0);
+                corrupted = static_cast<ushort>(
+                    (e & (h | g | (static_cast<ushort>(~d) & f) | c | b)) |
+                    (c & g & h));
+            }
+            else
+            {
+                const ushort a = ReadOAMWord(row, 0);
+                const ushort b = ReadOAMWord(row - 1, 2);
+                const ushort c = ReadOAMWord(row - 1, 0);
+                const ushort d = ReadOAMWord(row - 2, 0);
+                const ushort e = ReadOAMWord(row - 4, 0);
+
+                if (row == 4)
+                {
+                    corrupted = static_cast<ushort>(
+                        (c & (a | b | d | e)) |
+                        (a & b & d & e));
+                }
+                else if (row == 12)
+                {
+                    corrupted = static_cast<ushort>(
+                        (c & (a | b | d | e)) |
+                        (b & d & e));
+                }
+                else
+                {
+                    corrupted = static_cast<ushort>(
+                        c | (a & b & d & e));
+                }
+            }
+
+            WriteOAMWord(row - 1, 0, corrupted);
+            CopyOAMRow(row - 1, row - 2);
+            CopyOAMRow(row - 1, row - 4);
+        }
+    }
+    else
+    {
+        const ushort current = ReadOAMWord(row, 0);
+        const ushort previous = ReadOAMWord(row - 1, 0);
+        const ushort previousMiddle = ReadOAMWord(row - 1, 2);
+        const ushort corrupted = static_cast<ushort>(
+            previous | (current & previousMiddle));
+        WriteOAMWord(row - 1, 0, corrupted);
+        WriteOAMWord(row, 0, corrupted);
+    }
+
+    CopyOAMRow(row - 1, row);
+    if (row == 16)
+    {
+        CopyOAMRow(16, 0);
+    }
+}
+
+void GPU::TriggerOAMBug(
+    ushort address,
+    OAMBugAccess access,
+    OAMBugOrigin origin)
+{
+    if (address < 0xFE00 || address > 0xFEFF)
+    {
+        return;
+    }
+
+    const int row = GetOAMBugRow(origin);
+    if (row < 0)
+    {
+        return;
+    }
+
+    if (access == OAMBugAccess::Read)
+    {
+        CorruptOAMRead(row);
+    }
+    else
+    {
+        CorruptOAMWrite(row);
+    }
 }
 
 byte GPU::ReadOAMDMASourceByte(ushort address) const
@@ -1523,6 +1715,7 @@ void GPU::PreBoot()
     // The reference boot ROM completes partway through VBlank on line 0x91.
     m_ModeClock = 0;
     m_Line153LYReset = false;
+    m_FirstLineAfterLCDEnable = false;
     m_InternalMode2STATEventFired = false;
     m_lineSpriteCount = 0;
     SETMODE(ModeVBlank);
@@ -1580,6 +1773,7 @@ void GPU::DisableLCD()
     m_LCDControllerYCoordinate = 0;
     m_ModeClock = 0;
     m_Line153LYReset = false;
+    m_FirstLineAfterLCDEnable = false;
     m_InternalMode2STATEventFired = false;
     m_WindowLineCounter = 0;
     m_WindowYTriggered = false;
@@ -1595,11 +1789,14 @@ void GPU::EnableLCD()
     m_ModeClock = 0;
     m_LCDControllerYCoordinate = 0;
     m_Line153LYReset = false;
+    m_FirstLineAfterLCDEnable = true;
     m_InternalMode2STATEventFired = false;
     m_WindowLineCounter = 0;
     m_WindowYTriggered = false;
     ScanSpritesForLine(m_LCDControllerYCoordinate);
     ComputeScanlineTiming();
+    // The LCD-restart scanline advances LY after 452 dots instead of 456.
+    m_Mode0Cycles -= 4;
     EnterMode(ModeReadingOAM);
 }
 

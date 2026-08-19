@@ -124,8 +124,9 @@ public:
 
     TEST_METHOD(ModeResolutionTest)
     {
-        // 0x80 is "CGB enhanced, DMG compatible", 0xC0 is "CGB only".
-        Assert::IsTrue(ResolveGameBoyMode(ModelPreference::Auto, 0x80) == GameBoyMode::CGB);
+        // Auto uses the oldest supported console. A dual-compatible 0x80 cart
+        // runs on DMG, while a CGB-only 0xC0 cart necessarily selects CGB.
+        Assert::IsTrue(ResolveGameBoyMode(ModelPreference::Auto, 0x80) == GameBoyMode::DMG);
         Assert::IsTrue(ResolveGameBoyMode(ModelPreference::Auto, 0xC0) == GameBoyMode::CGB);
         Assert::IsTrue(ResolveGameBoyMode(ModelPreference::Auto, 0x00) == GameBoyMode::DMG);
 

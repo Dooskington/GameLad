@@ -1405,7 +1405,8 @@ public:
 
         spCPU->Step();
 
-        Assert::AreEqual(8, (int)spCPU->m_GPU->ReadByte(0xFF44));
+        // The shortened LCD-restart line lets the stall reach line 9.
+        Assert::AreEqual(9, (int)spCPU->m_GPU->ReadByte(0xFF44));
     }
 
     TEST_METHOD(STOPWake_Test)

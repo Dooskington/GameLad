@@ -77,6 +77,18 @@
 // Maximum number of sprites the hardware evaluates and draws per scanline.
 #define MaxSpritesPerScanline 10
 
+enum class OAMBugAccess : byte
+{
+    Read,
+    Write
+};
+
+enum class OAMBugOrigin : byte
+{
+    AddressBus,
+    MemoryBus
+};
+
 class GPU : public IMemoryUnit
 {
     friend class GPUTests;
@@ -124,6 +136,10 @@ public:
     // bus or the video bus; I/O and HRAM remain independently accessible.
     bool IsOAMDMAActive() const;
     bool IsCPUAddressBlockedByOAMDMA(ushort address) const;
+    void TriggerOAMBug(
+        ushort address,
+        OAMBugAccess access,
+        OAMBugOrigin origin);
     byte GetOAMDMASnoopByte() const
     {
         return m_DMAActive
@@ -136,6 +152,12 @@ public:
 private:
     void LaunchDMATransfer(const byte address);
     void StepOAMDMA(unsigned long cycles);
+    int GetOAMBugRow(OAMBugOrigin origin) const;
+    ushort ReadOAMWord(int row, int word) const;
+    void WriteOAMWord(int row, int word, ushort value);
+    void CopyOAMRow(int sourceRow, int destinationRow);
+    void CorruptOAMWrite(int row);
+    void CorruptOAMRead(int row);
     void EnterMode(byte mode);
     void DisableLCD();
     void EnableLCD();
@@ -210,6 +232,8 @@ private:
     bool m_StatInterruptLine;
     bool m_InternalMode2STATEventFired;
     bool m_Line153LYReset;
+    // The shortened LCD-restart line does not expose the DMG OAM bug.
+    bool m_FirstLineAfterLCDEnable;
 
     // Internal window line counter. Only increments on lines where the
     // window is actually rendered, independent of the absolute LY/WY delta.
