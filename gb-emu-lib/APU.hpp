@@ -280,12 +280,17 @@ public:
     byte GetFrameSequencerStep() const { return m_FrameSequencerStep; }
     bool IsChannelEnabled(int channel) const;
     byte GetChannelAmplitude(int channel) const;
+    // Raw analog mixer output for the most recently generated sample, before
+    // the DC-blocking stage below. Lets the NR50/NR51 mixing math be verified
+    // independently of the output filter.
+    Sample GetMixerOutput() const { return m_LastMixerOutput; }
 
 private:
     void PowerOn();
     void PowerOff();
     void ClockFrameSequencer();
     void GenerateSample();
+    Sample MixSample() const;
 
 private:
     SquareChannel m_Channel1;
@@ -305,6 +310,26 @@ private:
     unsigned int m_SampleRate;
     double m_CyclesPerSample;
     double m_SampleCycleAccumulator;
+
+    /*
+        DC-blocking (high-pass) output stage.
+
+        A channel whose DAC is enabled but whose digital output is 0 still
+        drives its DAC to a rail, so the raw mixer output carries a large
+        constant offset - four idle-but-enabled DACs pin the mix at full
+        scale. Hardware removes that offset with the output coupling
+        capacitor; without it the audible signal rides at the rail, DAC
+        enable/disable and NR51 routing changes become full-scale steps, and
+        the result sounds like static rather than music.
+
+        This models that capacitor with the standard one-pole high-pass:
+        the charge decays by 0.999958 per 4194304Hz tick, raised to the
+        number of ticks each output sample represents.
+    */
+    double m_CapacitorChargeFactor;
+    float m_CapacitorLeft;
+    float m_CapacitorRight;
+    Sample m_LastMixerOutput;
 
     std::vector<Sample> m_SampleBuffer;
     size_t m_SampleReadIndex;

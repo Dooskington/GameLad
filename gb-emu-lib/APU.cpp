@@ -1,6 +1,14 @@
 #include "pch.hpp"
 #include "APU.hpp"
 
+#include <cmath>
+
+namespace
+{
+    // Per-4194304Hz-tick charge decay of the output coupling capacitor.
+    const double CapacitorChargePerTick = 0.999958;
+}
+
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
 // FF12 - NR12 - Channel 1 Volume Envelope (R/W)
@@ -996,6 +1004,10 @@ APU::APU() :
     m_SampleRate(44100),
     m_CyclesPerSample(4194304.0 / 44100.0),
     m_SampleCycleAccumulator(4194304.0 / 44100.0),
+    m_CapacitorChargeFactor(std::pow(CapacitorChargePerTick, 4194304.0 / 44100.0)),
+    m_CapacitorLeft(0.0f),
+    m_CapacitorRight(0.0f),
+    m_LastMixerOutput({ 0.0f, 0.0f }),
     m_SampleReadIndex(0)
 {
     m_SampleBuffer.reserve(4096);
@@ -1009,6 +1021,7 @@ void APU::SetSampleRate(unsigned int sampleRate)
 {
     m_SampleRate = (sampleRate == 0) ? 44100 : sampleRate;
     m_CyclesPerSample = 4194304.0 / (double)m_SampleRate;
+    m_CapacitorChargeFactor = std::pow(CapacitorChargePerTick, m_CyclesPerSample);
 }
 
 void APU::Step(unsigned long cycles)
@@ -1098,6 +1111,22 @@ void APU::GenerateSample()
         return;
     }
 
+    Sample mixed = MixSample();
+    m_LastMixerOutput = mixed;
+
+    // Remove the DAC bias the same way the output coupling capacitor does on
+    // hardware, so only the AC (audible) component reaches the host.
+    Sample sample;
+    sample.Left = mixed.Left - m_CapacitorLeft;
+    sample.Right = mixed.Right - m_CapacitorRight;
+    m_CapacitorLeft = (float)(mixed.Left - sample.Left * m_CapacitorChargeFactor);
+    m_CapacitorRight = (float)(mixed.Right - sample.Right * m_CapacitorChargeFactor);
+
+    m_SampleBuffer.push_back(sample);
+}
+
+APU::Sample APU::MixSample() const
+{
     Sample sample = { 0.0f, 0.0f };
 
     if (m_Powered)
@@ -1138,7 +1167,7 @@ void APU::GenerateSample()
         sample.Right = (right / 4.0f) * ((float)rightVolume / 8.0f);
     }
 
-    m_SampleBuffer.push_back(sample);
+    return sample;
 }
 
 size_t APU::GetPendingSampleCount() const

@@ -4,7 +4,11 @@ This is a gameboy emulator that I made with [tyren](https://github.com/TyrenDe) 
 
 ![GameLad](https://i.imgur.com/QDiatSD.jpg)
 
-It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests. There isn't audio support.
+It supports Tetris and some other games with a few minor issues. The emulator passes all CPU instruction tests, as well as the instruction timing tests.
+
+## Controls
+
+Directions are `W`/`A`/`S`/`D`, A/B are `K`/`L`, and Start/Select are `N`/`M`.
 
 Learn more [here](https://github.com/Dooskington/GameLad/wiki).
 

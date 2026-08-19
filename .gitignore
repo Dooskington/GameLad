@@ -33,6 +33,8 @@
 /gb-emu_bin
 /gb-emu-lib_bin
 /res/games
+# Out-of-source CMake build trees (see GAMEBOY_FIX_SUMMARY.md)
+build-*/
 
 # Other
 .DS_STORE

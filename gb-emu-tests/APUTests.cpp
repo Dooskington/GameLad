@@ -470,17 +470,62 @@ public:
         size_t count = apu.ConsumeSamples(samples, 300);
         Assert::IsTrue(count > 0);
 
-        APU::Sample last = samples[count - 1];
-
         // Channel 1 duty 1 (0x81) bit 0 is set, so amplitude == current
         // volume (8). Analog DAC value = 1.0 - (8 / 7.5). Left volume factor
         // = (7 + 1) / 8.0 = 1.0. Only one channel contributes to the left
         // sum, which is then divided by 4 (four mixer inputs).
+        //
+        // This is asserted against the raw mixer output: the sample stream
+        // itself is DC-blocked (see DCOffsetIsRemovedFromOutputTest), which
+        // by design removes exactly this kind of steady offset.
         float expectedAnalog = 1.0f - (8.0f / 7.5f);
         float expectedLeft = (expectedAnalog / 4.0f) * 1.0f;
 
-        Assert::IsTrue(std::fabs(last.Left - expectedLeft) < 0.0001f);
-        Assert::IsTrue(last.Right == 0.0f);
+        APU::Sample mixed = apu.GetMixerOutput();
+        Assert::IsTrue(std::fabs(mixed.Left - expectedLeft) < 0.0001f);
+        Assert::IsTrue(mixed.Right == 0.0f);
+    }
+
+    // An enabled-but-idle DAC sits at a rail, so the raw mixer output carries
+    // a large constant offset. Hardware strips it with the output coupling
+    // capacitor; without that the audible signal rides at full scale and
+    // routing changes turn into full-scale steps (audible as static).
+    TEST_METHOD(DCOffsetIsRemovedFromOutputTest)
+    {
+        APU apu;
+        apu.SetSampleRate(44100);
+
+        apu.WriteByte(SoundOnOff, 0x80);
+        // DAC on but the channel is never triggered: digital output stays 0,
+        // which the DAC drives to a rail. This is the real source of the
+        // offset - it is pure DC, with no audio content to preserve.
+        apu.WriteByte(Channel1VolumeEnvelope, 0x80);
+        apu.WriteByte(OutputTerminalSelection, 0x11); // channel 1 -> both sides
+        apu.WriteByte(ChannelControl, 0x77);          // full volume both sides
+
+        // The raw mixer output is a large steady offset...
+        apu.Step(4194304 / 60);
+        APU::Sample mixed = apu.GetMixerOutput();
+        Assert::IsTrue(std::fabs(mixed.Left) > 0.2f);
+
+        // ...which the output stage decays away. Give the filter a second to
+        // settle, then inspect the samples produced after that.
+        apu.Step(4194304);
+        apu.ClearSampleBuffer();
+        apu.Step(4194304 / 60);
+
+        APU::Sample samples[64];
+        size_t count = apu.ConsumeSamples(samples, 64);
+        Assert::IsTrue(count > 0);
+
+        for (size_t i = 0; i < count; i++)
+        {
+            Assert::IsTrue(std::fabs(samples[i].Left) < 0.01f);
+            Assert::IsTrue(std::fabs(samples[i].Right) < 0.01f);
+        }
+
+        // The mixer stage itself is untouched by the filter.
+        Assert::IsTrue(std::fabs(apu.GetMixerOutput().Left) > 0.2f);
     }
 
     // No audio is produced while the APU is powered off, regardless of any

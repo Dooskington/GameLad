@@ -912,6 +912,11 @@ int CPU::Step()
     byte fetchedInterrupts = GetPendingInterrupts();
     if ((m_IME != 0x00) && (fetchedInterrupts != 0x00))
     {
+        // Undo the speculative fetch. Restoring the saved address rather than
+        // decrementing matters for the HALT bug: ReadBytePC() deliberately
+        // leaves PC unchanged there, so a blind m_PC-- would push the HALT
+        // opcode itself as the return address and RETI would re-halt.
+        m_PC = addr;
         return static_cast<int>(ServiceInterrupt(fetchedInterrupts, true));
     }
 
@@ -1501,7 +1506,7 @@ unsigned long CPU::ServiceInterrupt(byte activeInterrupts, bool opcodeFetched)
 
     if (opcodeFetched)
     {
-        m_PC--;
+        // The caller already rewound PC to the fetched opcode's address.
     }
     else
     {

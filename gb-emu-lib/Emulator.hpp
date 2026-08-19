@@ -20,6 +20,7 @@ public:
     Emulator();
 
     int Step();
+    unsigned long long GetBaseClockCycles() const;
     void Stop();
     bool Initialize(const char* bootROMPath, const char* cartridgePath);
     byte* GetCurrentFrame();

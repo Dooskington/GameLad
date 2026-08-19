@@ -2,11 +2,15 @@
 #include <Emulator.hpp>
 #include <vector>
 
-// 60 FPS or 16.67ms
-const double TimePerFrame = 1.0 / 60.0;
-
-// The number of CPU cycles per frame
+// The number of base-clock cycles in one Game Boy frame
 const unsigned int CyclesPerFrame = 70224;
+
+// The Game Boy's real frame rate is 4194304 / 70224 = 59.7275Hz, not 60Hz.
+// Pacing to a flat 1/60s runs the emulator ~0.5% fast, which makes it produce
+// audio slightly faster than the audio device consumes it and steadily grows
+// output latency.
+const double GameBoyClockHz = 4194304.0;
+const double TimePerFrame = CyclesPerFrame / GameBoyClockHz;
 
 struct SDLWindowDeleter
 {
@@ -77,6 +81,11 @@ const size_t AudioScratchFrames = 8192;
 std::vector<float> audioScratchBuffer(AudioScratchFrames * 2);
 SDL_AudioDeviceID audioDeviceId = 0;
 
+// ConsumeAudioSamples() always writes interleaved stereo floats, so a frame
+// is fixed at 2 floats regardless of what the device reports.
+const Uint32 AudioBytesPerFrame = 2 * sizeof(float);
+Uint32 maxQueuedAudioBytes = 0;
+
 void PumpAudio()
 {
     if (audioDeviceId == 0)
@@ -92,7 +101,14 @@ void PumpAudio()
             break;
         }
 
-        SDL_QueueAudio(audioDeviceId, audioScratchBuffer.data(), (Uint32)(framesConsumed * 2 * sizeof(float)));
+        // The emulator is paced by SDL_GetPerformanceCounter while the device
+        // drains at its own clock. Those never match exactly, so cap how much
+        // can sit in the queue - otherwise the drift accumulates into
+        // ever-growing audio latency.
+        if (SDL_GetQueuedAudioSize(audioDeviceId) < maxQueuedAudioBytes)
+        {
+            SDL_QueueAudio(audioDeviceId, audioScratchBuffer.data(), (Uint32)(framesConsumed * AudioBytesPerFrame));
+        }
 
         if (framesConsumed < AudioScratchFrames)
         {
@@ -269,6 +285,9 @@ int main(int argc, char** argv)
     }
     else
     {
+        // Roughly four frames of audio: enough to ride out frame-time jitter
+        // without an audible delay between action and sound.
+        maxQueuedAudioBytes = (Uint32)(obtainedSpec.freq * AudioBytesPerFrame * 4.0 * TimePerFrame);
         SDL_PauseAudioDevice(audioDeviceId, 0);
     }
 
@@ -281,7 +300,7 @@ int main(int argc, char** argv)
 
         emulator.SetVSyncCallback(&VSyncCallback);
 
-        unsigned int cycles = 0;
+        unsigned long long nextFrameBaseCycle = emulator.GetBaseClockCycles();
         Uint64 frameStart = SDL_GetPerformanceCounter();
         while (isRunning)
         {
@@ -302,12 +321,25 @@ int main(int argc, char** argv)
             }
 
             ProcessInput(emulator);
-            while (cycles < CyclesPerFrame)
-            {
-                cycles += emulator.Step();
-            }
 
-            cycles -= CyclesPerFrame;
+            // Advance a frame's worth of *base-clock* cycles. Step() returns
+            // raw CPU cycles, which double in CGB double-speed mode, so
+            // counting those would emulate only half a frame per real frame.
+            nextFrameBaseCycle += CyclesPerFrame;
+            while (emulator.GetBaseClockCycles() < nextFrameBaseCycle)
+            {
+                unsigned long long before = emulator.GetBaseClockCycles();
+                emulator.Step();
+                if (emulator.GetBaseClockCycles() == before)
+                {
+                    // STOP halts the system clock, so no emulated time passes
+                    // and there is nothing left to run this frame. Resync the
+                    // target rather than accumulating a deficit the CPU would
+                    // have to sprint through after the joypad wakes it.
+                    nextFrameBaseCycle = before;
+                    break;
+                }
+            }
 
             PumpAudio();
 
