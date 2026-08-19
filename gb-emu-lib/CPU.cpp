@@ -1192,6 +1192,14 @@ byte CPU::ReadMemory(ushort address)
     AdvanceHardware(4);
     m_instructionCycles += 4;
 
+    if (m_GPU != nullptr && address >= 0xFE00 && address <= 0xFEFF)
+    {
+        m_GPU->TriggerOAMBug(
+            address,
+            OAMBugAccess::Read,
+            OAMBugOrigin::MemoryBus);
+    }
+
     if ((m_GPU != nullptr) && m_GPU->IsOAMDMAActive() && IsCGBHardware(m_mode))
     {
         const ushort dmaSource = m_GPU->GetOAMDMASourceAddress();
@@ -1235,6 +1243,14 @@ bool CPU::WriteMemory(ushort address, byte val)
 
     AdvanceHardware(4);
     m_instructionCycles += 4;
+
+    if (m_GPU != nullptr && address >= 0xFE00 && address <= 0xFEFF)
+    {
+        m_GPU->TriggerOAMBug(
+            address,
+            OAMBugAccess::Write,
+            OAMBugOrigin::MemoryBus);
+    }
 
     if (IsAddressBlockedByDMA(address))
     {
@@ -2211,6 +2227,14 @@ unsigned long CPU::CPr(const byte& opCode)
 unsigned long CPU::INCrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, false);
+    if (m_GPU != nullptr && *rr >= 0xFE00 && *rr <= 0xFEFF)
+    {
+        m_GPU->TriggerOAMBug(
+            *rr,
+            OAMBugAccess::Write,
+            OAMBugOrigin::AddressBus);
+    }
+    IdleMachineCycle();
     *rr += 1;
 
     return 8;
@@ -2229,6 +2253,14 @@ unsigned long CPU::INCrr(const byte& opCode)
 unsigned long CPU::DECrr(const byte& opCode)
 {
     ushort* rr = GetUShortRegister(opCode >> 4, false);
+    if (m_GPU != nullptr && *rr >= 0xFE00 && *rr <= 0xFEFF)
+    {
+        m_GPU->TriggerOAMBug(
+            *rr,
+            OAMBugAccess::Write,
+            OAMBugOrigin::AddressBus);
+    }
+    IdleMachineCycle();
     *rr -= 1;
 
     return 8;
@@ -2387,6 +2419,13 @@ unsigned long CPU::PUSHrr(const byte& opCode)
 
     // Real hardware performs the internal SP-decrement M-cycle before either
     // byte is written to the stack.
+    if (m_GPU != nullptr && m_SP >= 0xFE00 && m_SP <= 0xFEFF)
+    {
+        m_GPU->TriggerOAMBug(
+            m_SP,
+            OAMBugAccess::Write,
+            OAMBugOrigin::AddressBus);
+    }
     IdleMachineCycle();
     PushUShortToSP(*rr);
 

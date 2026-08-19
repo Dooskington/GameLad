@@ -38,8 +38,8 @@ enum class GameBoyMode
 // What the frontend/runner asked for, before the cartridge is known.
 enum class ModelPreference
 {
-    // Pick the console from the cartridge's CGB flag, like inserting the
-    // cartridge into whichever console it was made for.
+    // Use the oldest console the cartridge supports: dual-compatible games
+    // run as DMG, while CGB-only games select CGB hardware automatically.
     Auto,
     ForceDMG,
     ForceCGB,
@@ -85,7 +85,7 @@ inline GameBoyMode ResolveGameBoyMode(ModelPreference preference, byte cgbFlag)
         return IsCGBCartridgeFlag(cgbFlag) ? GameBoyMode::CGB : GameBoyMode::CGBCompatibility;
     case ModelPreference::Auto:
     default:
-        return IsCGBCartridgeFlag(cgbFlag) ? GameBoyMode::CGB : GameBoyMode::DMG;
+        return IsCGBOnlyCartridgeFlag(cgbFlag) ? GameBoyMode::CGB : GameBoyMode::DMG;
     }
 }
 

@@ -130,13 +130,15 @@ public:
                     spGPU->Step(4);
                 }
 
-                for (int cycles = spGPU->m_ModeClock; cycles < ReadingOAMVRAMCycles; cycles += 4)
+                const int mode3Cycles = (int)spGPU->m_Mode3Cycles;
+                for (int cycles = spGPU->m_ModeClock; cycles < mode3Cycles; cycles += 4)
                 {
                     Assert::AreEqual(ModeReadingOAMVRAM, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
                     spGPU->Step(4);
                 }
 
-                for (int cycles = spGPU->m_ModeClock; cycles < HBlankCycles; cycles += 4)
+                const int mode0Cycles = (int)spGPU->m_Mode0Cycles;
+                for (int cycles = spGPU->m_ModeClock; cycles < mode0Cycles; cycles += 4)
                 {
                     Assert::AreEqual(ModeHBlank, (int)(spGPU->ReadByte(LCDControllerStatus) & 0x03));
                     spGPU->Step(4);
@@ -226,6 +228,87 @@ public:
         gpu.Step(2, 4);
         Assert::IsFalse(gpu.IsOAMDMAActive());
         Assert::AreEqual(OAMDMABytes, (int)gpu.m_DMAOffset);
+    }
+
+    TEST_METHOD(LCDEnableFirstLineTimingTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPU gpu(spMMU.get(), nullptr);
+
+        gpu.WriteByte(LCDControl, 0x80);
+        Assert::IsTrue(gpu.m_FirstLineAfterLCDEnable);
+
+        for (int cycles = 0; cycles < 448; cycles += 4)
+        {
+            gpu.Step(4);
+        }
+        Assert::AreEqual(0, (int)gpu.ReadByte(LCDControllerYCoordinate));
+
+        gpu.Step(4);
+        Assert::AreEqual(1, (int)gpu.ReadByte(LCDControllerYCoordinate));
+        Assert::IsFalse(gpu.m_FirstLineAfterLCDEnable);
+    }
+
+    TEST_METHOD(OAMCorruptionPatternTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPU gpu(spMMU.get(), nullptr);
+
+        for (int i = 0; i < OAMDMABytes; i++)
+        {
+            gpu.m_OAM[i] = (byte)i;
+        }
+
+        gpu.m_LCDControl = 0x80;
+        gpu.m_LCDControllerStatus = ModeReadingOAM;
+        gpu.m_ModeClock = 8;
+        gpu.m_FirstLineAfterLCDEnable = false;
+
+        gpu.WriteOAMWord(3, 0, 0xAAAA);
+        gpu.WriteOAMWord(2, 0, 0xCCCC);
+        gpu.WriteOAMWord(2, 2, 0xF0F0);
+        gpu.TriggerOAMBug(
+            0xFE00,
+            OAMBugAccess::Write,
+            OAMBugOrigin::AddressBus);
+
+        Assert::AreEqual(0xE8E8, (int)gpu.ReadOAMWord(3, 0));
+        for (int i = 2; i < 8; i++)
+        {
+            Assert::AreEqual(
+                (int)gpu.m_OAM[2 * 8 + i],
+                (int)gpu.m_OAM[3 * 8 + i]);
+        }
+
+        for (int i = 0; i < OAMDMABytes; i++)
+        {
+            gpu.m_OAM[i] = (byte)i;
+        }
+
+        gpu.m_ModeClock = 12;
+        gpu.WriteOAMWord(3, 0, 0xAAAA);
+        gpu.WriteOAMWord(2, 0, 0x0F0F);
+        gpu.WriteOAMWord(2, 2, 0xF0F0);
+        gpu.TriggerOAMBug(
+            0xFE00,
+            OAMBugAccess::Read,
+            OAMBugOrigin::MemoryBus);
+
+        Assert::AreEqual(0xAFAF, (int)gpu.ReadOAMWord(2, 0));
+        for (int i = 0; i < 8; i++)
+        {
+            Assert::AreEqual(
+                (int)gpu.m_OAM[2 * 8 + i],
+                (int)gpu.m_OAM[3 * 8 + i]);
+        }
+
+        const ushort row3Word = gpu.ReadOAMWord(3, 0);
+        gpu.SetGameBoyMode(GameBoyMode::CGB);
+        gpu.TriggerOAMBug(
+            0xFE00,
+            OAMBugAccess::Read,
+            OAMBugOrigin::MemoryBus);
+        Assert::AreEqual((int)row3Word, (int)gpu.ReadOAMWord(3, 0));
     }
 
     TEST_METHOD(WindowRightEdgeTimingTest)
