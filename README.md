@@ -10,6 +10,19 @@ It supports Tetris and some other games with a few minor issues. The emulator pa
 
 Directions are `W`/`A`/`S`/`D`, A/B are `K`/`L`, and Start/Select are `N`/`M`.
 
+SDL-compatible game controllers are enabled by default. The D-pad and left
+stick control movement. The east face button is Game Boy A, the south face
+button is Game Boy B, Start/Menu is Start, and Back/View/Share is Select.
+SDL normalizes these positions across Xbox, PlayStation, Nintendo, and other
+known controller layouts.
+
+To disable gamepad initialization, pass `--disable-gamepad` before or after the
+existing positional arguments:
+
+```bat
+build\bin\gb-emu.exe 3 "E:\ROMs\Tetris.gb" --disable-gamepad
+```
+
 Learn more [here](https://github.com/Dooskington/GameLad/wiki).
 
 Technology     | Purpose
