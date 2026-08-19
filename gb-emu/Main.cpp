@@ -11,6 +11,7 @@ const unsigned int CyclesPerFrame = 70224;
 // output latency.
 const double GameBoyClockHz = 4194304.0;
 const double TimePerFrame = CyclesPerFrame / GameBoyClockHz;
+const Sint16 GamepadAxisThreshold = 16000;
 
 struct SDLWindowDeleter
 {
@@ -44,6 +45,102 @@ struct SDLTextureDeleter
         }
     }
 };
+
+struct SDLGameControllerDeleter
+{
+    void operator()(SDL_GameController* controller)
+    {
+        if (controller != nullptr)
+        {
+            SDL_GameControllerClose(controller);
+        }
+    }
+};
+
+typedef std::unique_ptr<SDL_GameController, SDLGameControllerDeleter> SDLGameControllerPtr;
+
+bool ParseArguments(
+    int argc,
+    char** argv,
+    int& windowScale,
+    std::string& romPath,
+    bool& gamepadEnabled)
+{
+    std::vector<std::string> positionalArguments;
+    for (int index = 1; index < argc; index++)
+    {
+        const std::string argument = argv[index];
+        if (argument == "--disable-gamepad")
+        {
+            gamepadEnabled = false;
+        }
+        else if (argument.size() >= 2 && argument[0] == '-' && argument[1] == '-')
+        {
+            Logger::LogError("Unknown option: %s", argument.c_str());
+            return false;
+        }
+        else
+        {
+            positionalArguments.push_back(argument);
+        }
+    }
+
+    if (positionalArguments.size() > 2)
+    {
+        Logger::LogError("Usage: gb-emu [window scale] [ROM path] [--disable-gamepad]");
+        return false;
+    }
+
+    if (!positionalArguments.empty())
+    {
+        windowScale = atoi(positionalArguments[0].c_str());
+    }
+    if (positionalArguments.size() > 1)
+    {
+        romPath = positionalArguments[1];
+    }
+
+    return true;
+}
+
+SDLGameControllerPtr OpenGameController(int deviceIndex)
+{
+    if (deviceIndex < 0 ||
+        deviceIndex >= SDL_NumJoysticks() ||
+        !SDL_IsGameController(deviceIndex))
+    {
+        return SDLGameControllerPtr(nullptr);
+    }
+
+    SDL_GameController* controller = SDL_GameControllerOpen(deviceIndex);
+    if (controller == nullptr)
+    {
+        Logger::LogError(
+            "Game controller could not be opened! SDL error: '%s'",
+            SDL_GetError());
+        return SDLGameControllerPtr(nullptr);
+    }
+
+    const char* name = SDL_GameControllerName(controller);
+    Logger::Log(
+        "Opened game controller: %s",
+        name == nullptr ? "Unknown controller" : name);
+    return SDLGameControllerPtr(controller);
+}
+
+SDLGameControllerPtr OpenFirstAvailableGameController()
+{
+    for (int deviceIndex = 0; deviceIndex < SDL_NumJoysticks(); deviceIndex++)
+    {
+        SDLGameControllerPtr controller = OpenGameController(deviceIndex);
+        if (controller != nullptr)
+        {
+            return controller;
+        }
+    }
+
+    return SDLGameControllerPtr(nullptr);
+}
 
 void Render(SDL_Renderer* pRenderer, SDL_Texture* pTexture, Emulator& emulator)
 {
@@ -123,7 +220,7 @@ void VSyncCallback()
     Render(spRenderer.get(), spTexture.get(), emulator);
 }
 
-void ProcessInput(Emulator& emulator)
+void ProcessInput(Emulator& emulator, SDL_GameController* pController)
 {
     SDL_PumpEvents();
     const Uint8 *keys = SDL_GetKeyboardState(NULL);
@@ -170,6 +267,54 @@ void ProcessInput(Emulator& emulator)
         buttons |= JOYPAD_BUTTONS_SELECT;
     }
 
+    if (pController != nullptr && SDL_GameControllerGetAttached(pController))
+    {
+        const Sint16 horizontal =
+            SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTX);
+        const Sint16 vertical =
+            SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTY);
+
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_DPAD_UP) ||
+            vertical < -GamepadAxisThreshold)
+        {
+            input |= JOYPAD_INPUT_UP;
+        }
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ||
+            horizontal < -GamepadAxisThreshold)
+        {
+            input |= JOYPAD_INPUT_LEFT;
+        }
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ||
+            vertical > GamepadAxisThreshold)
+        {
+            input |= JOYPAD_INPUT_DOWN;
+        }
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ||
+            horizontal > GamepadAxisThreshold)
+        {
+            input |= JOYPAD_INPUT_RIGHT;
+        }
+
+        // Preserve the original Game Boy layout by physical position:
+        // east face button is A, south face button is B.
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_B))
+        {
+            buttons |= JOYPAD_BUTTONS_A;
+        }
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_A))
+        {
+            buttons |= JOYPAD_BUTTONS_B;
+        }
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_START))
+        {
+            buttons |= JOYPAD_BUTTONS_START;
+        }
+        if (SDL_GameControllerGetButton(pController, SDL_CONTROLLER_BUTTON_BACK))
+        {
+            buttons |= JOYPAD_BUTTONS_SELECT;
+        }
+    }
+
     emulator.SetInput(input, buttons);
 }
 
@@ -178,10 +323,7 @@ int main(int argc, char** argv)
     int windowWidth = 160;
     int windowHeight = 144;
     int windowScale = 2;
-    if(argc > 1)
-    {
-        windowScale = atoi(argv[1]);
-    }
+    bool gamepadEnabled = true;
 
     std::string bootROM;
     //std::string bootROM = "res/games/dmg_bios.bin";
@@ -223,9 +365,9 @@ int main(int argc, char** argv)
     // CGB Only
     //std::string romPath = "res/games/Lemmings.gbc";   // Requires MBC5
     //std::string romPath = "res/games/Mario2.gbc";   // Requires MBC5
-    if(argc > 2)
+    if (!ParseArguments(argc, argv, windowScale, romPath, gamepadEnabled))
     {
-        romPath = argv[2];
+        return 1;
     }
 
     bool isRunning = true;
@@ -238,6 +380,30 @@ int main(int argc, char** argv)
     {
         Logger::LogError("SDL could not initialize! SDL error: '%s'", SDL_GetError());
         return false;
+    }
+
+    SDLGameControllerPtr spGameController;
+    if (gamepadEnabled)
+    {
+        if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) < 0)
+        {
+            Logger::LogError(
+                "Gamepad support could not initialize; keyboard input remains enabled. SDL error: '%s'",
+                SDL_GetError());
+            gamepadEnabled = false;
+        }
+        else
+        {
+            spGameController = OpenFirstAvailableGameController();
+            if (spGameController == nullptr)
+            {
+                Logger::Log("No compatible game controller found; keyboard input remains enabled.");
+            }
+        }
+    }
+    else
+    {
+        Logger::Log("Gamepad support disabled.");
     }
 
     // Create window
@@ -312,6 +478,26 @@ int main(int argc, char** argv)
                     isRunning = false;
                     emulator.SetVSyncCallback(nullptr);
                 }
+                else if (gamepadEnabled &&
+                         event.type == SDL_CONTROLLERDEVICEADDED &&
+                         spGameController == nullptr)
+                {
+                    spGameController = OpenGameController(event.cdevice.which);
+                }
+                else if (gamepadEnabled &&
+                         event.type == SDL_CONTROLLERDEVICEREMOVED &&
+                         spGameController != nullptr)
+                {
+                    SDL_Joystick* joystick =
+                        SDL_GameControllerGetJoystick(spGameController.get());
+                    if (joystick != nullptr &&
+                        SDL_JoystickInstanceID(joystick) == event.cdevice.which)
+                    {
+                        Logger::Log("Game controller disconnected.");
+                        spGameController.reset();
+                        spGameController = OpenFirstAvailableGameController();
+                    }
+                }
             }
 
             if (!isRunning)
@@ -320,7 +506,7 @@ int main(int argc, char** argv)
                 continue;
             }
 
-            ProcessInput(emulator);
+            ProcessInput(emulator, spGameController.get());
 
             // Advance a frame's worth of *base-clock* cycles. Step() returns
             // raw CPU cycles, which double in CGB double-speed mode, so
@@ -369,6 +555,7 @@ int main(int argc, char** argv)
         audioDeviceId = 0;
     }
 
+    spGameController.reset();
     spTexture.reset();
     spRenderer.reset();
     spWindow.reset();
