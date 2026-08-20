@@ -1,5 +1,12 @@
 #pragma once
 
+class StateSerializer;
+
+typedef bool (*SerialLinkCallback)(
+    void* context,
+    bool outgoingBit,
+    bool& incomingBit);
+
 #define INT40 0x40  // VBlank
 #define INT48 0x48  // STAT
 #define INT50 0x50  // Timer

@@ -27,6 +27,28 @@ Timer::~Timer()
 {
 }
 
+void Timer::Serialize(StateSerializer& state)
+{
+    state.SyncEnum(m_mode);
+    state.Sync(m_doubleSpeed);
+    state.Sync(m_SystemCounter);
+    state.Sync(m_TimerCounter);
+    state.Sync(m_TimerModulo);
+    state.Sync(m_TimerControl);
+    state.Sync(m_OverflowDelay);
+    state.Sync(m_ReloadedThisCycle);
+
+    if (state.IsReading() &&
+        (static_cast<unsigned int>(m_mode) >
+             static_cast<unsigned int>(GameBoyMode::CGBCompatibility) ||
+         m_TimerControl > 0x07 ||
+         m_OverflowDelay > 4 ||
+         (!IsCGBHardware(m_mode) && m_doubleSpeed)))
+    {
+        state.Invalidate();
+    }
+}
+
 void Timer::PreBoot()
 {
     /*

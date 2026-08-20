@@ -1,6 +1,8 @@
 #include "pch.hpp"
 #include "MMU.hpp"
 
+#include <limits>
+
 /*
     General Memory Map
     ==================
@@ -40,6 +42,7 @@
 
 MMU::MMU() :
     m_isBooting(0x00),
+    m_BIOSSize(0),
     m_mode(GameBoyMode::DMG),
     m_SVBK(0x00),
     m_speedSwitchArmed(false),
@@ -103,8 +106,11 @@ void MMU::RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, I
 
 byte MMU::Read(const ushort& address)
 {
-    // If we are booting and reading below 0x00FF, read from the boot rom.
-    if ((m_isBooting == 0x00) && (address <= 0x00FF))
+    // CGB boot ROM keeps 0x0100-0x01FF mapped to the cartridge header.
+    const bool bootROMAddress =
+        address <= 0x00FF ||
+        (m_BIOSSize >= 0x0900 && address >= 0x0200 && address <= 0x08FF);
+    if (m_isBooting == 0x00 && bootROMAddress)
     {
         if (m_BIOS == nullptr)
         {
@@ -130,47 +136,111 @@ bool MMU::LoadBootROM(const char* bootROMPath)
 {
     if (bootROMPath == nullptr)
     {
-        // Set the booted flag, this will trigger the CPU to "preboot".
+        return LoadBootROM(nullptr, 0);
+    }
+
+    std::ifstream file(bootROMPath, std::ios::in | std::ios::binary | std::ios::ate);
+    if (!file.is_open())
+    {
+        Logger::Log("Failed to load boot ROM %s", bootROMPath);
+        return false;
+    }
+
+    const std::streampos streamSize = file.tellg();
+    if (streamSize < static_cast<std::streampos>(256) ||
+        streamSize > static_cast<std::streampos>((std::numeric_limits<unsigned int>::max)()))
+    {
+        Logger::Log("Boot rom at '%s' is the wrong size!", bootROMPath);
+        return false;
+    }
+
+    const size_t size = static_cast<size_t>(streamSize);
+    std::unique_ptr<byte[]> bios(new byte[size]);
+    file.seekg(0, std::ios::beg);
+    if (!file.read(reinterpret_cast<char*>(bios.get()), size))
+    {
+        Logger::Log("Failed to load boot ROM %s", bootROMPath);
+        return false;
+    }
+
+    if (!LoadBootROM(bios.get(), size))
+    {
+        return false;
+    }
+    Logger::Log("Loaded boot rom %s (%u bytes)", bootROMPath, static_cast<unsigned int>(size));
+    return true;
+}
+
+bool MMU::LoadBootROM(const byte* bootROMData, size_t bootROMSize)
+{
+    if (bootROMData == nullptr || bootROMSize == 0)
+    {
+        m_BIOS.reset();
+        m_BIOSSize = 0;
+        // Set the booted flag, which causes the CPU to install post-boot state.
         m_isBooting = 0x01;
         return true;
     }
-    else
+
+    if (bootROMSize < 256 ||
+        bootROMSize > static_cast<size_t>((std::numeric_limits<unsigned int>::max)()))
     {
-        bool succeeded = false;
-        m_isBooting = 0x00;
-        std::streampos size;
+        return false;
+    }
 
-        std::ifstream file(bootROMPath, std::ios::in | std::ios::binary | std::ios::ate);
-        if (file.is_open())
-        {
-            size = file.tellg();
+    m_BIOS.reset(new byte[bootROMSize]);
+    std::memcpy(m_BIOS.get(), bootROMData, bootROMSize);
+    m_BIOSSize = bootROMSize;
+    m_isBooting = 0x00;
+    return true;
+}
 
-#if WINDOWS
-            int iSize = static_cast<int>(size.seekpos());
-#else
-            int iSize = size;
-#endif
-            if (iSize < 256)
-            {
-                Logger::Log("Boot rom at '%s' is the wrong size!", bootROMPath);
-            }
-            else
-            {
-                file.seekg(0, std::ios::beg);
-                m_BIOS = std::unique_ptr<byte[]>(new byte[static_cast<unsigned int>(iSize)]);
-                if (file.read(reinterpret_cast<char*>(m_BIOS.get()), iSize))
-                {
-                    Logger::Log("Loaded boot rom %s (%d bytes)", bootROMPath, iSize);
-                    succeeded = true;
-                }
-                else
-                {
-                    Logger::Log("Failed to load boot ROM %s", bootROMPath);
-                }
-            }
-        }
+void MMU::Serialize(StateSerializer& state)
+{
+    unsigned long long biosSize = static_cast<unsigned long long>(m_BIOSSize);
+    unsigned long long biosHash = 1469598103934665603ULL;
+    for (size_t index = 0; index < m_BIOSSize; ++index)
+    {
+        biosHash ^= m_BIOS[index];
+        biosHash *= 1099511628211ULL;
+    }
+    state.Sync(biosSize);
+    state.Sync(biosHash);
+    state.Sync(m_isBooting);
+    state.SyncEnum(m_mode);
+    state.SyncBytes(m_WRAM, sizeof(m_WRAM));
+    state.Sync(m_SVBK);
+    state.SyncBytes(m_HRAM, sizeof(m_HRAM));
+    state.Sync(m_speedSwitchArmed);
+    state.Sync(m_doubleSpeed);
+    state.Sync(m_RP);
+    state.Sync(m_OPRI);
+    state.Sync(m_undocumented72);
+    state.Sync(m_undocumented73);
+    state.Sync(m_undocumented74);
+    state.Sync(m_undocumented75);
+    state.Sync(m_IE);
+    state.Sync(m_IF);
 
-        return succeeded;
+    if (state.IsReading() &&
+        (biosSize != m_BIOSSize ||
+         biosHash != [&]()
+         {
+             unsigned long long hash = 1469598103934665603ULL;
+             for (size_t index = 0; index < m_BIOSSize; ++index)
+             {
+                 hash ^= m_BIOS[index];
+                 hash *= 1099511628211ULL;
+             }
+             return hash;
+         }() ||
+         static_cast<unsigned int>(m_mode) >
+             static_cast<unsigned int>(GameBoyMode::CGBCompatibility) ||
+         m_SVBK > 0x07 ||
+         m_IF > 0x1F ||
+         (!IsCGBHardware(m_mode) && (m_speedSwitchArmed || m_doubleSpeed))))
+    {
+        state.Invalidate();
     }
 }
 

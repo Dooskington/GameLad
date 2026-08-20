@@ -1,0 +1,43 @@
+# Software Information
+display_name = "Nintendo - Game Boy / Color (GameLad)"
+authors = "Dooskington|TyrenDe"
+supported_extensions = "gb|gbc"
+corename = "GameLad"
+license = "MIT"
+permissions = ""
+display_version = "0.2.0"
+categories = "Emulator"
+
+# Hardware Information
+manufacturer = "Nintendo"
+systemname = "Game Boy/Game Boy Color"
+systemid = "game_boy"
+
+# Libretro Features
+supports_no_game = "false"
+database = "Nintendo - Game Boy|Nintendo - Game Boy Color"
+savestate = "true"
+savestate_features = "deterministic"
+libretro_saves = "true"
+cheats = "true"
+input_descriptors = "true"
+memory_descriptors = "true"
+core_options = "true"
+core_options_version = "2.0"
+load_subsystem = "false"
+hw_render = "false"
+needs_fullpath = "false"
+disk_control = "false"
+is_experimental = "true"
+
+# BIOS / Firmware
+firmware_count = 2
+firmware0_desc = "gb_bios.bin (Game Boy boot ROM)"
+firmware0_path = "gb_bios.bin"
+firmware0_opt = "true"
+firmware1_desc = "gbc_bios.bin (Game Boy Color boot ROM)"
+firmware1_path = "gbc_bios.bin"
+firmware1_opt = "true"
+notes = "Boot ROMs are optional and disabled by default. Enable them in Core Options. Link-cable multiplayer uses RetroArch's netpacket interface."
+
+description = "A libretro port of the GameLad Game Boy and Game Boy Color emulator with save states, managed cartridge saves, cheats, achievements, rumble, and link-cable netplay support."

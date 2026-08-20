@@ -12,6 +12,8 @@ public:
     void AcknowledgeInterrupt(bool doubleSpeed = false);
     bool IsWaitingForExternalClock() const;
     bool ClockExternalBit(bool incomingBit, bool& outgoingBit);
+    void SetLinkCallback(SerialLinkCallback callback, void* context);
+    void Serialize(StateSerializer& state);
 
     void SetGameBoyMode(GameBoyMode mode) { m_mode = mode; }
 
@@ -34,4 +36,6 @@ private:
     bool m_MasterClock;
     unsigned long m_ClockCycles;
     byte m_InterruptSuppressCycles;
+    SerialLinkCallback m_LinkCallback;
+    void* m_LinkContext;
 };

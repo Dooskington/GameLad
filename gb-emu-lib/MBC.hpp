@@ -34,11 +34,16 @@ class MBC : public IMemoryUnit
 public:
     MBC(byte* pROM, unsigned int romSize, byte* pRAM, unsigned int ramSize);
     virtual ~MBC();
+    virtual void Serialize(StateSerializer& state) = 0;
+    virtual byte* GetRTCData() { return nullptr; }
+    virtual size_t GetRTCDataSize() const { return 0; }
+    virtual bool IsRumbleEnabled() const { return false; }
 
 protected:
     byte ReadROM(unsigned int bank, unsigned int offset) const;
     byte ReadRAM(unsigned int bank, unsigned int offset) const;
     bool WriteRAM(unsigned int bank, unsigned int offset, byte val);
+    void SerializeBase(StateSerializer& state);
 
     byte* m_ROM;
     byte* m_RAM;
@@ -56,6 +61,7 @@ public:
 
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
+    void Serialize(StateSerializer& state);
 };
 
 class MBC1_MBC : public MBC
@@ -66,6 +72,7 @@ public:
 
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
+    void Serialize(StateSerializer& state);
 
 private:
     unsigned int LowerROMBank() const;
@@ -86,6 +93,7 @@ public:
 
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
+    void Serialize(StateSerializer& state);
 
 private:
     byte m_ROMBank;
@@ -104,6 +112,9 @@ public:
     void Step(unsigned long cycles);
     bool LoadRTC(std::istream& stream);
     bool SaveRTC(std::ostream& stream);
+    void Serialize(StateSerializer& state);
+    byte* GetRTCData() { return m_HasRTC ? m_RTCPersistence : nullptr; }
+    size_t GetRTCDataSize() const { return m_HasRTC ? sizeof(m_RTCPersistence) : 0; }
 
 private:
     void AddSeconds(unsigned long long seconds);
@@ -111,11 +122,15 @@ private:
     void LatchRTC();
     byte ReadRTC(byte index);
     void WriteRTC(byte index, byte val);
+    void ImportRTCPersistence();
+    void ExportRTCPersistence();
 
     byte m_ROMBank;
     byte m_RAMRTCSelect;
     byte m_RTCRegisters[0x05];
     byte m_LatchedRTCRegisters[0x05];
+    byte m_RTCPersistence[0x0D];
+    byte m_LastExportedRTC[0x0D];
     byte m_LastLatchWrite;
     bool m_HasRTC;
     bool m_IsMBC30;
@@ -132,6 +147,8 @@ public:
 
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
+    void Serialize(StateSerializer& state);
+    bool IsRumbleEnabled() const { return m_HasRumble && m_RumbleEnabled; }
 
 private:
     ushort m_ROMBank;

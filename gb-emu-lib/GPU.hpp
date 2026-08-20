@@ -100,6 +100,13 @@ public:
     void Step(unsigned long cycles);
     void Step(unsigned long baseCycles, unsigned long cpuCycles);
     byte* GetCurrentFrame();
+    void Serialize(StateSerializer& state);
+    byte* GetVideoRAM() { return &m_VRAM[0][0]; }
+    const byte* GetVideoRAM() const { return &m_VRAM[0][0]; }
+    size_t GetVideoRAMSize() const { return sizeof(m_VRAM); }
+    byte* GetOAM() { return m_OAM; }
+    const byte* GetOAM() const { return m_OAM; }
+    size_t GetOAMSize() const { return sizeof(m_OAM); }
 
     /*
         The unconverted frame, one ushort per pixel:

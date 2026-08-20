@@ -59,5 +59,64 @@ NOTE: The bootstrap may fail, if it does, follow any instructions listed and try
 
 ## Windows
 * Open VS Developer Command Prompt
-* Run: `compile.bat <path_to_cloned_vcpkg>`
+* Run: `compile.bat <path_to_cloned_vcpkg> [--release]`
 *     For example: compile.bat E:\Git\microsoft\vcpkg
+
+The Windows build produces the desktop emulator at `build\bin\gb-emu.exe`
+and the libretro files at `build\bin\gamelad_libretro.dll` and
+`build\bin\gamelad_libretro.info`. It builds Debug by default; pass `--release`
+after the vcpkg path for an optimized Release build.
+
+## RetroArch core
+
+`gamelad_libretro.dll` is a standalone libretro core for Game Boy and Game
+Boy Color ROMs. Build it from a Visual Studio Developer Command Prompt whose
+architecture matches the RetroArch installation. For example, use an x64
+prompt for 64-bit RetroArch:
+
+```bat
+compile.bat E:\Git\microsoft\vcpkg --release
+```
+
+To install the resulting core manually:
+
+1. In RetroArch, open **Settings > Directory** and note the **Cores** and
+   **Core Info** directories.
+2. Close RetroArch, copy `build\bin\gamelad_libretro.dll` into the **Cores**
+   directory, and copy `build\bin\gamelad_libretro.info` into the **Core Info**
+   directory. Keep the matching `gamelad_libretro` filenames unchanged.
+3. Start RetroArch and choose
+   **Main Menu > Load Core > Nintendo - Game Boy / Color (GameLad)**.
+4. Choose **Load Content** and select a `.gb` or `.gbc` ROM.
+
+The core uses the standard RetroPad D-pad, A, B, Start, and Select mappings.
+RetroPad X and Y provide Turbo A and Turbo B. RetroArch controller remapping,
+overlays, shaders, scaling, screenshots, recording, rewind, run-ahead, and
+serialization-based netplay can operate through the normal frontend features.
+
+Implemented core integrations include:
+
+* Deterministic save states, including CPU, PPU, APU, timers, DMA, MBC, SRAM,
+  RTC, and mid-frame state.
+* RetroArch-managed battery RAM and MBC3 RTC persistence.
+* Game Genie (`XXX-XXX` / `XXX-XXX-XXX`) and GameShark (`XXXXXXXX`) cheats.
+* Memory descriptors and RetroAchievements support.
+* Core options for hardware model, boot ROM use, opposing directions, and
+  audio-buffer-driven frameskip.
+* MBC5 cartridge rumble forwarded to the frontend controller.
+* In-memory and archive-extracted ROM loading, plus frontend VFS access.
+* Two-player link-cable communication through RetroArch's netpacket interface.
+
+Boot ROMs are optional and disabled by default. To use them, place a 256-byte
+`gb_bios.bin` and/or a 2304-byte `gbc_bios.bin` in RetroArch's **System**
+directory, then enable **Use Official Boot ROM** in **Core Options**. GameLad
+selects the matching file for the active hardware model. Close and reload
+content after changing the hardware-model or boot-ROM options.
+
+Game Boy Camera, MBC7 tilt sensors, and Super Game Boy features remain
+unsupported because those cartridge/system devices are not implemented by the
+emulator. Hardware rendering and disk control do not apply to Game Boy
+cartridges. Link-cable networking is covered by the core integration tests but
+has not yet been exercised against a live RetroArch multiplayer session. Save
+states are deterministic within a build and platform, but are not advertised as
+portable between architectures or different core versions.

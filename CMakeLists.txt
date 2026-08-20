@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(GameLad)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 if (NOT WIN32)
     find_package (Threads)
@@ -11,6 +12,8 @@ if (NOT WIN32)
 endif(NOT WIN32)
 
 add_subdirectory(gb-emu-lib)
+add_subdirectory(gb-emu-libretro)
+add_subdirectory(gb-emu-libretro-tests)
 add_subdirectory(gb-emu-tests)
 add_subdirectory(gb-emu)
 

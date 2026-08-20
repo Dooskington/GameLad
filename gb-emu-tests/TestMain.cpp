@@ -10,6 +10,7 @@
 #include "SerialTests.cpp"
 #include "APUTests.cpp"
 #include "CGBTests.cpp"
+#include "StateTests.cpp"
 
 int main(int arg, char** argv)
 {
@@ -285,6 +286,7 @@ int main(int arg, char** argv)
     TEST_CALL(SerialTests, RegisterMaskTest);
     TEST_CALL(SerialTests, InternalClockTimingTest);
     TEST_CALL(SerialTests, ExternalClockTransferTest);
+    TEST_CALL(SerialTests, LinkCallbackCanDelayMasterClockTest);
     TEST_CALL(SerialTests, InternalClockPhaseAlignmentTest);
     TEST_CALL(SerialTests, InternalClockUsesFullDividerPhaseTest);
     TEST_CALL(SerialTests, PreBootClockPhaseTest);
@@ -364,6 +366,15 @@ int main(int arg, char** argv)
     TEST_CALL(CGBTests, PowerOffClearsLengthCountersOnCGBTest);
     TEST_CALL(CGBTests, CGBWaveRAMIsAccessibleWhileChannelIsOnTest);
     TEST_CALL(CGBTests, DMGWaveRAMIsOpenBusWhileChannelIsOnTest);
+    TEST_CLEANUP();
+
+    TEST_SETUP(StateTests);
+    TEST_CALL(StateTests, DeterministicRoundTripTest);
+    TEST_CALL(StateTests, RejectedStateIsTransactionalTest);
+    TEST_CALL(StateTests, MBCAndRTCStateRoundTripTest);
+    TEST_CALL(StateTests, RumbleStateRoundTripTest);
+    TEST_CALL(StateTests, CGBBootROMMappingTest);
+    TEST_CALL(StateTests, GameGenieReadPatchTest);
     TEST_CLEANUP();
 
     std::cout << "----------------------------------" << std::endl;

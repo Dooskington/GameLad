@@ -10,3 +10,9 @@ target_include_directories(gb-emu-tests PUBLIC ${SDL2_INCLUDE_DIR})
 target_include_directories(gb-emu-tests PUBLIC ../gb-emu-lib)
 
 target_link_libraries(gb-emu-tests PRIVATE gb-emu-lib ${SDL2_LIBRARY} ${SDL2_MAIN} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+
+if (MSVC)
+    # TestMain.cpp includes every test implementation; optimizing that harness
+    # adds substantial compile time without improving the shipped binaries.
+    target_compile_options(gb-emu-tests PRIVATE /Od)
+endif()

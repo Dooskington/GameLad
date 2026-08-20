@@ -22,12 +22,34 @@ Serial::Serial(ICPU* pCPU) :
     m_BitsTransferred(0x00),
     m_MasterClock(false),
     m_ClockCycles(0),
-    m_InterruptSuppressCycles(0)
+    m_InterruptSuppressCycles(0),
+    m_LinkCallback(nullptr),
+    m_LinkContext(nullptr)
 {
 }
 
 Serial::~Serial()
 {
+}
+
+void Serial::Serialize(StateSerializer& state)
+{
+    state.SyncEnum(m_mode);
+    state.Sync(m_Data);
+    state.Sync(m_Control);
+    state.Sync(m_BitsTransferred);
+    state.Sync(m_MasterClock);
+    state.Sync(m_ClockCycles);
+    state.Sync(m_InterruptSuppressCycles);
+
+    if (state.IsReading() &&
+        (static_cast<unsigned int>(m_mode) >
+             static_cast<unsigned int>(GameBoyMode::CGBCompatibility) ||
+         (m_Control & static_cast<byte>(~ControlMask())) != 0 ||
+         m_BitsTransferred > 7))
+    {
+        state.Invalidate();
+    }
 }
 
 byte Serial::ControlMask() const
@@ -87,12 +109,24 @@ void Serial::AcknowledgeInterrupt(bool doubleSpeed)
         IsCGBHardware(m_mode) ? static_cast<byte>(doubleSpeed ? 8 : 5) : 3;
 }
 
+void Serial::SetLinkCallback(SerialLinkCallback callback, void* context)
+{
+    m_LinkCallback = callback;
+    m_LinkContext = context;
+}
+
 void Serial::ClockMasterEdge()
 {
     m_MasterClock = !m_MasterClock;
     if (!m_MasterClock && (m_Control & SerialControlMask) == SerialControlMask)
     {
-        ShiftBit(true);
+        bool incomingBit = true;
+        const bool outgoingBit = ISBITSET(m_Data, 7);
+        if (m_LinkCallback == nullptr ||
+            m_LinkCallback(m_LinkContext, outgoingBit, incomingBit))
+        {
+            ShiftBit(incomingBit);
+        }
     }
 }
 

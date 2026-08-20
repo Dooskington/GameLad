@@ -111,7 +111,9 @@ Cartridge::Cartridge() :
     m_ROMSize(0),
     m_RAMSize(0),
     m_HasBattery(false),
-    m_HasRTC(false)
+    m_HasRTC(false),
+    m_ManagePersistentData(false),
+    m_ROMHash(0)
 {
 }
 
@@ -127,16 +129,6 @@ bool Cartridge::LoadROM(const char* path)
         Logger::LogError("Cartridge::LoadROM - Invalid ROM path.");
         return false;
     }
-
-    SavePersistentData();
-    m_MBC.reset();
-    m_ROM.reset();
-    m_RAM.reset();
-    m_ROMSize = 0;
-    m_RAMSize = 0;
-    m_HasBattery = false;
-    m_HasRTC = false;
-    m_Path.clear();
 
     std::ifstream file(path, std::ios::in | std::ios::binary | std::ios::ate);
     if (!file.is_open())
@@ -162,8 +154,41 @@ bool Cartridge::LoadROM(const char* path)
         return false;
     }
 
-    m_Path = path;
-    m_ROM = std::move(rom);
+    return LoadROM(rom.get(), actualSize, path, true);
+}
+
+bool Cartridge::LoadROM(
+    const byte* data,
+    size_t size,
+    const char* persistencePath,
+    bool managePersistentData)
+{
+    if (data == nullptr ||
+        size < 0x0150 ||
+        size > static_cast<size_t>((std::numeric_limits<unsigned int>::max)()))
+    {
+        Logger::LogError("Cartridge::LoadROM - Invalid ROM data.");
+        return false;
+    }
+
+    SavePersistentData();
+    m_MBC.reset();
+    m_ROM.reset();
+    m_RAM.reset();
+    m_ROMSize = 0;
+    m_RAMSize = 0;
+    m_HasBattery = false;
+    m_HasRTC = false;
+    m_ManagePersistentData = managePersistentData;
+    m_ROMHash = 0;
+    m_ROMPatches.clear();
+    m_Path = persistencePath == nullptr ? "" : persistencePath;
+
+    const unsigned int actualSize = static_cast<unsigned int>(size);
+    m_ROM.reset(new byte[actualSize]);
+    std::memcpy(m_ROM.get(), data, actualSize);
+    m_ROMSize = actualSize;
+    m_ROMHash = GetROMHash();
     if (!LoadMBC(actualSize))
     {
         m_MBC.reset();
@@ -173,18 +198,37 @@ bool Cartridge::LoadROM(const char* path)
         m_RAMSize = 0;
         m_HasBattery = false;
         m_HasRTC = false;
+        m_ManagePersistentData = false;
+        m_ROMHash = 0;
         m_Path.clear();
         return false;
     }
 
-    Logger::Log("Loaded game ROM %s (%u bytes)", path, actualSize);
-    LoadPersistentData();
+    Logger::Log(
+        "Loaded game ROM %s (%u bytes)",
+        m_Path.empty() ? "<memory>" : m_Path.c_str(),
+        actualSize);
+    if (m_ManagePersistentData)
+    {
+        LoadPersistentData();
+    }
     return true;
 }
 
 byte Cartridge::ReadByte(const ushort& address)
 {
-    return m_MBC == nullptr ? 0xFF : m_MBC->ReadByte(address);
+    const byte value = m_MBC == nullptr ? 0xFF : m_MBC->ReadByte(address);
+    for (size_t index = m_ROMPatches.size(); index != 0; --index)
+    {
+        const ROMPatch& patch = m_ROMPatches[index - 1];
+        if (address == patch.Address &&
+            (patch.CompareValue < 0 ||
+             value == static_cast<byte>(patch.CompareValue)))
+        {
+            return patch.Value;
+        }
+    }
+    return value;
 }
 
 bool Cartridge::WriteByte(const ushort& address, const byte val)
@@ -199,6 +243,95 @@ void Cartridge::Step(unsigned long cycles)
     {
         mbc3->Step(cycles);
     }
+}
+
+unsigned long long Cartridge::GetROMHash() const
+{
+    if (m_ROMHash != 0)
+    {
+        return m_ROMHash;
+    }
+
+    const unsigned long long offsetBasis = 1469598103934665603ULL;
+    const unsigned long long prime = 1099511628211ULL;
+    unsigned long long hash = offsetBasis;
+    for (unsigned int index = 0; index < m_ROMSize; ++index)
+    {
+        hash ^= m_ROM[index];
+        hash *= prime;
+    }
+    return hash;
+}
+
+void Cartridge::ClearROMPatches()
+{
+    m_ROMPatches.clear();
+}
+
+void Cartridge::ApplyROMPatch(byte value, ushort address, int compareValue)
+{
+    if (m_ROM == nullptr || address >= 0x8000)
+    {
+        return;
+    }
+
+    ROMPatch patch = { value, address, compareValue };
+    m_ROMPatches.push_back(patch);
+}
+
+byte* Cartridge::GetRTCData()
+{
+    MBC* mbc = dynamic_cast<MBC*>(m_MBC.get());
+    return mbc == nullptr ? nullptr : mbc->GetRTCData();
+}
+
+size_t Cartridge::GetRTCDataSize() const
+{
+    const MBC* mbc = dynamic_cast<const MBC*>(m_MBC.get());
+    return mbc == nullptr ? 0 : mbc->GetRTCDataSize();
+}
+
+bool Cartridge::IsRumbleEnabled() const
+{
+    const MBC* mbc = dynamic_cast<const MBC*>(m_MBC.get());
+    return mbc != nullptr && mbc->IsRumbleEnabled();
+}
+
+void Cartridge::Serialize(StateSerializer& state)
+{
+    unsigned int romSize = m_ROMSize;
+    unsigned int ramSize = m_RAMSize;
+    byte mbcType = m_MBCType;
+    bool hasBattery = m_HasBattery;
+    bool hasRTC = m_HasRTC;
+    unsigned long long romHash = GetROMHash();
+
+    state.Sync(romSize);
+    state.Sync(ramSize);
+    state.Sync(mbcType);
+    state.Sync(hasBattery);
+    state.Sync(hasRTC);
+    state.Sync(romHash);
+
+    if (state.IsReading() &&
+        (romSize != m_ROMSize ||
+         ramSize != m_RAMSize ||
+         mbcType != m_MBCType ||
+         hasBattery != m_HasBattery ||
+         hasRTC != m_HasRTC ||
+         romHash != GetROMHash()))
+    {
+        state.Invalidate();
+        return;
+    }
+
+    state.SyncBytes(m_RAM.get(), m_RAMSize);
+    if (m_MBC == nullptr)
+    {
+        state.Invalidate();
+        return;
+    }
+    static_cast<MBC*>(m_MBC.get())->Serialize(state);
 }
 
 byte Cartridge::GetCGBFlag() const
@@ -336,7 +469,7 @@ bool Cartridge::LoadMBC(unsigned int actualSize)
 
 void Cartridge::LoadPersistentData()
 {
-    if (!m_HasBattery)
+    if (!m_ManagePersistentData || !m_HasBattery)
     {
         return;
     }
@@ -380,7 +513,10 @@ void Cartridge::LoadPersistentData()
 
 void Cartridge::SavePersistentData()
 {
-    if (!m_HasBattery || m_Path.empty() || m_MBC == nullptr)
+    if (!m_ManagePersistentData ||
+        !m_HasBattery ||
+        m_Path.empty() ||
+        m_MBC == nullptr)
     {
         return;
     }

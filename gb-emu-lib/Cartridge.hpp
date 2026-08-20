@@ -80,6 +80,8 @@ RAM of 512 x 4 bits.
 #define RAM_128KB       0x04
 #define RAM_64KB        0x05
 
+#include <vector>
+
 class Cartridge : public IMemoryUnit
 {
 public:
@@ -87,19 +89,44 @@ public:
     ~Cartridge();
 
     bool LoadROM(const char* path);
+    bool LoadROM(
+        const byte* data,
+        size_t size,
+        const char* persistencePath = nullptr,
+        bool managePersistentData = false);
     void Step(unsigned long cycles);
+    void Serialize(StateSerializer& state);
 
     // Raw cartridge CGB flag (0x0143). Returns 0x00 when no ROM is loaded so
     // model resolution falls back to DMG rather than to an undefined value.
     byte GetCGBFlag() const;
     bool IsCGBCartridge() const;
     bool IsCGBOnlyCartridge() const;
+    byte* GetSaveRAM() { return m_RAM.get(); }
+    const byte* GetSaveRAM() const { return m_RAM.get(); }
+    size_t GetSaveRAMSize() const { return m_RAMSize; }
+    unsigned long long GetROMHash() const;
+    const byte* GetROM() const { return m_ROM.get(); }
+    size_t GetROMSize() const { return m_ROMSize; }
+    byte* GetRTCData();
+    size_t GetRTCDataSize() const;
+    bool IsRumbleEnabled() const;
+    bool HasBattery() const { return m_HasBattery; }
+    void ClearROMPatches();
+    void ApplyROMPatch(byte value, ushort address, int compareValue);
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
     bool WriteByte(const ushort& address, const byte val);
 
 private:
+    struct ROMPatch
+    {
+        byte Value;
+        ushort Address;
+        int CompareValue;
+    };
+
     bool LoadMBC(unsigned int actualSize);
     bool IsMBC1Multicart() const;
     void LoadPersistentData();
@@ -112,7 +139,10 @@ private:
     unsigned int m_RAMSize;
     bool m_HasBattery;
     bool m_HasRTC;
+    bool m_ManagePersistentData;
+    unsigned long long m_ROMHash;
     std::unique_ptr<byte[]> m_ROM;
     std::unique_ptr<byte[]> m_RAM;
     std::unique_ptr<IMemoryUnit> m_MBC;
+    std::vector<ROMPatch> m_ROMPatches;
 };

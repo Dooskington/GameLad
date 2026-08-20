@@ -13,6 +13,21 @@ Joypad::~Joypad()
 {
 }
 
+void Joypad::Serialize(StateSerializer& state)
+{
+    state.Sync(m_SelectValues);
+    state.Sync(m_InputValues);
+    state.Sync(m_ButtonValues);
+
+    if (state.IsReading() &&
+        ((m_SelectValues & 0xCF) != 0 ||
+         (m_InputValues & 0xF0) != 0 ||
+         (m_ButtonValues & 0xF0) != 0))
+    {
+        state.Invalidate();
+    }
+}
+
 void Joypad::SetInput(byte input, byte buttons)
 {
     byte previousLines = ReadInputLines();

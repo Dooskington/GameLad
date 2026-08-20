@@ -113,6 +113,52 @@ void SquareChannel::Reset()
     m_SweepNegateUsedSinceTrigger = false;
 }
 
+void SquareChannel::Serialize(StateSerializer& state)
+{
+    state.Sync(m_SweepPeriod);
+    state.Sync(m_SweepNegate);
+    state.Sync(m_SweepShift);
+    state.Sync(m_Duty);
+    state.Sync(m_LengthLoad);
+    state.Sync(m_EnvelopeInitialVolume);
+    state.Sync(m_EnvelopeIncrease);
+    state.Sync(m_EnvelopePeriod);
+    state.Sync(m_Frequency);
+    state.Sync(m_LengthEnabled);
+    state.Sync(m_Enabled);
+    state.Sync(m_FrameSequencerStep);
+    state.Sync(m_FrequencyTimer);
+    state.Sync(m_DutyPosition);
+    state.Sync(m_DutyStepped);
+    state.Sync(m_LengthCounter);
+    state.Sync(m_EnvelopeTimer);
+    state.Sync(m_CurrentVolume);
+    state.Sync(m_ShadowFrequency);
+    state.Sync(m_SweepTimer);
+    state.Sync(m_SweepEnabled);
+    state.Sync(m_SweepNegateUsedSinceTrigger);
+
+    if (state.IsReading() &&
+        (m_SweepPeriod > 7 ||
+         m_SweepShift > 7 ||
+         m_Duty > 3 ||
+         m_EnvelopeInitialVolume > 15 ||
+         m_EnvelopePeriod > 7 ||
+         m_Frequency > 0x07FF ||
+         m_FrameSequencerStep > 7 ||
+         m_DutyPosition > 7 ||
+         m_CurrentVolume > 15 ||
+         m_ShadowFrequency > 0x07FF ||
+         (m_Enabled && m_FrequencyTimer <= 0) ||
+         m_LengthCounter < 0 ||
+         m_LengthCounter > 64 ||
+         m_SweepTimer < 0 ||
+         m_SweepTimer > 8))
+    {
+        state.Invalidate();
+    }
+}
+
 void SquareChannel::PowerOff(bool clearLength)
 {
     if (clearLength)
@@ -463,6 +509,39 @@ WaveChannel::WaveChannel()
     Reset();
 }
 
+void WaveChannel::Serialize(StateSerializer& state)
+{
+    state.Sync(m_DacEnabled);
+    state.Sync(m_LengthLoad);
+    state.Sync(m_VolumeCode);
+    state.Sync(m_Frequency);
+    state.Sync(m_LengthEnabled);
+    state.Sync(m_Enabled);
+    state.Sync(m_CGBWaveBehavior);
+    state.Sync(m_FrameSequencerStep);
+    state.Sync(m_FrequencyTimer);
+    state.Sync(m_LengthCounter);
+    state.Sync(m_WavePosition);
+    state.Sync(m_LastReadByte);
+    state.Sync(m_LastReadIndex);
+    state.Sync(m_CycleCounter);
+    state.Sync(m_LastReadTime);
+    state.SyncBytes(m_WaveRAM, sizeof(m_WaveRAM));
+
+    if (state.IsReading() &&
+        (m_VolumeCode > 3 ||
+         m_Frequency > 0x07FF ||
+         m_FrameSequencerStep > 7 ||
+         m_WavePosition > 31 ||
+         m_LastReadIndex > 15 ||
+         (m_Enabled && m_FrequencyTimer <= 0) ||
+         m_LengthCounter < 0 ||
+         m_LengthCounter > 256))
+    {
+        state.Invalidate();
+    }
+}
+
 void WaveChannel::Reset()
 {
     m_DacEnabled = false;
@@ -761,6 +840,40 @@ NoiseChannel::NoiseChannel()
     Reset();
 }
 
+void NoiseChannel::Serialize(StateSerializer& state)
+{
+    state.Sync(m_LengthLoad);
+    state.Sync(m_EnvelopeInitialVolume);
+    state.Sync(m_EnvelopeIncrease);
+    state.Sync(m_EnvelopePeriod);
+    state.Sync(m_ClockShift);
+    state.Sync(m_WidthMode7Bit);
+    state.Sync(m_DivisorCode);
+    state.Sync(m_LengthEnabled);
+    state.Sync(m_Enabled);
+    state.Sync(m_FrameSequencerStep);
+    state.Sync(m_FrequencyTimer);
+    state.Sync(m_LengthCounter);
+    state.Sync(m_EnvelopeTimer);
+    state.Sync(m_CurrentVolume);
+    state.Sync(m_LFSR);
+
+    if (state.IsReading() &&
+        (m_EnvelopeInitialVolume > 15 ||
+         m_EnvelopePeriod > 7 ||
+         m_ClockShift > 15 ||
+         m_DivisorCode > 7 ||
+         m_FrameSequencerStep > 7 ||
+         m_CurrentVolume > 15 ||
+         m_LFSR > 0x7FFF ||
+         (m_Enabled && m_FrequencyTimer <= 0) ||
+         m_LengthCounter < 0 ||
+         m_LengthCounter > 64))
+    {
+        state.Invalidate();
+    }
+}
+
 void NoiseChannel::Reset()
 {
     m_LengthLoad = 0x00;
@@ -1017,10 +1130,96 @@ APU::~APU()
 {
 }
 
+void APU::Serialize(StateSerializer& state)
+{
+    m_Channel1.Serialize(state);
+    m_Channel2.Serialize(state);
+    m_Channel3.Serialize(state);
+    m_Channel4.Serialize(state);
+    state.Sync(m_NR50);
+    state.Sync(m_NR51);
+    state.Sync(m_Powered);
+    state.SyncEnum(m_mode);
+    state.Sync(m_FrameSequencerCounter);
+    state.Sync(m_FrameSequencerStep);
+    state.Sync(m_FrameSequencerSelfClocked);
+    state.Sync(m_SampleRate);
+    state.Sync(m_SampleCycleAccumulator);
+    state.Sync(m_CapacitorLeft);
+    state.Sync(m_CapacitorRight);
+    state.Sync(m_LastMixerOutput.Left);
+    state.Sync(m_LastMixerOutput.Right);
+
+    unsigned int pendingSamples = static_cast<unsigned int>(
+        (std::min)(GetPendingSampleCount(), MaxBufferedSamples));
+    state.Sync(pendingSamples);
+    if (state.IsReading() && pendingSamples > MaxBufferedSamples)
+    {
+        state.Invalidate();
+        return;
+    }
+
+    if (state.IsReading())
+    {
+        m_SampleBuffer.clear();
+        m_SampleBuffer.resize(pendingSamples);
+        m_SampleReadIndex = 0;
+    }
+    for (size_t index = 0; index < MaxBufferedSamples; ++index)
+    {
+        Sample sample = { 0.0f, 0.0f };
+        if (!state.IsReading() && index < pendingSamples)
+        {
+            sample = m_SampleBuffer[m_SampleReadIndex + index];
+        }
+        state.Sync(sample.Left);
+        state.Sync(sample.Right);
+        if (state.IsReading() && index < pendingSamples)
+        {
+            if (!std::isfinite(sample.Left) || !std::isfinite(sample.Right))
+            {
+                state.Invalidate();
+                return;
+            }
+            m_SampleBuffer[index] = sample;
+        }
+    }
+
+    if (state.IsReading())
+    {
+        const double cyclesPerSample = 4194304.0 / m_SampleRate;
+        if (static_cast<unsigned int>(m_mode) >
+                static_cast<unsigned int>(GameBoyMode::CGBCompatibility) ||
+            m_FrameSequencerStep > 7 ||
+            m_SampleRate < 8000 ||
+            m_SampleRate > 384000 ||
+            m_FrameSequencerCounter <= 0 ||
+            m_FrameSequencerCounter > FRAME_SEQUENCER_PERIOD ||
+            !std::isfinite(m_SampleCycleAccumulator) ||
+            m_SampleCycleAccumulator <= 0.0 ||
+            m_SampleCycleAccumulator > cyclesPerSample * 1.001 ||
+            !std::isfinite(m_CapacitorLeft) ||
+            !std::isfinite(m_CapacitorRight) ||
+            !std::isfinite(m_LastMixerOutput.Left) ||
+            !std::isfinite(m_LastMixerOutput.Right))
+        {
+            state.Invalidate();
+            return;
+        }
+
+        const double sampleCycleAccumulator = m_SampleCycleAccumulator;
+        SetSampleRate(m_SampleRate);
+        m_SampleCycleAccumulator = sampleCycleAccumulator;
+        m_Channel3.SetCGBWaveBehavior(IsCGBHardware(m_mode));
+    }
+}
+
 void APU::SetSampleRate(unsigned int sampleRate)
 {
-    m_SampleRate = (sampleRate == 0) ? 44100 : sampleRate;
+    m_SampleRate =
+        sampleRate < 8000 || sampleRate > 384000 ? 44100 : sampleRate;
     m_CyclesPerSample = 4194304.0 / (double)m_SampleRate;
+    m_SampleCycleAccumulator = m_CyclesPerSample;
     m_CapacitorChargeFactor = std::pow(CapacitorChargePerTick, m_CyclesPerSample);
 }
 
