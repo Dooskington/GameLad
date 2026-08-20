@@ -36,6 +36,11 @@ MBC::~MBC()
 {
 }
 
+void MBC::SerializeBase(StateSerializer& state)
+{
+    state.Sync(m_isRAMEnabled);
+}
+
 byte MBC::ReadROM(unsigned int bank, unsigned int offset) const
 {
     if (m_ROM == nullptr || m_ROMSize == 0 || m_ROMBanks == 0)
@@ -98,6 +103,11 @@ bool ROMOnly_MBC::WriteByte(const ushort& address, const byte val)
 {
     return address >= 0xA000 && address <= 0xBFFF &&
         WriteRAM(0, address - 0xA000, val);
+}
+
+void ROMOnly_MBC::Serialize(StateSerializer& state)
+{
+    SerializeBase(state);
 }
 
 MBC1_MBC::MBC1_MBC(byte* pROM, byte* pRAM) :
@@ -192,6 +202,20 @@ bool MBC1_MBC::WriteByte(const ushort& address, const byte val)
     return false;
 }
 
+void MBC1_MBC::Serialize(StateSerializer& state)
+{
+    SerializeBase(state);
+    state.Sync(m_ROMBankLower);
+    state.Sync(m_ROMRAMBankUpper);
+    state.Sync(m_ROMRAMMode);
+
+    if (state.IsReading() &&
+        (m_ROMRAMBankUpper > 0x03 || m_ROMRAMMode > 0x01))
+    {
+        state.Invalidate();
+    }
+}
+
 MBC2_MBC::MBC2_MBC(byte* pROM) :
     MBC(pROM, 0x10000, nullptr, 0),
     m_ROMBank(0x01),
@@ -262,6 +286,16 @@ bool MBC2_MBC::WriteByte(const ushort& address, const byte val)
     return false;
 }
 
+void MBC2_MBC::Serialize(StateSerializer& state)
+{
+    SerializeBase(state);
+    state.Sync(m_ROMBank);
+    if (state.IsReading() && (m_ROMBank == 0 || m_ROMBank > 0x0F))
+    {
+        state.Invalidate();
+    }
+}
+
 MBC3_MBC::MBC3_MBC(byte* pROM, byte* pRAM) :
     MBC3_MBC(pROM, 0x10000, pRAM, pRAM == nullptr ? 0 : 0x8000, true)
 {
@@ -285,6 +319,79 @@ MBC3_MBC::MBC3_MBC(
 {
     std::memset(m_RTCRegisters, 0, sizeof(m_RTCRegisters));
     std::memset(m_LatchedRTCRegisters, 0, sizeof(m_LatchedRTCRegisters));
+    std::memset(m_RTCPersistence, 0, sizeof(m_RTCPersistence));
+    std::memset(m_LastExportedRTC, 0, sizeof(m_LastExportedRTC));
+    ExportRTCPersistence();
+}
+
+void MBC3_MBC::ExportRTCPersistence()
+{
+    std::memcpy(m_RTCPersistence, m_RTCRegisters, sizeof(m_RTCRegisters));
+    std::time_t timestamp = std::time(nullptr);
+    if (timestamp == static_cast<std::time_t>(-1))
+    {
+        timestamp = m_LastRTCUpdate;
+    }
+    const std::uint64_t encoded = timestamp < 0
+        ? 0
+        : static_cast<std::uint64_t>(timestamp);
+    for (size_t index = 0; index < 8; ++index)
+    {
+        m_RTCPersistence[5 + index] =
+            static_cast<byte>((encoded >> (index * 8)) & 0xFF);
+    }
+    std::memcpy(
+        m_LastExportedRTC,
+        m_RTCPersistence,
+        sizeof(m_LastExportedRTC));
+}
+
+void MBC3_MBC::ImportRTCPersistence()
+{
+    if (!m_HasRTC ||
+        std::memcmp(
+            m_RTCPersistence,
+            m_LastExportedRTC,
+            sizeof(m_RTCPersistence)) == 0)
+    {
+        return;
+    }
+
+    std::uint64_t timestamp = 0;
+    for (size_t index = 0; index < 8; ++index)
+    {
+        timestamp |=
+            static_cast<std::uint64_t>(m_RTCPersistence[5 + index]) <<
+            (index * 8);
+    }
+
+    const std::uint64_t maxTimestamp =
+        static_cast<std::uint64_t>((std::numeric_limits<std::time_t>::max)());
+    const std::time_t now = std::time(nullptr);
+    if (timestamp > maxTimestamp || now == static_cast<std::time_t>(-1))
+    {
+        ExportRTCPersistence();
+        return;
+    }
+    if (timestamp == 0)
+    {
+        timestamp = static_cast<std::uint64_t>(now);
+    }
+
+    std::memcpy(m_RTCRegisters, m_RTCPersistence, sizeof(m_RTCRegisters));
+    m_RTCRegisters[0] &= 0x3F;
+    m_RTCRegisters[1] &= 0x3F;
+    m_RTCRegisters[2] &= 0x1F;
+    m_RTCRegisters[4] &= 0xC1;
+    m_LastRTCUpdate = static_cast<std::time_t>(timestamp);
+    if ((m_RTCRegisters[4] & 0x40) == 0 && now > m_LastRTCUpdate)
+    {
+        AddSeconds(static_cast<unsigned long long>(now - m_LastRTCUpdate));
+    }
+    m_LastRTCUpdate = now;
+    m_RTCCycles = 0;
+    m_HasLatchedRTC = false;
+    ExportRTCPersistence();
 }
 
 void MBC3_MBC::AddSeconds(unsigned long long seconds)
@@ -381,6 +488,7 @@ void MBC3_MBC::IncrementRTC()
 
 void MBC3_MBC::Step(unsigned long cycles)
 {
+    ImportRTCPersistence();
     if (!m_HasRTC || (m_RTCRegisters[4] & 0x40) != 0)
     {
         return;
@@ -391,6 +499,7 @@ void MBC3_MBC::Step(unsigned long cycles)
     {
         AddSeconds(m_RTCCycles / GameBoyClock);
         m_RTCCycles %= GameBoyClock;
+        ExportRTCPersistence();
     }
 }
 
@@ -402,6 +511,7 @@ void MBC3_MBC::LatchRTC()
 
 byte MBC3_MBC::ReadRTC(byte index)
 {
+    ImportRTCPersistence();
     if (!m_HasRTC || index >= sizeof(m_RTCRegisters))
     {
         return 0xFF;
@@ -411,6 +521,7 @@ byte MBC3_MBC::ReadRTC(byte index)
 
 void MBC3_MBC::WriteRTC(byte index, byte val)
 {
+    ImportRTCPersistence();
     if (!m_HasRTC || index >= sizeof(m_RTCRegisters))
     {
         return;
@@ -436,6 +547,7 @@ void MBC3_MBC::WriteRTC(byte index, byte val)
         m_LastRTCUpdate = std::time(nullptr);
         break;
     }
+    ExportRTCPersistence();
 }
 
 byte MBC3_MBC::ReadByte(const ushort& address)
@@ -561,11 +673,13 @@ bool MBC3_MBC::LoadRTC(std::istream& stream)
     m_LastRTCUpdate = now;
     m_RTCCycles = 0;
     m_HasLatchedRTC = false;
+    ExportRTCPersistence();
     return true;
 }
 
 bool MBC3_MBC::SaveRTC(std::ostream& stream)
 {
+    ImportRTCPersistence();
     if (!m_HasRTC)
     {
         return false;
@@ -586,7 +700,59 @@ bool MBC3_MBC::SaveRTC(std::ostream& stream)
     stream.write("GLRTC1", 6);
     stream.write(reinterpret_cast<const char*>(m_RTCRegisters), sizeof(m_RTCRegisters));
     stream.write(reinterpret_cast<const char*>(timestampBytes), sizeof(timestampBytes));
+    ExportRTCPersistence();
     return stream.good();
+}
+
+void MBC3_MBC::Serialize(StateSerializer& state)
+{
+    if (!state.IsReading())
+    {
+        ImportRTCPersistence();
+    }
+    SerializeBase(state);
+    state.Sync(m_ROMBank);
+    state.Sync(m_RAMRTCSelect);
+    state.SyncBytes(m_RTCRegisters, sizeof(m_RTCRegisters));
+    state.SyncBytes(m_LatchedRTCRegisters, sizeof(m_LatchedRTCRegisters));
+    state.Sync(m_LastLatchWrite);
+    state.Sync(m_HasLatchedRTC);
+    state.Sync(m_RTCCycles);
+    state.SyncBytes(m_RTCPersistence, sizeof(m_RTCPersistence));
+    state.SyncBytes(m_LastExportedRTC, sizeof(m_LastExportedRTC));
+    unsigned long long lastRTCUpdate =
+        m_LastRTCUpdate < 0
+            ? 0
+            : static_cast<unsigned long long>(m_LastRTCUpdate);
+    state.Sync(lastRTCUpdate);
+
+    if (state.IsReading())
+    {
+        const unsigned long long maxTimestamp =
+            static_cast<unsigned long long>(
+                (std::numeric_limits<std::time_t>::max)());
+        if (m_ROMBank == 0 ||
+            m_RTCCycles >= GameBoyClock ||
+            lastRTCUpdate > maxTimestamp ||
+            m_RTCRegisters[0] > 0x3F ||
+            m_RTCRegisters[1] > 0x3F ||
+            m_RTCRegisters[2] > 0x1F ||
+            (m_RTCRegisters[4] & 0x3E) != 0 ||
+            std::memcmp(
+                m_RTCPersistence,
+                m_LastExportedRTC,
+                sizeof(m_RTCPersistence)) != 0 ||
+            std::memcmp(
+                m_RTCPersistence,
+                m_RTCRegisters,
+                sizeof(m_RTCRegisters)) != 0)
+        {
+            state.Invalidate();
+            return;
+        }
+
+        m_LastRTCUpdate = static_cast<std::time_t>(lastRTCUpdate);
+    }
 }
 
 MBC5_MBC::MBC5_MBC(byte* pROM, byte* pRAM) :
@@ -657,4 +823,20 @@ bool MBC5_MBC::WriteByte(const ushort& address, const byte val)
         return m_isRAMEnabled && WriteRAM(m_RAMBank, address - 0xA000, val);
     }
     return false;
+}
+
+void MBC5_MBC::Serialize(StateSerializer& state)
+{
+    SerializeBase(state);
+    state.Sync(m_ROMBank);
+    state.Sync(m_RAMBank);
+    state.Sync(m_RumbleEnabled);
+
+    if (state.IsReading() &&
+        (m_ROMBank > 0x01FF ||
+         m_RAMBank > 0x0F ||
+         (!m_HasRumble && m_RumbleEnabled)))
+    {
+        state.Invalidate();
+    }
 }

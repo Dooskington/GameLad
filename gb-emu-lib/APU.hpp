@@ -59,6 +59,7 @@ public:
     byte Amplitude() const;
     bool DacEnabled() const;
     bool IsEnabled() const { return m_Enabled; }
+    void Serialize(StateSerializer& state);
 
 private:
     void Trigger();
@@ -138,6 +139,7 @@ public:
     byte Amplitude() const;
     bool DacEnabled() const { return m_DacEnabled; }
     bool IsEnabled() const { return m_Enabled; }
+    void Serialize(StateSerializer& state);
 
 private:
     void Trigger();
@@ -195,6 +197,7 @@ public:
     byte Amplitude() const;
     bool DacEnabled() const;
     bool IsEnabled() const { return m_Enabled; }
+    void Serialize(StateSerializer& state);
 
 private:
     void Trigger();
@@ -274,6 +277,7 @@ public:
     size_t GetPendingSampleCount() const;
     size_t ConsumeSamples(Sample* pBuffer, size_t maxCount);
     void ClearSampleBuffer();
+    void Serialize(StateSerializer& state);
 
     // Debug/test accessors - do not affect emulated state.
     bool IsPowered() const { return m_Powered; }

@@ -9,6 +9,8 @@ public:
     void RegisterMemoryUnit(const ushort& startRange, const ushort& endRange, IMemoryUnit* pUnit);
     unsigned short ReadUShort(const ushort& address);
     bool LoadBootROM(const char* bootROMPath);
+    bool LoadBootROM(const byte* bootROMData, size_t bootROMSize);
+    void Serialize(StateSerializer& state);
 
     byte Read(const ushort& address);
     bool Write(const ushort& address, const byte val);
@@ -19,6 +21,12 @@ public:
     bool IsSpeedSwitchArmed() const { return m_speedSwitchArmed; }
     void CompleteSpeedSwitch();
     bool IsDoubleSpeed() const { return m_doubleSpeed; }
+    byte* GetWorkRAM() { return &m_WRAM[0][0]; }
+    const byte* GetWorkRAM() const { return &m_WRAM[0][0]; }
+    size_t GetWorkRAMSize() const { return sizeof(m_WRAM); }
+    byte* GetHighRAM() { return m_HRAM; }
+    const byte* GetHighRAM() const { return m_HRAM; }
+    size_t GetHighRAMSize() const { return sizeof(m_HRAM); }
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
@@ -35,6 +43,7 @@ private:
     // Booting
     byte m_isBooting;
     std::unique_ptr<byte[]> m_BIOS;
+    size_t m_BIOSSize;
 
     // Hardware model
     GameBoyMode m_mode;

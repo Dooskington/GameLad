@@ -66,6 +66,14 @@ private:
 public:
     bool Initialize();
     bool LoadROM(const char* bootROMPath, const char* cartridgePath);
+    bool LoadROM(
+        const byte* bootROMData,
+        size_t bootROMSize,
+        const byte* cartridgeData,
+        size_t cartridgeSize,
+        const char* persistencePath = nullptr,
+        bool managePersistentData = false);
+    bool Serialize(StateSerializer& state);
     int Step();
     void TriggerInterrupt(byte interrupt);
     void QueueInterrupt(byte interrupt);
@@ -97,6 +105,28 @@ public:
     // Native (unconverted) frame: RGB555 little-endian per pixel on CGB, DMG
     // shade index 0-3 per pixel otherwise. 160*144 ushorts.
     const ushort* GetCurrentNativeFrame() const;
+    byte ReadMemoryForHost(ushort address) const;
+    bool WriteMemoryForHost(ushort address, byte value);
+    byte* GetSaveRAM();
+    size_t GetSaveRAMSize() const;
+    byte* GetRTCData();
+    size_t GetRTCDataSize() const;
+    byte* GetWorkRAM();
+    size_t GetWorkRAMSize() const;
+    byte* GetHighRAM();
+    size_t GetHighRAMSize() const;
+    byte* GetVideoRAM();
+    size_t GetVideoRAMSize() const;
+    byte* GetOAM();
+    size_t GetOAMSize() const;
+    bool IsRumbleEnabled() const;
+    bool HasBattery() const;
+    const byte* GetROM() const;
+    size_t GetROMSize() const;
+    void ClearROMPatches();
+    void ApplyROMPatch(byte value, ushort address, int compareValue);
+    void SetSerialLinkCallback(SerialLinkCallback callback, void* context);
+    bool ClockExternalSerialBit(bool incomingBit, bool& outgoingBit);
 
 private:
     static byte GetHighByte(ushort dest);

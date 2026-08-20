@@ -756,6 +756,133 @@ bool CPU::LoadROM(const char* bootROMPath, const char* cartridgePath)
     return true;
 }
 
+bool CPU::LoadROM(
+    const byte* bootROMData,
+    size_t bootROMSize,
+    const byte* cartridgeData,
+    size_t cartridgeSize,
+    const char* persistencePath,
+    bool managePersistentData)
+{
+    MMU* mmu = dynamic_cast<MMU*>(m_MMU.get());
+    if (mmu == nullptr ||
+        !mmu->LoadBootROM(bootROMData, bootROMSize) ||
+        !m_cartridge->LoadROM(
+            cartridgeData,
+            cartridgeSize,
+            persistencePath,
+            managePersistentData))
+    {
+        return false;
+    }
+
+    m_mode = ResolveGameBoyMode(m_modelPreference, m_cartridge->GetCGBFlag());
+    PropagateGameBoyMode();
+    if (m_MMU->Read(0xFF50) != 0x00)
+    {
+        ApplyPostBootState();
+    }
+    return true;
+}
+
+bool CPU::Serialize(StateSerializer& state)
+{
+    MMU* mmu = dynamic_cast<MMU*>(m_MMU.get());
+    if (mmu == nullptr ||
+        m_cartridge == nullptr ||
+        m_GPU == nullptr ||
+        m_APU == nullptr ||
+        m_joypad == nullptr ||
+        m_serial == nullptr ||
+        m_timer == nullptr)
+    {
+        state.Invalidate();
+        return false;
+    }
+
+    state.Sync(m_cycles);
+    state.Sync(m_instructionCycles);
+    state.Sync(m_baseClockCycles);
+    state.Sync(m_baseClockRemainder);
+    state.Sync(m_pendingDMAStallCycles);
+    state.SyncEnum(m_modelPreference);
+    state.SyncEnum(m_mode);
+    state.Sync(m_isHalted);
+    state.Sync(m_isStopped);
+    state.Sync(m_isLocked);
+    state.Sync(m_haltBug);
+    state.Sync(m_stopWakeRequested);
+    state.Sync(m_imePending);
+    state.Sync(m_StatAckSuppressCycles);
+    state.Sync(m_InterruptAcceptanceBlocked);
+    state.Sync(m_InterruptAcceptanceDelayCycles);
+    state.Sync(m_lastInput);
+    state.Sync(m_lastButtons);
+    state.Sync(m_AF);
+    state.Sync(m_BC);
+    state.Sync(m_DE);
+    state.Sync(m_HL);
+    state.Sync(m_SP);
+    state.Sync(m_PC);
+    state.Sync(m_IME);
+
+    m_cartridge->Serialize(state);
+    if (!state.IsValid())
+    {
+        Logger::LogError("Save state cartridge section is invalid.");
+        return false;
+    }
+    mmu->Serialize(state);
+    if (!state.IsValid())
+    {
+        Logger::LogError("Save state MMU section is invalid.");
+        return false;
+    }
+    m_GPU->Serialize(state);
+    if (!state.IsValid())
+    {
+        Logger::LogError("Save state GPU section is invalid.");
+        return false;
+    }
+    m_APU->Serialize(state);
+    if (!state.IsValid())
+    {
+        Logger::LogError("Save state APU section is invalid.");
+        return false;
+    }
+    m_joypad->Serialize(state);
+    if (!state.IsValid())
+    {
+        Logger::LogError("Save state joypad section is invalid.");
+        return false;
+    }
+    m_serial->Serialize(state);
+    if (!state.IsValid())
+    {
+        Logger::LogError("Save state serial section is invalid.");
+        return false;
+    }
+    m_timer->Serialize(state);
+
+    if (state.IsReading() &&
+        (static_cast<unsigned int>(m_modelPreference) >
+             static_cast<unsigned int>(ModelPreference::ForceCGB) ||
+         static_cast<unsigned int>(m_mode) >
+             static_cast<unsigned int>(GameBoyMode::CGBCompatibility) ||
+         m_baseClockRemainder > 1 ||
+         (m_InterruptAcceptanceBlocked & 0xE0) != 0 ||
+         (m_lastInput & 0xF0) != 0 ||
+         (m_lastButtons & 0xF0) != 0 ||
+         (m_AF & 0x000F) != 0 ||
+         m_IME > 1 ||
+         mmu->GetGameBoyMode() != m_mode))
+    {
+        state.Invalidate();
+    }
+
+    return state.IsValid();
+}
+
 void CPU::PropagateGameBoyMode()
 {
     m_MMU->SetGameBoyMode(m_mode);
@@ -1035,6 +1162,130 @@ byte* CPU::GetCurrentFrame()
 const ushort* CPU::GetCurrentNativeFrame() const
 {
     return (m_GPU != nullptr) ? m_GPU->GetCurrentNativeFrame() : nullptr;
+}
+
+byte CPU::ReadMemoryForHost(ushort address) const
+{
+    return m_MMU == nullptr ? 0xFF : m_MMU->Read(address);
+}
+
+bool CPU::WriteMemoryForHost(ushort address, byte value)
+{
+    return m_MMU != nullptr && m_MMU->Write(address, value);
+}
+
+byte* CPU::GetSaveRAM()
+{
+    return m_cartridge == nullptr ? nullptr : m_cartridge->GetSaveRAM();
+}
+
+size_t CPU::GetSaveRAMSize() const
+{
+    return m_cartridge == nullptr ? 0 : m_cartridge->GetSaveRAMSize();
+}
+
+byte* CPU::GetRTCData()
+{
+    return m_cartridge == nullptr ? nullptr : m_cartridge->GetRTCData();
+}
+
+size_t CPU::GetRTCDataSize() const
+{
+    return m_cartridge == nullptr ? 0 : m_cartridge->GetRTCDataSize();
+}
+
+byte* CPU::GetWorkRAM()
+{
+    MMU* mmu = dynamic_cast<MMU*>(m_MMU.get());
+    return mmu == nullptr ? nullptr : mmu->GetWorkRAM();
+}
+
+size_t CPU::GetWorkRAMSize() const
+{
+    const MMU* mmu = dynamic_cast<const MMU*>(m_MMU.get());
+    return mmu == nullptr ? 0 : mmu->GetWorkRAMSize();
+}
+
+byte* CPU::GetHighRAM()
+{
+    MMU* mmu = dynamic_cast<MMU*>(m_MMU.get());
+    return mmu == nullptr ? nullptr : mmu->GetHighRAM();
+}
+
+size_t CPU::GetHighRAMSize() const
+{
+    const MMU* mmu = dynamic_cast<const MMU*>(m_MMU.get());
+    return mmu == nullptr ? 0 : mmu->GetHighRAMSize();
+}
+
+byte* CPU::GetVideoRAM()
+{
+    return m_GPU == nullptr ? nullptr : m_GPU->GetVideoRAM();
+}
+
+size_t CPU::GetVideoRAMSize() const
+{
+    return m_GPU == nullptr ? 0 : m_GPU->GetVideoRAMSize();
+}
+
+byte* CPU::GetOAM()
+{
+    return m_GPU == nullptr ? nullptr : m_GPU->GetOAM();
+}
+
+size_t CPU::GetOAMSize() const
+{
+    return m_GPU == nullptr ? 0 : m_GPU->GetOAMSize();
+}
+
+bool CPU::IsRumbleEnabled() const
+{
+    return m_cartridge != nullptr && m_cartridge->IsRumbleEnabled();
+}
+
+bool CPU::HasBattery() const
+{
+    return m_cartridge != nullptr && m_cartridge->HasBattery();
+}
+
+const byte* CPU::GetROM() const
+{
+    return m_cartridge == nullptr ? nullptr : m_cartridge->GetROM();
+}
+
+size_t CPU::GetROMSize() const
+{
+    return m_cartridge == nullptr ? 0 : m_cartridge->GetROMSize();
+}
+
+void CPU::ClearROMPatches()
+{
+    if (m_cartridge != nullptr)
+    {
+        m_cartridge->ClearROMPatches();
+    }
+}
+
+void CPU::ApplyROMPatch(byte value, ushort address, int compareValue)
+{
+    if (m_cartridge != nullptr)
+    {
+        m_cartridge->ApplyROMPatch(value, address, compareValue);
+    }
+}
+
+void CPU::SetSerialLinkCallback(SerialLinkCallback callback, void* context)
+{
+    if (m_serial != nullptr)
+    {
+        m_serial->SetLinkCallback(callback, context);
+    }
+}
+
+bool CPU::ClockExternalSerialBit(bool incomingBit, bool& outgoingBit)
+{
+    return m_serial != nullptr &&
+        m_serial->ClockExternalBit(incomingBit, outgoingBit);
 }
 
 void CPU::SetInput(byte input, byte buttons)

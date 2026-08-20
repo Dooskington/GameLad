@@ -30,6 +30,30 @@ public:
     byte LastInterrupt;
 };
 
+struct SerialLinkTestContext
+{
+    int Calls;
+    bool Ready;
+    bool OutgoingBit;
+};
+
+inline bool SerialLinkTestCallback(
+    void* context,
+    bool outgoingBit,
+    bool& incomingBit)
+{
+    SerialLinkTestContext* link =
+        static_cast<SerialLinkTestContext*>(context);
+    link->Calls++;
+    link->OutgoingBit = outgoingBit;
+    if (!link->Ready)
+    {
+        return false;
+    }
+    incomingBit = false;
+    return true;
+}
+
 TEST_CLASS(SerialTests)
 {
 public:
@@ -108,6 +132,26 @@ public:
         Assert::AreEqual(1, cpu.InterruptCount);
         Assert::AreEqual((int)INT58, (int)cpu.LastInterrupt);
         Assert::IsFalse(serial.ClockExternalBit(true, outgoingBit));
+    }
+
+    TEST_METHOD(LinkCallbackCanDelayMasterClockTest)
+    {
+        SerialTestCPU cpu;
+        Serial serial(&cpu);
+        SerialLinkTestContext link = { 0, false, false };
+        serial.SetLinkCallback(SerialLinkTestCallback, &link);
+        serial.WriteByte(SERIAL_DATA, 0x80);
+        serial.WriteByte(SERIAL_CONTROL, 0x81);
+
+        serial.Step(512);
+        Assert::AreEqual(1, link.Calls);
+        Assert::IsTrue(link.OutgoingBit);
+        Assert::AreEqual(0x80, (int)serial.ReadByte(SERIAL_DATA));
+
+        link.Ready = true;
+        serial.Step(512);
+        Assert::AreEqual(2, link.Calls);
+        Assert::AreEqual(0x00, (int)serial.ReadByte(SERIAL_DATA));
     }
 
     TEST_METHOD(InternalClockPhaseAlignmentTest)

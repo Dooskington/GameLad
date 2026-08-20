@@ -141,6 +141,7 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     memset(m_bgColorIndexLine, 0x00, ARRAYSIZE(m_bgColorIndexLine));
     memset(m_VRAM, 0x00, sizeof(m_VRAM));
     memset(m_OAM, 0x00, sizeof(m_OAM));
+    memset(m_bgPixels, 0x00, sizeof(m_bgPixels));
     memset(m_DisplayPixels, 0x00, ARRAYSIZE(m_DisplayPixels));
     memset(m_NativePixels, 0x00, sizeof(m_NativePixels));
     memset(m_LineColorIndex, 0x00, sizeof(m_LineColorIndex));
@@ -154,6 +155,146 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
 
 GPU::~GPU()
 {
+}
+
+void GPU::Serialize(StateSerializer& state)
+{
+    state.SyncEnum(m_mode);
+    state.SyncBytes(m_VRAM, sizeof(m_VRAM));
+    state.Sync(m_VRAMBank);
+    state.SyncBytes(m_OAM, sizeof(m_OAM));
+    state.SyncBytes(m_bgPixels, sizeof(m_bgPixels));
+    state.SyncBytes(m_DisplayPixels, sizeof(m_DisplayPixels));
+    for (size_t index = 0; index < ARRAYSIZE(m_NativePixels); ++index)
+    {
+        state.Sync(m_NativePixels[index]);
+    }
+    state.SyncBytes(m_LineColorIndex, sizeof(m_LineColorIndex));
+    for (size_t index = 0; index < ARRAYSIZE(m_LineBGPriority); ++index)
+    {
+        state.Sync(m_LineBGPriority[index]);
+    }
+    state.SyncBytes(m_bgColorIndexLine, sizeof(m_bgColorIndexLine));
+    state.Sync(m_ModeClock);
+    state.Sync(m_Mode3Cycles);
+    state.Sync(m_Mode0Cycles);
+    state.Sync(m_StatInterruptLine);
+    state.Sync(m_InternalMode2STATEventFired);
+    state.Sync(m_Line153LYReset);
+    state.Sync(m_FirstLineAfterLCDEnable);
+    state.Sync(m_WindowLineCounter);
+    state.Sync(m_WindowYTriggered);
+    state.SyncBytes(m_lineSpriteOAMIndex, sizeof(m_lineSpriteOAMIndex));
+    state.Sync(m_lineSpriteCount);
+    for (size_t index = 0; index < ARRAYSIZE(m_lineSpriteFetched); ++index)
+    {
+        state.Sync(m_lineSpriteFetched[index]);
+    }
+    state.Sync(m_RenderX);
+    state.Sync(m_PixelStartupCycles);
+    state.Sync(m_PixelStallCycles);
+    state.Sync(m_PixelFetcherAlignmentCycles);
+    state.SyncBytes(m_BGPixelFIFO, sizeof(m_BGPixelFIFO));
+    state.SyncBytes(m_BGPixelFIFOAttributes, sizeof(m_BGPixelFIFOAttributes));
+    state.Sync(m_BGPixelFIFOHead);
+    state.Sync(m_BGPixelFIFOSize);
+    state.Sync(m_BGFetcherStage);
+    state.Sync(m_BGFetcherTileNumber);
+    state.Sync(m_BGFetcherTileAttributes);
+    state.Sync(m_BGFetcherTileLow);
+    state.Sync(m_BGFetcherTileHigh);
+    state.Sync(m_BGFetcherTileRow);
+    state.Sync(m_BGFetcherAddress);
+    state.Sync(m_BGFetcherPixelX);
+    state.Sync(m_BGFetcherFineDiscard);
+    state.Sync(m_BGFetcherWindow);
+    state.Sync(m_BGFetcherUnsignedTiles);
+    state.Sync(m_PixelStallPausesFetcher);
+    state.Sync(m_OBJEnabledAtTransferStart);
+    state.Sync(m_WindowTriggeredThisLine);
+    state.Sync(m_WindowTriggerMissedThisLine);
+    state.Sync(m_WindowStartedThisLine);
+    state.Sync(m_WindowEligibleThisLine);
+    state.Sync(m_WindowPenaltyScheduled);
+    state.Sync(m_WindowStartX);
+    state.Sync(m_DMAActive);
+    state.Sync(m_DMASourceAddress);
+    state.Sync(m_DMAOffset);
+    state.Sync(m_DMASnoopByte);
+    state.Sync(m_DMACyclesAccumulated);
+    state.Sync(m_DMARegister);
+    state.Sync(m_DMAPending);
+    state.Sync(m_DMAPendingSource);
+    state.Sync(m_DMAPendingCyclesRemaining);
+    state.Sync(m_LCDControl);
+    state.Sync(m_LCDControllerStatus);
+    state.Sync(m_ScrollY);
+    state.Sync(m_ScrollX);
+    state.Sync(m_LCDControllerYCoordinate);
+    state.Sync(m_LYCompare);
+    state.Sync(m_WindowYPosition);
+    state.Sync(m_WindowXPositionMinus7);
+    state.Sync(m_BGPaletteData);
+    state.Sync(m_ObjectPalette0Data);
+    state.Sync(m_ObjectPalette1Data);
+    state.SyncBytes(m_BGPaletteRAM, sizeof(m_BGPaletteRAM));
+    state.SyncBytes(m_OBJPaletteRAM, sizeof(m_OBJPaletteRAM));
+    state.Sync(m_BGPaletteIndex);
+    state.Sync(m_OBJPaletteIndex);
+    state.Sync(m_HDMASource);
+    state.Sync(m_HDMADestination);
+    state.Sync(m_HDMABlocksRemaining);
+    state.Sync(m_HDMAActive);
+    state.Sync(m_HDMABlockTransferred);
+    state.Sync(m_GDMATransferCount);
+    state.Sync(m_HDMATerminationWindow);
+    state.Sync(m_DMAStallCycles);
+
+    if (state.IsReading())
+    {
+        bool invalidSpriteIndex = false;
+        for (byte index = 0; index < m_lineSpriteCount; ++index)
+        {
+            if (m_lineSpriteOAMIndex[index] >= OAMDMABytes ||
+                (m_lineSpriteOAMIndex[index] & 0x03) != 0)
+            {
+                invalidSpriteIndex = true;
+                break;
+            }
+        }
+
+        const byte lcdMode = m_LCDControllerStatus & 0x03;
+        const bool invalidVisibleLine =
+            ISBITSET(m_LCDControl, 7) &&
+            lcdMode != ModeVBlank &&
+            m_LCDControllerYCoordinate >= 144;
+        if (static_cast<unsigned int>(m_mode) >
+             static_cast<unsigned int>(GameBoyMode::CGBCompatibility) ||
+            m_VRAMBank > 1 ||
+            m_lineSpriteCount > MaxSpritesPerScanline ||
+            invalidSpriteIndex ||
+            m_RenderX > 160 ||
+            m_BGPixelFIFOHead > 15 ||
+            m_BGPixelFIFOSize > 16 ||
+            m_BGFetcherStage > 5 ||
+            m_BGFetcherTileRow > 7 ||
+            m_BGFetcherAddress > 0x1FFF ||
+            m_BGFetcherFineDiscard > 7 ||
+            (m_DMAActive && m_DMAOffset >= OAMDMABytes) ||
+            (!m_DMAActive && m_DMAOffset > OAMDMABytes) ||
+            (m_DMAActive && m_DMACyclesAccumulated >= 4) ||
+            (m_DMAPending &&
+             (m_DMAPendingCyclesRemaining == 0 ||
+              m_DMAPendingCyclesRemaining > OAMDMAStartDelayCycles)) ||
+            m_LCDControllerYCoordinate > 153 ||
+            invalidVisibleLine ||
+            (m_BGPaletteIndex & 0x40) != 0 ||
+            (m_OBJPaletteIndex & 0x40) != 0 ||
+            m_HDMABlocksRemaining > 0x80)
+        {
+            state.Invalidate();
+        }
+    }
 }
 
 void GPU::SetGameBoyMode(GameBoyMode mode)

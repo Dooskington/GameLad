@@ -13,6 +13,7 @@ typedef unsigned char byte;
 typedef signed char sbyte;
 typedef unsigned short ushort;
 
+#include "StateSerializer.hpp"
 #include "Logger.hpp"
 #include "HardwareModel.hpp"
 #include "IMemoryUnit.hpp"

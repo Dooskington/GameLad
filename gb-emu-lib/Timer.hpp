@@ -8,6 +8,7 @@ public:
 
     void PreBoot();
     void Step(unsigned long cycles);
+    void Serialize(StateSerializer& state);
 
     void SetGameBoyMode(GameBoyMode mode) { m_mode = mode; }
     /*

@@ -20,6 +20,7 @@ public:
     ~Joypad();
 
     void SetInput(byte input, byte buttons);
+    void Serialize(StateSerializer& state);
 
     // IMemoryUnit
     byte ReadByte(const ushort& address);
