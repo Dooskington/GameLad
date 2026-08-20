@@ -53,9 +53,15 @@ Then, follow the code of the main emulator loop that starts [here](https://githu
 NOTE: The bootstrap may fail, if it does, follow any instructions listed and try again.
 
 ## Linux
+* Install a C++ compiler, GNU Make, and CMake 3.16 or newer.
 * You may need to run: `chmod 700 compile.sh`
-* `./compile.sh <path_to_cloned_vcpkg>`
-*     For example: ./compile.sh ~/git/microsoft/vcpkg
+* Run `./compile.sh` for a Debug build or `./compile.sh --release` for Release.
+
+The Linux build produces `build-linux/bin/gamelad_libretro.so`,
+`build-linux/bin/gamelad_libretro.info`, and both test executables. It does not
+require SDL or vcpkg. To build the optional desktop frontend, install the SDL2
+development package and configure CMake with
+`-DGAMELAD_BUILD_SDL_FRONTEND=ON`.
 
 ## Windows
 * Open VS Developer Command Prompt
@@ -69,10 +75,11 @@ after the vcpkg path for an optimized Release build.
 
 ## RetroArch core
 
-`gamelad_libretro.dll` is a standalone libretro core for Game Boy and Game
-Boy Color ROMs. Build it from a Visual Studio Developer Command Prompt whose
-architecture matches the RetroArch installation. For example, use an x64
-prompt for 64-bit RetroArch:
+`gamelad_libretro.dll` on Windows and `gamelad_libretro.so` on Linux are
+standalone libretro cores for Game Boy and Game Boy Color ROMs. On Windows,
+build from a Visual Studio Developer Command Prompt whose architecture matches
+the RetroArch installation. For example, use an x64 prompt for 64-bit
+RetroArch:
 
 ```bat
 compile.bat E:\Git\microsoft\vcpkg --release

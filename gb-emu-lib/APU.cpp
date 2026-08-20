@@ -9,6 +9,8 @@ namespace
     const double CapacitorChargePerTick = 0.999958;
 }
 
+const size_t APU::MaxBufferedSamples;
+
 // FF10 - NR10 - Channel 1 Sweep register (R / W)
 // FF11 - NR11 - Channel 1 Sound length/Wave pattern duty (R/W)
 // FF12 - NR12 - Channel 1 Volume Envelope (R/W)
