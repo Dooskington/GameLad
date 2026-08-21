@@ -5,7 +5,7 @@ supported_extensions = "gb|gbc"
 corename = "GameLad"
 license = "MIT"
 permissions = ""
-display_version = "0.2.0"
+display_version = "0.2.1"
 categories = "Emulator"
 
 # Hardware Information

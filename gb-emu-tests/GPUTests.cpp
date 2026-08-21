@@ -1,6 +1,9 @@
 #include "stdafx.h"
 
 #include <GPU.hpp>
+#include <StateSerializer.hpp>
+
+#include <vector>
 
 class GPUTestCPU : public ICPU
 {
@@ -228,6 +231,105 @@ public:
         gpu.Step(2, 4);
         Assert::IsFalse(gpu.IsOAMDMAActive());
         Assert::AreEqual(OAMDMABytes, (int)gpu.m_DMAOffset);
+    }
+
+    TEST_METHOD(VBlankInterruptTimingTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+
+        GPUTestCPU doubleSpeedCPU;
+        GPU doubleSpeed(spMMU.get(), &doubleSpeedCPU);
+        doubleSpeed.SetGameBoyMode(GameBoyMode::CGB);
+        doubleSpeed.m_LCDControl = 0x80;
+        doubleSpeed.m_LCDControllerStatus = ModeHBlank;
+        doubleSpeed.m_LCDControllerYCoordinate = 143;
+        doubleSpeed.m_ModeClock = HBlankCycles - 2;
+        doubleSpeed.m_Mode0Cycles = HBlankCycles;
+
+        doubleSpeed.Step(2, 4);
+        Assert::AreEqual(144, (int)doubleSpeed.m_LCDControllerYCoordinate);
+        Assert::AreEqual(ModeVBlank, (int)(doubleSpeed.m_LCDControllerStatus & 0x03));
+        Assert::AreEqual(0, doubleSpeedCPU.InterruptCount);
+        Assert::AreEqual(
+            CGBDoubleSpeedVBlankInterruptDelayCycles,
+            (int)doubleSpeed.m_VBlankInterruptDelayCycles);
+
+        doubleSpeed.Step(2, 4);
+        Assert::AreEqual(0, doubleSpeedCPU.InterruptCount);
+        Assert::AreEqual(2, (int)doubleSpeed.m_VBlankInterruptDelayCycles);
+
+        doubleSpeed.Step(2, 4);
+        Assert::AreEqual(1, doubleSpeedCPU.InterruptCount);
+        Assert::AreEqual(0, (int)doubleSpeed.m_VBlankInterruptDelayCycles);
+
+        doubleSpeed.Step(2, 4);
+        Assert::AreEqual(1, doubleSpeedCPU.InterruptCount);
+
+        GPUTestCPU singleSpeedCPU;
+        GPU singleSpeed(spMMU.get(), &singleSpeedCPU);
+        singleSpeed.SetGameBoyMode(GameBoyMode::CGB);
+        singleSpeed.m_LCDControl = 0x80;
+        singleSpeed.m_LCDControllerStatus = ModeHBlank;
+        singleSpeed.m_LCDControllerYCoordinate = 143;
+        singleSpeed.m_ModeClock = HBlankCycles - 4;
+        singleSpeed.m_Mode0Cycles = HBlankCycles;
+
+        singleSpeed.Step(4, 4);
+        Assert::AreEqual(144, (int)singleSpeed.m_LCDControllerYCoordinate);
+        Assert::AreEqual(1, singleSpeedCPU.InterruptCount);
+        Assert::AreEqual(0, (int)singleSpeed.m_VBlankInterruptDelayCycles);
+    }
+
+    TEST_METHOD(PendingVBlankInterruptCancelledWhenLCDDisabledTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPUTestCPU cpu;
+        GPU gpu(spMMU.get(), &cpu);
+        gpu.SetGameBoyMode(GameBoyMode::CGB);
+        gpu.m_LCDControl = 0x80;
+        gpu.m_LCDControllerStatus = ModeHBlank;
+        gpu.m_LCDControllerYCoordinate = 143;
+        gpu.m_ModeClock = HBlankCycles - 2;
+        gpu.m_Mode0Cycles = HBlankCycles;
+
+        gpu.Step(2, 4);
+        Assert::AreEqual(
+            CGBDoubleSpeedVBlankInterruptDelayCycles,
+            (int)gpu.m_VBlankInterruptDelayCycles);
+
+        gpu.WriteByte(LCDControl, 0x00);
+        Assert::AreEqual(0, (int)gpu.m_VBlankInterruptDelayCycles);
+        gpu.Step(2, 4);
+        gpu.Step(2, 4);
+        Assert::AreEqual(0, cpu.InterruptCount);
+    }
+
+    TEST_METHOD(PendingVBlankInterruptStateRoundTripTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPU source(spMMU.get(), nullptr);
+        source.SetGameBoyMode(GameBoyMode::CGB);
+        source.m_LCDControl = 0x80;
+        source.m_LCDControllerStatus = ModeVBlank;
+        source.m_LCDControllerYCoordinate = 144;
+        source.m_VBlankInterruptDelayCycles = 2;
+
+        std::vector<byte> serialized;
+        StateSerializer writer(serialized);
+        source.Serialize(writer);
+        Assert::IsTrue(writer.IsValid());
+
+        GPUTestCPU cpu;
+        GPU restored(spMMU.get(), &cpu);
+        StateSerializer reader(serialized.data(), serialized.size());
+        restored.Serialize(reader);
+        Assert::IsTrue(reader.IsValid());
+        Assert::AreEqual(0, (int)reader.Remaining());
+        Assert::AreEqual(2, (int)restored.m_VBlankInterruptDelayCycles);
+
+        restored.Step(2, 4);
+        Assert::AreEqual(1, cpu.InterruptCount);
+        Assert::AreEqual(0, (int)restored.m_VBlankInterruptDelayCycles);
     }
 
     TEST_METHOD(LCDEnableFirstLineTimingTest)

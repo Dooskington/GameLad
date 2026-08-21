@@ -69,6 +69,7 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     m_Mode0Cycles(HBlankCycles),
     m_StatInterruptLine(false),
     m_InternalMode2STATEventFired(false),
+    m_VBlankInterruptDelayCycles(0),
     m_Line153LYReset(false),
     m_FirstLineAfterLCDEnable(false),
     m_WindowLineCounter(0),
@@ -180,6 +181,7 @@ void GPU::Serialize(StateSerializer& state)
     state.Sync(m_Mode0Cycles);
     state.Sync(m_StatInterruptLine);
     state.Sync(m_InternalMode2STATEventFired);
+    state.Sync(m_VBlankInterruptDelayCycles);
     state.Sync(m_Line153LYReset);
     state.Sync(m_FirstLineAfterLCDEnable);
     state.Sync(m_WindowLineCounter);
@@ -280,6 +282,8 @@ void GPU::Serialize(StateSerializer& state)
             m_BGFetcherTileRow > 7 ||
             m_BGFetcherAddress > 0x1FFF ||
             m_BGFetcherFineDiscard > 7 ||
+            m_VBlankInterruptDelayCycles >
+                CGBDoubleSpeedVBlankInterruptDelayCycles ||
             (m_DMAActive && m_DMAOffset >= OAMDMABytes) ||
             (!m_DMAActive && m_DMAOffset > OAMDMABytes) ||
             (m_DMAActive && m_DMACyclesAccumulated >= 4) ||
@@ -372,6 +376,8 @@ void GPU::Step(unsigned long cycles)
 
 void GPU::Step(unsigned long baseCycles, unsigned long cpuCycles)
 {
+    StepVBlankInterruptDelay(cpuCycles);
+
     /*
         OAM DMA moves one byte per CPU M-cycle. In CGB double speed that is two
         base-clock dots, so it must use the CPU-domain count while the PPU state
@@ -446,7 +452,15 @@ void GPU::Step(unsigned long baseCycles, unsigned long cpuCycles)
 
                 if (m_CPU != nullptr)
                 {
-                    m_CPU->TriggerInterrupt(INT40);
+                    if (IsCGBHardware(m_mode) && cpuCycles > baseCycles)
+                    {
+                        m_VBlankInterruptDelayCycles =
+                            CGBDoubleSpeedVBlankInterruptDelayCycles;
+                    }
+                    else
+                    {
+                        m_CPU->TriggerInterrupt(INT40);
+                    }
                 }
             }
             else
@@ -500,6 +514,26 @@ void GPU::Step(unsigned long baseCycles, unsigned long cpuCycles)
             }
         }
         break;
+    }
+}
+
+void GPU::StepVBlankInterruptDelay(unsigned long cpuCycles)
+{
+    if (m_VBlankInterruptDelayCycles == 0)
+    {
+        return;
+    }
+
+    if (cpuCycles < m_VBlankInterruptDelayCycles)
+    {
+        m_VBlankInterruptDelayCycles -= cpuCycles;
+        return;
+    }
+
+    m_VBlankInterruptDelayCycles = 0;
+    if (m_CPU != nullptr)
+    {
+        m_CPU->TriggerInterrupt(INT40);
     }
 }
 
@@ -1855,6 +1889,7 @@ void GPU::PreBoot()
 
     // The reference boot ROM completes partway through VBlank on line 0x91.
     m_ModeClock = 0;
+    m_VBlankInterruptDelayCycles = 0;
     m_Line153LYReset = false;
     m_FirstLineAfterLCDEnable = false;
     m_InternalMode2STATEventFired = false;
@@ -1913,6 +1948,7 @@ void GPU::DisableLCD()
 
     m_LCDControllerYCoordinate = 0;
     m_ModeClock = 0;
+    m_VBlankInterruptDelayCycles = 0;
     m_Line153LYReset = false;
     m_FirstLineAfterLCDEnable = false;
     m_InternalMode2STATEventFired = false;
@@ -1929,6 +1965,7 @@ void GPU::EnableLCD()
 {
     m_ModeClock = 0;
     m_LCDControllerYCoordinate = 0;
+    m_VBlankInterruptDelayCycles = 0;
     m_Line153LYReset = false;
     m_FirstLineAfterLCDEnable = true;
     m_InternalMode2STATEventFired = false;

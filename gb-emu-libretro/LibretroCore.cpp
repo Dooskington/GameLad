@@ -1596,7 +1596,7 @@ RETRO_API unsigned int retro_api_version(void)
 RETRO_API void retro_get_system_info(struct retro_system_info* info)
 {
     info->library_name = "GameLad";
-    info->library_version = "0.2.0";
+    info->library_version = "0.2.1";
     info->valid_extensions = "gb|gbc";
     info->need_fullpath = false;
     info->block_extract = false;

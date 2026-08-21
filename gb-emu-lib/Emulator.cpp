@@ -5,6 +5,11 @@
 
 #include <cstring>
 
+namespace
+{
+const unsigned int SaveStateVersion = 2;
+}
+
 Emulator::Emulator()
 {
 }
@@ -96,7 +101,7 @@ bool Emulator::Serialize(std::vector<byte>& output)
 
     StateSerializer state(output);
     byte magic[8] = { 'G', 'L', 'S', 'T', 'A', 'T', 'E', 0 };
-    unsigned int version = 1;
+    unsigned int version = SaveStateVersion;
     state.SyncBytes(magic, sizeof(magic));
     state.Sync(version);
     return cpu->Serialize(state) && state.IsValid();
@@ -118,7 +123,7 @@ bool Emulator::DeserializeUnchecked(const void* input, size_t size)
     const byte expectedMagic[8] = { 'G', 'L', 'S', 'T', 'A', 'T', 'E', 0 };
     if (!state.IsValid() ||
         std::memcmp(magic, expectedMagic, sizeof(magic)) != 0 ||
-        version != 1)
+        version != SaveStateVersion)
     {
         return false;
     }

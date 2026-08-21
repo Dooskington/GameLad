@@ -69,6 +69,10 @@
 // A write to FF46 takes effect 2 CPU M-cycles after the write.
 #define OAMDMAStartDelayCycles 8
 
+// LY becomes 144 three PPU dots before the VBlank request is visible. In CGB
+// double speed those dots span six CPU T-cycles.
+#define CGBDoubleSpeedVBlankInterruptDelayCycles 6
+
 // While OAM DMA is in progress, the DMG CPU may only access High RAM
 // (0xFF80-0xFFFE) and the Interrupt Enable register (0xFFFF). The DMA
 // register itself (0xFF46) is always writable so a transfer can be restarted.
@@ -159,6 +163,7 @@ public:
 private:
     void LaunchDMATransfer(const byte address);
     void StepOAMDMA(unsigned long cycles);
+    void StepVBlankInterruptDelay(unsigned long cpuCycles);
     int GetOAMBugRow(OAMBugOrigin origin) const;
     ushort ReadOAMWord(int row, int word) const;
     void WriteOAMWord(int row, int word, ushort value);
@@ -238,6 +243,7 @@ private:
     unsigned long m_Mode0Cycles;
     bool m_StatInterruptLine;
     bool m_InternalMode2STATEventFired;
+    unsigned long m_VBlankInterruptDelayCycles;
     bool m_Line153LYReset;
     // The shortened LCD-restart line does not expose the DMG OAM bug.
     bool m_FirstLineAfterLCDEnable;

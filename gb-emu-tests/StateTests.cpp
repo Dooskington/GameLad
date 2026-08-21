@@ -117,6 +117,30 @@ public:
             otherBefore.size()) == 0);
     }
 
+    TEST_METHOD(PreviousStateVersionIsRejectedTest)
+    {
+        std::vector<byte> rom = CreateROM(ROMOnly, RAM_None);
+        Emulator emulator;
+        Assert::IsTrue(emulator.Initialize(nullptr, 0, rom.data(), rom.size()));
+        Step(emulator, 300);
+
+        std::vector<byte> before;
+        Assert::IsTrue(emulator.Serialize(before));
+        std::vector<byte> previousVersion = before;
+        previousVersion[8] = 1;
+        previousVersion[9] = 0;
+        previousVersion[10] = 0;
+        previousVersion[11] = 0;
+        Assert::IsFalse(emulator.Deserialize(
+            previousVersion.data(),
+            previousVersion.size()));
+
+        std::vector<byte> after;
+        Assert::IsTrue(emulator.Serialize(after));
+        Assert::IsTrue(after.size() == before.size());
+        Assert::IsTrue(std::memcmp(after.data(), before.data(), before.size()) == 0);
+    }
+
     TEST_METHOD(MBCAndRTCStateRoundTripTest)
     {
         std::vector<byte> rom = CreateROM(MBC3TimerRAMBattery, RAM_8KB);

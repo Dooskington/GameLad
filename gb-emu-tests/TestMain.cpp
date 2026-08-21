@@ -267,6 +267,9 @@ int main(int arg, char** argv)
     TEST_CALL(GPUTests, Line153LYResetTest);
     TEST_CALL(GPUTests, DMABusConflictTest);
     TEST_CALL(GPUTests, OAMDMADoubleSpeedClockDomainTest);
+    TEST_CALL(GPUTests, VBlankInterruptTimingTest);
+    TEST_CALL(GPUTests, PendingVBlankInterruptCancelledWhenLCDDisabledTest);
+    TEST_CALL(GPUTests, PendingVBlankInterruptStateRoundTripTest);
     TEST_CALL(GPUTests, LCDEnableFirstLineTimingTest);
     TEST_CALL(GPUTests, OAMCorruptionPatternTest);
     TEST_CALL(GPUTests, WindowRightEdgeTimingTest);
@@ -371,6 +374,7 @@ int main(int arg, char** argv)
     TEST_SETUP(StateTests);
     TEST_CALL(StateTests, DeterministicRoundTripTest);
     TEST_CALL(StateTests, RejectedStateIsTransactionalTest);
+    TEST_CALL(StateTests, PreviousStateVersionIsRejectedTest);
     TEST_CALL(StateTests, MBCAndRTCStateRoundTripTest);
     TEST_CALL(StateTests, RumbleStateRoundTripTest);
     TEST_CALL(StateTests, CGBBootROMMappingTest);
