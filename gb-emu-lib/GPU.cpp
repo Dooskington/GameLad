@@ -145,6 +145,8 @@ GPU::GPU(IMMU* pMMU, ICPU* pCPU) :
     memset(m_bgPixels, 0x00, sizeof(m_bgPixels));
     memset(m_DisplayPixels, 0x00, ARRAYSIZE(m_DisplayPixels));
     memset(m_NativePixels, 0x00, sizeof(m_NativePixels));
+    memset(m_CompletedPixels, 0x00, sizeof(m_CompletedPixels));
+    memset(m_CompletedNativePixels, 0x00, sizeof(m_CompletedNativePixels));
     memset(m_LineColorIndex, 0x00, sizeof(m_LineColorIndex));
     memset(m_LineBGPriority, 0x00, sizeof(m_LineBGPriority));
 
@@ -169,6 +171,11 @@ void GPU::Serialize(StateSerializer& state)
     for (size_t index = 0; index < ARRAYSIZE(m_NativePixels); ++index)
     {
         state.Sync(m_NativePixels[index]);
+    }
+    state.SyncBytes(m_CompletedPixels, sizeof(m_CompletedPixels));
+    for (size_t index = 0; index < ARRAYSIZE(m_CompletedNativePixels); ++index)
+    {
+        state.Sync(m_CompletedNativePixels[index]);
     }
     state.SyncBytes(m_LineColorIndex, sizeof(m_LineColorIndex));
     for (size_t index = 0; index < ARRAYSIZE(m_LineBGPriority); ++index)
@@ -1515,7 +1522,7 @@ void GPU::RenderPixel(byte x, byte bgColorIndex, byte bgAttributes)
 
 byte* GPU::GetCurrentFrame()
 {
-    return m_DisplayPixels;
+    return m_CompletedPixels;
 }
 
 // IMemoryUnit
@@ -1919,14 +1926,17 @@ void GPU::PreBoot()
 
     // Initialize color to white
     memset(m_DisplayPixels, GBColors[0], ARRAYSIZE(m_DisplayPixels));
+    memset(m_CompletedPixels, GBColors[0], ARRAYSIZE(m_CompletedPixels));
     for (unsigned int a = 0;a < ARRAYSIZE(m_DisplayPixels);a += 4)
     {
         m_DisplayPixels[a] = 0xFF;   // Set Alpha to 0xFF
+        m_CompletedPixels[a] = 0xFF;
     }
 
     for (unsigned int a = 0; a < ARRAYSIZE(m_NativePixels); a++)
     {
         m_NativePixels[a] = IsCGBRendering() ? 0x7FFF : 0x0000;
+        m_CompletedNativePixels[a] = m_NativePixels[a];
     }
 }
 
@@ -1937,13 +1947,16 @@ void GPU::DisableLCD()
 {
     // Clear the screen to white while the LCD is off.
     memset(m_DisplayPixels, GBColors[0], ARRAYSIZE(m_DisplayPixels));
+    memset(m_CompletedPixels, GBColors[0], ARRAYSIZE(m_CompletedPixels));
     for (unsigned int a = 0; a < ARRAYSIZE(m_DisplayPixels); a += 4)
     {
         m_DisplayPixels[a] = 0xFF;   // Set Alpha to 0xFF
+        m_CompletedPixels[a] = 0xFF;
     }
     for (unsigned int a = 0; a < ARRAYSIZE(m_NativePixels); a++)
     {
         m_NativePixels[a] = IsCGBRendering() ? 0x7FFF : 0x0000;
+        m_CompletedNativePixels[a] = m_NativePixels[a];
     }
 
     m_LCDControllerYCoordinate = 0;
@@ -2034,6 +2047,15 @@ void GPU::RenderScanline()
 
 void GPU::RenderImage()
 {
+    // The LCD controller has just finished visible line 143. Publish the
+    // complete hardware frame before mode 2 starts overwriting the working
+    // scanout for the next one.
+    memcpy(m_CompletedPixels, m_DisplayPixels, sizeof(m_CompletedPixels));
+    memcpy(
+        m_CompletedNativePixels,
+        m_NativePixels,
+        sizeof(m_CompletedNativePixels));
+
     if (m_pVSyncCallback != nullptr)
     {
         m_pVSyncCallback();

@@ -496,4 +496,108 @@ public:
         Assert::AreEqual(0, cpu.InterruptCount);
         Assert::AreEqual(1, cpu.QueuedInterruptCount);
     }
+
+    TEST_METHOD(CompletedFrameIsStableDuringNextScanoutTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPU gpu(spMMU.get(), nullptr);
+        gpu.SetGameBoyMode(GameBoyMode::CGB);
+
+        for (int pixel = 0; pixel < 160 * 144; ++pixel)
+        {
+            const int output = pixel * 4;
+            gpu.m_DisplayPixels[output + 0] = 0xFF;
+            gpu.m_DisplayPixels[output + 1] = static_cast<byte>(pixel);
+            gpu.m_DisplayPixels[output + 2] = static_cast<byte>(pixel >> 1);
+            gpu.m_DisplayPixels[output + 3] = static_cast<byte>(pixel >> 2);
+            gpu.m_NativePixels[pixel] = static_cast<ushort>(pixel & 0x7FFF);
+        }
+
+        gpu.RenderImage();
+        std::vector<byte> completed(
+            gpu.GetCurrentFrame(),
+            gpu.GetCurrentFrame() + sizeof(gpu.m_CompletedPixels));
+        std::vector<ushort> completedNative(
+            gpu.GetCurrentNativeFrame(),
+            gpu.GetCurrentNativeFrame() + ARRAYSIZE(gpu.m_CompletedNativePixels));
+
+        // Simulate the next LCD scanout overwriting the top of the working
+        // framebuffer before the frontend asks for a frame.
+        memset(gpu.m_DisplayPixels, 0xCC, 12 * 160 * 4);
+        for (int pixel = 0; pixel < 12 * 160; ++pixel)
+        {
+            gpu.m_NativePixels[pixel] = 0x1234;
+        }
+
+        Assert::IsTrue(std::memcmp(
+            completed.data(),
+            gpu.GetCurrentFrame(),
+            completed.size()) == 0);
+        Assert::IsTrue(std::memcmp(
+            completedNative.data(),
+            gpu.GetCurrentNativeFrame(),
+            completedNative.size() * sizeof(ushort)) == 0);
+    }
+
+    TEST_METHOD(CompletedFrameStateRoundTripTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPU source(spMMU.get(), nullptr);
+        source.SetGameBoyMode(GameBoyMode::CGB);
+
+        memset(source.m_DisplayPixels, 0x5A, sizeof(source.m_DisplayPixels));
+        for (int pixel = 0; pixel < 160 * 144; ++pixel)
+        {
+            source.m_NativePixels[pixel] =
+                static_cast<ushort>((pixel * 3) & 0x7FFF);
+        }
+        source.RenderImage();
+
+        std::vector<byte> stateData;
+        StateSerializer writer(stateData);
+        source.Serialize(writer);
+        Assert::IsTrue(writer.IsValid());
+
+        GPU restored(spMMU.get(), nullptr);
+        StateSerializer reader(stateData.data(), stateData.size());
+        restored.Serialize(reader);
+        Assert::IsTrue(reader.IsValid());
+        Assert::AreEqual(0, (int)reader.Remaining());
+        Assert::IsTrue(std::memcmp(
+            source.GetCurrentFrame(),
+            restored.GetCurrentFrame(),
+            sizeof(source.m_CompletedPixels)) == 0);
+        Assert::IsTrue(std::memcmp(
+            source.GetCurrentNativeFrame(),
+            restored.GetCurrentNativeFrame(),
+            sizeof(source.m_CompletedNativePixels)) == 0);
+    }
+
+    TEST_METHOD(LCDDisablePublishesWhiteCompletedFrameTest)
+    {
+        std::unique_ptr<GPUTestsMMU> spMMU(new GPUTestsMMU(nullptr, 0));
+        GPU gpu(spMMU.get(), nullptr);
+        gpu.SetGameBoyMode(GameBoyMode::CGB);
+        gpu.PreBoot();
+        const byte white = gpu.GetCurrentFrame()[1];
+        memset(gpu.m_DisplayPixels, 0x00, sizeof(gpu.m_DisplayPixels));
+        memset(gpu.m_NativePixels, 0x00, sizeof(gpu.m_NativePixels));
+        gpu.RenderImage();
+
+        gpu.m_LCDControl = 0x80;
+        gpu.DisableLCD();
+
+        const byte* completed = gpu.GetCurrentFrame();
+        for (int pixel = 0; pixel < 160 * 144; ++pixel)
+        {
+            const int output = pixel * 4;
+            Assert::AreEqual(0xFF, (int)completed[output + 0]);
+            Assert::AreEqual((int)white, (int)completed[output + 1]);
+            Assert::AreEqual((int)white, (int)completed[output + 2]);
+            Assert::AreEqual((int)white, (int)completed[output + 3]);
+            Assert::AreEqual(
+                0x7FFF,
+                (int)gpu.GetCurrentNativeFrame()[pixel]);
+        }
+    }
 };

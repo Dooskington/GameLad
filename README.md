@@ -110,6 +110,8 @@ Implemented core integrations include:
 * Memory descriptors and RetroAchievements support.
 * Core options for hardware model, boot ROM use, opposing directions, and
   audio-buffer-driven frameskip.
+* VBlank-latched video output, so frontends never receive a framebuffer while
+  the PPU is progressively overwriting it for the next hardware frame.
 * MBC5 cartridge rumble forwarded to the frontend controller.
 * In-memory and archive-extracted ROM loading, plus frontend VFS access.
 * Two-player link-cable communication through RetroArch's netpacket interface.

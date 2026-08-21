@@ -127,7 +127,7 @@ public:
         std::vector<byte> before;
         Assert::IsTrue(emulator.Serialize(before));
         std::vector<byte> previousVersion = before;
-        previousVersion[8] = 1;
+        previousVersion[8] = 2;
         previousVersion[9] = 0;
         previousVersion[10] = 0;
         previousVersion[11] = 0;

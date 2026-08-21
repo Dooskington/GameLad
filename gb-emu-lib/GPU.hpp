@@ -103,6 +103,9 @@ public:
 
     void Step(unsigned long cycles);
     void Step(unsigned long baseCycles, unsigned long cpuCycles);
+    // Host-facing video is latched only after all 144 visible lines complete.
+    // The PPU keeps drawing the next hardware frame into separate working
+    // buffers, so a frontend can never observe a top/bottom split mid-scanout.
     byte* GetCurrentFrame();
     void Serialize(StateSerializer& state);
     byte* GetVideoRAM() { return &m_VRAM[0][0]; }
@@ -113,7 +116,7 @@ public:
     size_t GetOAMSize() const { return sizeof(m_OAM); }
 
     /*
-        The unconverted frame, one ushort per pixel:
+        The latest completed, unconverted frame, one ushort per pixel:
         - CGB: the RGB555 value the PPU actually latched, with no host colour
           correction applied. Test oracles disagree about how RGB555 should be
           expanded to RGB888 (gambatte applies its own correction curve, the
@@ -121,7 +124,7 @@ public:
           the hardware value and lets the comparison decide.
         - DMG: the shade index 0-3, before the palette is applied.
     */
-    const ushort* GetCurrentNativeFrame() const { return m_NativePixels; }
+    const ushort* GetCurrentNativeFrame() const { return m_CompletedNativePixels; }
 
     void SetGameBoyMode(GameBoyMode mode);
     GameBoyMode GetGameBoyMode() const { return m_mode; }
@@ -221,8 +224,12 @@ private:
 
     byte m_OAM[0x009F + 1];
     byte m_bgPixels[160 * 144 * 4];
+    // Working scanout buffers, updated progressively as mode 3 emits pixels.
     byte m_DisplayPixels[160 * 144 * 4];
     ushort m_NativePixels[160 * 144];
+    // Stable host-visible buffers, updated atomically on entry to VBlank.
+    byte m_CompletedPixels[160 * 144 * 4];
+    ushort m_CompletedNativePixels[160 * 144];
 
     /*
         Per-scanline shadow of the background/window layer used for sprite

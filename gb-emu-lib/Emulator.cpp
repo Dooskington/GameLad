@@ -7,7 +7,7 @@
 
 namespace
 {
-const unsigned int SaveStateVersion = 2;
+const unsigned int SaveStateVersion = 3;
 }
 
 Emulator::Emulator()

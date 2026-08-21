@@ -276,6 +276,9 @@ int main(int arg, char** argv)
     TEST_CALL(GPUTests, CGBWindowYLatchesWhileDisabledTest);
     TEST_CALL(GPUTests, CGBWindowEnableDeadlineTest);
     TEST_CALL(GPUTests, InternalMode2STATEventTest);
+    TEST_CALL(GPUTests, CompletedFrameIsStableDuringNextScanoutTest);
+    TEST_CALL(GPUTests, CompletedFrameStateRoundTripTest);
+    TEST_CALL(GPUTests, LCDDisablePublishesWhiteCompletedFrameTest);
     TEST_CLEANUP();
 
     TEST_SETUP(JoypadTests);
